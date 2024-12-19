@@ -1,5 +1,7 @@
 # autosar-data-abstraction
 
+[![Github Actions](https://github.com/DanielT/autosar-data-abstraction/actions/workflows/CI.yml/badge.svg)](https://github.com/DanielT/autosar-data-abstraction/actions)
+
 ***Warning: This is a prototype***
 
 This is an abstraction layer on top of the autosar-data model.
