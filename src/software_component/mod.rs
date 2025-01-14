@@ -102,13 +102,15 @@ pub trait AbstractSwComponentType: AbstractionElement {
 //##################################################################
 
 /// A `CompositionSwComponentType` is a software component that contains other software components
+///
+/// Use [`ArPackage::create_composition_sw_component_type`] to create a new composition sw component type.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CompositionSwComponentType(Element);
 abstraction_element!(CompositionSwComponentType, CompositionSwComponentType);
 
 impl CompositionSwComponentType {
     /// create a new composition component with the given name
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let composition = elements.create_named_sub_element(ElementName::CompositionSwComponentType, name)?;
         Ok(Self(composition))
@@ -368,13 +370,15 @@ impl AbstractSwComponentType for CompositionSwComponentType {
 //##################################################################
 
 /// An `ApplicationSwComponentType` is a software component that provides application functionality
+///
+/// Use [`ArPackage::create_application_sw_component_type`] to create a new application sw component type.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ApplicationSwComponentType(Element);
 abstraction_element!(ApplicationSwComponentType, ApplicationSwComponentType);
 
 impl ApplicationSwComponentType {
     /// create a new application component with the given name
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let application = elements.create_named_sub_element(ElementName::ApplicationSwComponentType, name)?;
         Ok(Self(application))
@@ -386,13 +390,15 @@ impl AbstractSwComponentType for ApplicationSwComponentType {}
 //##################################################################
 
 /// A `ComplexDeviceDriverSwComponentType` is a software component that provides complex device driver functionality
+///
+/// Use [`ArPackage::create_complex_device_driver_sw_component_type`] to create a new complex device driver sw component type.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ComplexDeviceDriverSwComponentType(Element);
 abstraction_element!(ComplexDeviceDriverSwComponentType, ComplexDeviceDriverSwComponentType);
 
 impl ComplexDeviceDriverSwComponentType {
     /// create a new complex device driver component with the given name
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let cdd = elements.create_named_sub_element(ElementName::ComplexDeviceDriverSwComponentType, name)?;
         Ok(Self(cdd))
@@ -405,13 +411,15 @@ impl AbstractSwComponentType for ComplexDeviceDriverSwComponentType {}
 
 /// `ServiceSwComponentType` is used for configuring services for a given ECU. Instances of this class should only
 /// be created in ECU Configuration phase for the specific purpose of the service configuration.
+///
+/// Use [`ArPackage::create_service_sw_component_type`] to create a new service sw component type.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ServiceSwComponentType(Element);
 abstraction_element!(ServiceSwComponentType, ServiceSwComponentType);
 
 impl ServiceSwComponentType {
     /// create a new service component with the given name
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let service = elements.create_named_sub_element(ElementName::ServiceSwComponentType, name)?;
         Ok(Self(service))
@@ -423,13 +431,15 @@ impl AbstractSwComponentType for ServiceSwComponentType {}
 //##################################################################
 
 /// `SensorActuatorSwComponentType` is used to connect sensor/acutator devices to the ECU configuration
+///
+/// Use [`ArPackage::create_sensor_actuator_sw_component_type`] to create a new sensor/actuator sw component type.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SensorActuatorSwComponentType(Element);
 abstraction_element!(SensorActuatorSwComponentType, SensorActuatorSwComponentType);
 
 impl SensorActuatorSwComponentType {
     /// create a new sensor/actuator component with the given name
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let sensor_actuator = elements.create_named_sub_element(ElementName::SensorActuatorSwComponentType, name)?;
         Ok(Self(sensor_actuator))
@@ -442,13 +452,15 @@ impl AbstractSwComponentType for SensorActuatorSwComponentType {}
 
 /// The `ECUAbstraction` is a special `AtomicSwComponentType` that resides between a software-component
 /// that wants to access ECU periphery and the Microcontroller Abstraction
+///
+/// Use [`ArPackage::create_ecu_abstraction_sw_component_type`] to create a new ECU abstraction sw component type.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcuAbstractionSwComponentType(Element);
 abstraction_element!(EcuAbstractionSwComponentType, EcuAbstractionSwComponentType);
 
 impl EcuAbstractionSwComponentType {
     /// create a new ECU abstraction component with the given name
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let ecu_abstraction = elements.create_named_sub_element(ElementName::EcuAbstractionSwComponentType, name)?;
         Ok(Self(ecu_abstraction))
@@ -719,7 +731,7 @@ element_iterator!(PortPrototypeIterator, PortPrototype, Some);
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{System, SystemCategory};
+    use crate::SystemCategory;
     use autosar_data::{AutosarModel, AutosarVersion};
 
     #[test]
@@ -765,7 +777,7 @@ mod test {
         let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/package").unwrap();
 
-        let system = System::new("system", &package, SystemCategory::EcuExtract).unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let comp = CompositionSwComponentType::new("comp", &package).unwrap();
         let root_sw_component_prototype = system.set_root_sw_composition("root", &comp).unwrap();
 

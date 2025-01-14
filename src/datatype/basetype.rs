@@ -7,13 +7,30 @@ use std::fmt::Display;
 //#########################################################
 
 /// `SwBaseType` is a basic data type.
+/// 
+/// It is used to define the data types of signals and variables.
+/// 
+/// Use [`ArPackage::create_sw_base_type`] to create a new `SwBaseType`.
+/// 
+/// # Example
+/// 
+/// ```
+/// # use autosar_data::*;
+/// # use autosar_data_abstraction::{*, datatype::*};
+/// # let model = AutosarModel::new();
+/// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
+/// let package = ArPackage::get_or_create(&model, "/my/pkg").unwrap();
+/// let base_type = package.create_sw_base_type("MyBaseType",
+///    8, BaseTypeEncoding::None, None, None, Some("uint8")).unwrap();
+/// assert!(model.get_element_by_path("/my/pkg/MyBaseType").is_some())
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SwBaseType(Element);
 abstraction_element!(SwBaseType, SwBaseType);
 
 impl SwBaseType {
     /// create a new `SwBaseType` in the given package
-    pub fn new(
+    pub(crate) fn new(
         name: &str,
         package: &ArPackage,
         bit_length: u32,

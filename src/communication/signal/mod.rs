@@ -191,13 +191,15 @@ impl ISignal {
 //##################################################################
 
 /// The system signal represents the communication system's view of data exchanged between SW components which reside on different ECUs
+///
+/// Use [`ArPackage::create_system_signal`] to create a new system signal
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SystemSignal(Element);
 abstraction_element!(SystemSignal, SystemSignal);
 
 impl SystemSignal {
     /// Create a new system signal in the given package
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let package_elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let elem_syssignal = package_elements.create_named_sub_element(ElementName::SystemSignal, name)?;
 
@@ -438,13 +440,15 @@ impl ISignalGroup {
 
 /// A signal group refers to a set of signals that shall always be kept together. A signal group is used to
 /// guarantee the atomic transfer of AUTOSAR composite data types.
+///
+/// Use [`ArPackage::create_system_signal_group`] to create a new system signal group
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SystemSignalGroup(Element);
 abstraction_element!(SystemSignalGroup, SystemSignalGroup);
 
 impl SystemSignalGroup {
     /// Create a new system signal group
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let pkg_elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let signalgroup = pkg_elements.create_named_sub_element(ElementName::SystemSignalGroup, name)?;
 

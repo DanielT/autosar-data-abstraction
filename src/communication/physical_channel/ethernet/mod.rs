@@ -51,7 +51,7 @@ impl EthernetPhysicalChannel {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
     /// let vlan_info = EthernetVlanInfo {
     ///     vlan_name: "VLAN_1".to_string(),
@@ -84,7 +84,7 @@ impl EthernetPhysicalChannel {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
     /// let channel = cluster.create_physical_channel("Channel", None).unwrap();
     /// let cluster_2 = channel.cluster().unwrap();
@@ -114,7 +114,7 @@ impl EthernetPhysicalChannel {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
     /// # let channel = cluster.create_physical_channel("Channel", None).unwrap();
     /// let endpoint_address = NetworkEndpointAddress::IPv4 {
@@ -171,7 +171,7 @@ impl EthernetPhysicalChannel {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
     /// # let channel = cluster.create_physical_channel("Channel", None).unwrap();
     /// # let endpoint_address = NetworkEndpointAddress::IPv4 {
@@ -204,7 +204,7 @@ impl EthernetPhysicalChannel {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let ecu_instance = system.create_ecu_instance("Ecu", &package).unwrap();
     /// # let controller = ecu_instance.create_ethernet_communication_controller("EthCtrl", None).unwrap();
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
@@ -250,7 +250,7 @@ impl EthernetPhysicalChannel {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let ecu_instance = system.create_ecu_instance("Ecu", &package).unwrap();
     /// # let controller = ecu_instance.create_ethernet_communication_controller("EthCtrl", None).unwrap();
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
@@ -297,7 +297,7 @@ impl EthernetPhysicalChannel {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00046).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
     /// # let channel = cluster.create_physical_channel("Channel", None).unwrap();
     /// # let server_endpoint = channel.create_network_endpoint("ServerAddress", NetworkEndpointAddress::IPv4 {
@@ -345,7 +345,7 @@ impl EthernetPhysicalChannel {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
     /// # let channel = cluster.create_physical_channel("Channel", None).unwrap();
     /// # let endpoint = channel.create_network_endpoint("ServerAddress", NetworkEndpointAddress::IPv4 {
@@ -406,7 +406,7 @@ impl EthernetPhysicalChannel {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let ecu_instance = system.create_ecu_instance("Ecu", &package).unwrap();
     /// # let controller = ecu_instance.create_ethernet_communication_controller("EthCtrl", None).unwrap();
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
@@ -1195,7 +1195,7 @@ element_iterator!(
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{ArPackage, System, SystemCategory};
+    use crate::{ArPackage, SystemCategory};
     use autosar_data::{AutosarModel, AutosarVersion};
 
     #[test]
@@ -1203,7 +1203,7 @@ mod test {
         let model = AutosarModel::new();
         model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
         let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
-        let system = System::new("System", &pkg, SystemCategory::SystemDescription).unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
 
         let channel = cluster.create_physical_channel("channel_name", None).unwrap();

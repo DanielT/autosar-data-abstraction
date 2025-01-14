@@ -5,13 +5,15 @@ use autosar_data::ElementName;
 use datatype::{ApplicationDataType, ImplementationDataType};
 
 /// A [`DataTypeMappingSet`] contains `DataTypeMap`s
+///
+/// Use [`ArPackage::create_data_type_mapping_set`] to create a new `DataTypeMappingSet`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DataTypeMappingSet(Element);
 abstraction_element!(DataTypeMappingSet, DataTypeMappingSet);
 
 impl DataTypeMappingSet {
     /// Create a new `DataTypeMappingSet`
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let mapping_set = elements.create_named_sub_element(ElementName::DataTypeMappingSet, name)?;
 

@@ -20,7 +20,7 @@
 //! let model = AutosarModel::new();
 //! let _file = model.create_file("file.arxml", AutosarVersion::Autosar_00049).unwrap();
 //! let package_1 = ArPackage::get_or_create(&model, "/System").unwrap();
-//! let system = System::new("System", &package_1, SystemCategory::SystemExtract).unwrap();
+//! let system = package_1.create_system("System", SystemCategory::SystemExtract).unwrap();
 //! let package_2 = ArPackage::get_or_create(&model, "/Clusters").unwrap();
 //!
 //! // create an Ethernet cluster and a physical channel for VLAN 33

@@ -32,7 +32,7 @@ impl FlexrayCommunicationController {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
     /// let flexray_controller = ecu_instance.create_flexray_communication_controller("FRCtrl").unwrap();
     /// # let cluster = system.create_flexray_cluster("Cluster", &package, &FlexrayClusterSettings::default()).unwrap();
@@ -69,7 +69,7 @@ impl FlexrayCommunicationController {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
     /// let flexray_controller = ecu_instance.create_flexray_communication_controller("FRCtrl").unwrap();
     /// assert_eq!(ecu_instance, flexray_controller.ecu_instance().unwrap());
@@ -103,7 +103,7 @@ impl FlexrayCommunicationController {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
     /// let flexray_controller = ecu_instance.create_flexray_communication_controller("FlxCtrl").unwrap();
     /// # let cluster = system.create_flexray_cluster("Cluster", &package, &FlexrayClusterSettings::default()).unwrap();
@@ -246,7 +246,7 @@ impl Iterator for FlexrayCtrlChannelsIterator {
 mod test {
     use crate::{
         communication::{FlexrayChannelName, FlexrayClusterSettings},
-        ArPackage, System, SystemCategory,
+        ArPackage, SystemCategory,
     };
 
     use super::*;
@@ -257,7 +257,7 @@ mod test {
         let model = AutosarModel::new();
         model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
         let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
-        let system = System::new("System", &pkg, SystemCategory::SystemDescription).unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let ecu = system.create_ecu_instance("ECU", &pkg).unwrap();
 
         // create a controller

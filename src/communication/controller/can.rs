@@ -33,7 +33,7 @@ impl CanCommunicationController {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
     /// let can_controller = ecu_instance.create_can_communication_controller("CanCtrl").unwrap();
     /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default()).unwrap();
@@ -69,7 +69,7 @@ impl CanCommunicationController {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
     /// let can_controller = ecu_instance.create_can_communication_controller("CanCtrl").unwrap();
     /// assert_eq!(ecu_instance, can_controller.ecu_instance().unwrap());
@@ -103,7 +103,7 @@ impl CanCommunicationController {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
     /// let can_controller = ecu_instance.create_can_communication_controller("CanCtrl").unwrap();
     /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default()).unwrap();
@@ -252,7 +252,7 @@ impl Iterator for CanCtrlChannelsIterator {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{communication::CanClusterSettings, ArPackage, System, SystemCategory};
+    use crate::{communication::CanClusterSettings, ArPackage, SystemCategory};
     use autosar_data::AutosarVersion;
 
     #[test]
@@ -260,7 +260,7 @@ mod test {
         let model = AutosarModel::new();
         model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
         let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
-        let system = System::new("System", &pkg, SystemCategory::SystemDescription).unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let ecu = system.create_ecu_instance("ECU", &pkg).unwrap();
 
         // create a controller

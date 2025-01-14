@@ -2,13 +2,15 @@ use crate::{abstraction_element, element_iterator, AbstractionElement, ArPackage
 use autosar_data::{AutosarVersion, Element, ElementName, EnumItem};
 
 /// A [`DataTransformationSet`] contains `DataTransformation`s and `TransformationTechnology`s used in communication
+///
+/// Use [`ArPackage::create_data_transformation_set`] to create a new `DataTransformationSet`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DataTransformationSet(Element);
 abstraction_element!(DataTransformationSet, DataTransformationSet);
 
 impl DataTransformationSet {
     /// Create a new `DataTransformationSet`
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let transformation_set = elements.create_named_sub_element(ElementName::DataTransformationSet, name)?;
 

@@ -383,7 +383,7 @@ pub enum SocketAddressType {
 mod test {
     use super::*;
     use crate::communication::{IPv4AddressSource, NetworkEndpointAddress};
-    use crate::{ArPackage, System, SystemCategory};
+    use crate::{ArPackage, SystemCategory};
     use autosar_data::{AutosarModel, AutosarVersion};
 
     #[test]
@@ -391,7 +391,7 @@ mod test {
         let model = AutosarModel::new();
         model.create_file("filename", AutosarVersion::Autosar_4_3_0).unwrap();
         let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-        let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+        let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
         let ecu_instance = system.create_ecu_instance("Ecu", &package).unwrap();
         let controller = ecu_instance
             .create_ethernet_communication_controller("EthCtrl", None)

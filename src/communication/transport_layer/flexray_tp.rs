@@ -540,7 +540,7 @@ mod test {
     use super::*;
     use crate::{
         communication::{FlexrayChannelName, FlexrayClusterSettings},
-        System, SystemCategory,
+        SystemCategory,
     };
     use autosar_data::{AutosarModel, AutosarVersion};
 
@@ -550,7 +550,7 @@ mod test {
         let _file = model.create_file("DoipTp.arxml", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
 
-        let system = System::new("system", &package, SystemCategory::EcuExtract).unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let flexray_cluster = system
             .create_flexray_cluster("flexray_cluster", &package, &FlexrayClusterSettings::default())
             .unwrap();

@@ -569,7 +569,7 @@ impl CanTpNode {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{communication::CanClusterSettings, System, SystemCategory};
+    use crate::{communication::CanClusterSettings, SystemCategory};
     use autosar_data::{AutosarModel, AutosarVersion};
 
     #[test]
@@ -578,7 +578,7 @@ mod test {
         let _file = model.create_file("CanTp.arxml", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
 
-        let system = System::new("system", &package, SystemCategory::EcuExtract).unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let can_cluster = system
             .create_can_cluster("can_cluster", &package, &CanClusterSettings::default())
             .unwrap();

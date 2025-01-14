@@ -169,7 +169,7 @@ mod test {
         communication::{
             CommunicationDirection, IPv4AddressSource, NetworkEndpointAddress, SocketAddressType, TpConfig,
         },
-        System, SystemCategory,
+        SystemCategory,
     };
     use autosar_data::{AutosarModel, AutosarVersion};
 
@@ -179,7 +179,7 @@ mod test {
         let _file = model.create_file("DoipTp.arxml", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
 
-        let system = System::new("system", &package, SystemCategory::EcuExtract).unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let eth_cluster = system.create_ethernet_cluster("can_cluster", &package).unwrap();
         let eth_channel = eth_cluster.create_physical_channel("can_channel", None).unwrap();
         let ecu_instance = system.create_ecu_instance("ecu_instance", &package).unwrap();

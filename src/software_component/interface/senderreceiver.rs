@@ -7,13 +7,15 @@ use datatype::AutosarDataType;
 //##################################################################
 
 /// A `SenderReceiverInterface` defines a set of data elements that can be sent and received
+///
+/// Use [`ArPackage::create_sender_receiver_interface`] to create a new sender receiver interface
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SenderReceiverInterface(pub(crate) Element);
 abstraction_element!(SenderReceiverInterface, SenderReceiverInterface);
 
 impl SenderReceiverInterface {
     /// Create a new `SenderReceiverInterface`
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let sender_receiver_interface =
             elements.create_named_sub_element(ElementName::SenderReceiverInterface, name)?;

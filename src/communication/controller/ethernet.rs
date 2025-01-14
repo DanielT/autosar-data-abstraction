@@ -49,7 +49,7 @@ impl EthernetCommunicationController {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
     /// let ethernet_controller = ecu_instance.create_ethernet_communication_controller("EthCtrl", None).unwrap();
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
@@ -85,7 +85,7 @@ impl EthernetCommunicationController {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
     /// let ethernet_controller = ecu_instance.create_ethernet_communication_controller("EthCtrl", None).unwrap();
     /// assert_eq!(ecu_instance, ethernet_controller.ecu_instance().unwrap());
@@ -118,7 +118,7 @@ impl EthernetCommunicationController {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
     /// let ethernet_controller = ecu_instance.create_ethernet_communication_controller("EthCtrl", None).unwrap();
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
@@ -303,7 +303,7 @@ impl Iterator for EthernetCtrlChannelsIterator {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{communication::EthernetVlanInfo, ArPackage, System, SystemCategory};
+    use crate::{communication::EthernetVlanInfo, ArPackage, SystemCategory};
     use autosar_data::{AutosarModel, AutosarVersion};
 
     #[test]
@@ -311,7 +311,7 @@ mod test {
         let model = AutosarModel::new();
         model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
         let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
-        let system = System::new("System", &pkg, SystemCategory::SystemDescription).unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let ecu = system.create_ecu_instance("ECU", &pkg).unwrap();
 
         // can't create a controller with an invalid MAC address

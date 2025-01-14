@@ -10,13 +10,15 @@ pub use senderreceiver::*;
 //##################################################################
 
 /// A `ModeSwitchInterface` defines a set of modes that can be switched
+///
+/// Use [`ArPackage::create_mode_switch_interface`] to create a new mode switch interface
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ModeSwitchInterface(Element);
 abstraction_element!(ModeSwitchInterface, ModeSwitchInterface);
 
 impl ModeSwitchInterface {
     /// Create a new `ModeSwitchInterface`
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let mode_switch_interface = elements.create_named_sub_element(ElementName::ModeSwitchInterface, name)?;
 
@@ -27,13 +29,15 @@ impl ModeSwitchInterface {
 //##################################################################
 
 /// A `ParameterInterface` defines a set of parameters that can be accessed
+///
+/// Use [`ArPackage::create_parameter_interface`] to create a new parameter interface
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ParameterInterface(Element);
 abstraction_element!(ParameterInterface, ParameterInterface);
 
 impl ParameterInterface {
     /// Create a new `ParameterInterface`
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let parameter_interface = elements.create_named_sub_element(ElementName::ParameterInterface, name)?;
 
@@ -44,13 +48,15 @@ impl ParameterInterface {
 //##################################################################
 
 /// An `NvDataInterface` defines non-volatile data that can be accessed through the interface
+///
+/// Use [`ArPackage::create_nv_data_interface`] to create a new non-volatile data interface
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NvDataInterface(Element);
 abstraction_element!(NvDataInterface, NvDataInterface);
 
 impl NvDataInterface {
     /// Create a new `NvDataInterface`
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let nv_data_interface = elements.create_named_sub_element(ElementName::NvDataInterface, name)?;
 
@@ -61,13 +67,15 @@ impl NvDataInterface {
 //##################################################################
 
 /// A `TriggerInterface` declares a number of triggers that can be sent by an trigger source
+///
+/// Use [`ArPackage::create_trigger_interface`] to create a new trigger interface
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TriggerInterface(Element);
 abstraction_element!(TriggerInterface, TriggerInterface);
 
 impl TriggerInterface {
     /// Create a new `TriggerInterface`
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let trigger_interface = elements.create_named_sub_element(ElementName::TriggerInterface, name)?;
 

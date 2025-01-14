@@ -8,13 +8,15 @@ use datatype::AutosarDataType;
 //##################################################################
 
 /// A `ClientServerInterface` defines a set of operations that can be implemented by a server and called by a client
+///
+/// Use [`ArPackage::create_client_server_interface`] to create a new client server interface
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ClientServerInterface(pub(crate) Element);
 abstraction_element!(ClientServerInterface, ClientServerInterface);
 
 impl ClientServerInterface {
     /// Create a new `ClientServerInterface`
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let client_server_interface = elements.create_named_sub_element(ElementName::ClientServerInterface, name)?;
 

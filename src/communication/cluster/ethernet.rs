@@ -37,7 +37,7 @@ impl EthernetCluster {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
     /// let vlan_info = EthernetVlanInfo {
     ///     vlan_name: "VLAN_1".to_string(),
@@ -104,7 +104,7 @@ impl EthernetCluster {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
     /// cluster.create_physical_channel("Channel", None).unwrap();
     /// for channel in cluster.physical_channels() {
@@ -133,7 +133,7 @@ element_iterator!(EthernetClusterChannelsIterator, EthernetPhysicalChannel, Some
 mod test {
     use crate::{
         communication::{AbstractCluster, EthernetVlanInfo},
-        ArPackage, System, SystemCategory,
+        ArPackage, SystemCategory,
     };
     use autosar_data::{AutosarModel, AutosarVersion};
 
@@ -142,7 +142,7 @@ mod test {
         let model = AutosarModel::new();
         model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
         let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
-        let system = System::new("System", &pkg, SystemCategory::SystemDescription).unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
 
         let pkg2 = ArPackage::get_or_create(&model, "/ethernet").unwrap();
         // create the ethernet cluster EthCluster

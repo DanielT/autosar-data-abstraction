@@ -747,7 +747,7 @@ mod test {
     ///   - a socket address
     fn helper_create_test_objects(model: &AutosarModel) -> SocketAddress {
         let package = ArPackage::get_or_create(model, "/ethernet").unwrap();
-        let system = System::new("system", &package, SystemCategory::EcuExtract).unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let cluster = system.create_ethernet_cluster("ethcluster", &package).unwrap();
         let channel = cluster
             .create_physical_channel(

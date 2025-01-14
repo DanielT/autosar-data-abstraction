@@ -7,13 +7,15 @@ use datatype::{CompuMethod, DataConstr, Unit};
 //#########################################################
 
 /// An application array data type
+///
+/// Use [`ArPackage::create_application_array_data_type`] to create a new application array data type.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ApplicationArrayDataType(Element);
 abstraction_element!(ApplicationArrayDataType, ApplicationArrayDataType);
 
 impl ApplicationArrayDataType {
     /// create a new application array data type in the given package
-    pub fn new<T: Into<ApplicationDataType> + AbstractionElement>(
+    pub(crate) fn new<T: Into<ApplicationDataType> + AbstractionElement>(
         name: &str,
         package: &ArPackage,
         element_type: &T,
@@ -127,13 +129,15 @@ impl ApplicationArrayElement {
 //#########################################################
 
 /// An application record data type
+///
+/// Use [`ArPackage::create_application_record_data_type`] to create a new application record data type.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ApplicationRecordDataType(Element);
 abstraction_element!(ApplicationRecordDataType, ApplicationRecordDataType);
 
 impl ApplicationRecordDataType {
     /// create a new application record data type in the given package
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let application_record_data_type =
             elements.create_named_sub_element(ElementName::ApplicationRecordDataType, name)?;
@@ -207,13 +211,15 @@ impl ApplicationRecordElement {
 //#########################################################
 
 /// An application primitive data type
+///
+/// Use [`ArPackage::create_application_primitive_data_type`] to create a new application primitive data type.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ApplicationPrimitiveDataType(Element);
 abstraction_element!(ApplicationPrimitiveDataType, ApplicationPrimitiveDataType);
 
 impl ApplicationPrimitiveDataType {
     /// create a new application primitive data type in the given package
-    pub fn new(
+    pub(crate) fn new(
         name: &str,
         package: &ArPackage,
         category: ApplicationPrimitiveCategory,

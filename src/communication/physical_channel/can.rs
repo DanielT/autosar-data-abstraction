@@ -22,7 +22,7 @@ impl CanPhysicalChannel {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default()).unwrap();
     /// let channel = cluster.create_physical_channel("Channel").unwrap();
     /// let cluster_2 = channel.cluster().unwrap();
@@ -45,7 +45,7 @@ impl CanPhysicalChannel {
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
     /// # let frame_package = ArPackage::get_or_create(&model, "/Frames").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default()).unwrap();
     /// let channel = cluster.create_physical_channel("Channel").unwrap();
     /// let frame = system.create_can_frame("Frame", 8, &frame_package).unwrap();
@@ -66,7 +66,7 @@ impl CanPhysicalChannel {
 
 #[cfg(test)]
 mod test {
-    use crate::{communication::CanClusterSettings, ArPackage, System, SystemCategory};
+    use crate::{communication::CanClusterSettings, ArPackage, SystemCategory};
     use autosar_data::{AutosarModel, AutosarVersion};
 
     #[test]
@@ -74,7 +74,7 @@ mod test {
         let model = AutosarModel::new();
         model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
         let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
-        let system = System::new("System", &pkg, SystemCategory::SystemDescription).unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let settings = CanClusterSettings::default();
         let cluster = system.create_can_cluster("CanCluster", &pkg, &settings).unwrap();
 

@@ -17,13 +17,15 @@ pub use udp_nm::*;
 /// The `NmConfig` is the root element for the network management configuration.
 ///
 /// Only one config may exist per `System`, and this configuration may contain multiple `NmClusters` for different bus types.
+///
+/// Use [`System::create_nm_config`](crate::System::create_nm_config) to create a new `NmConfig` in a `System`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NmConfig(Element);
 abstraction_element!(NmConfig, NmConfig);
 
 impl NmConfig {
     /// create a new `NmConfig` in the given `ArPackage`
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let nm_config = Self(elements.create_named_sub_element(ElementName::NmConfig, name)?);
         nm_config
@@ -695,7 +697,7 @@ mod test {
         let model = AutosarModel::new();
         let _file = model.create_file("test", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/package").unwrap();
-        let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+        let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
 
         let can_cluster = system
             .create_can_cluster("can_cluster", &package, &CanClusterSettings::default())
@@ -865,7 +867,7 @@ mod test {
         let model = AutosarModel::new();
         let _file = model.create_file("test", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/package").unwrap();
-        let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+        let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
 
         let flexray_cluster = system
             .create_flexray_cluster("flexray_cluster", &package, &FlexrayClusterSettings::default())
@@ -1078,7 +1080,7 @@ mod test {
         let model = AutosarModel::new();
         let _file = model.create_file("test", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/package").unwrap();
-        let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+        let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
 
         let ethernet_cluster = system.create_ethernet_cluster("ethernet_cluster", &package).unwrap();
         let ethernet_physical_channel = ethernet_cluster

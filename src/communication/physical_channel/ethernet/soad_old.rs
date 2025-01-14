@@ -39,7 +39,7 @@ impl SocketConnectionBundle {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
     /// # let channel = cluster.create_physical_channel("Channel", None).unwrap();
     /// # let server_endpoint = channel.create_network_endpoint("ServerAddress", NetworkEndpointAddress::IPv4 {
@@ -141,7 +141,7 @@ impl SocketConnection {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
     /// # let channel = cluster.create_physical_channel("Channel", None).unwrap();
     /// # let server_endpoint = channel.create_network_endpoint("ServerAddress", NetworkEndpointAddress::IPv4 {
@@ -531,7 +531,7 @@ mod test {
     use super::*;
     use crate::{
         communication::{IPv4AddressSource, NetworkEndpointAddress, SocketAddressType},
-        System, SystemCategory,
+        SystemCategory,
     };
     use autosar_data::{AutosarModel, AutosarVersion};
 
@@ -540,7 +540,7 @@ mod test {
         let model = AutosarModel::new();
         model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
         let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-        let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+        let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
         let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
         let channel = cluster.create_physical_channel("Channel", None).unwrap();
         let server_endpoint = channel

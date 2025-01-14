@@ -4,13 +4,15 @@ use autosar_data::{AttributeName, Element, ElementName};
 //#########################################################
 
 /// A `CompuMethod` describes the conversion between physical and internal values
+///
+/// Use [`ArPackage::create_compu_method`] to create a new `CompuMethod`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CompuMethod(Element);
 abstraction_element!(CompuMethod, CompuMethod);
 
 impl CompuMethod {
     /// Create a new `CompuMethod`
-    pub fn new(name: &str, package: &ArPackage, content: CompuMethodContent) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage, content: CompuMethodContent) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let compu_method = elements.create_named_sub_element(ElementName::CompuMethod, name)?;
 
@@ -18,22 +20,6 @@ impl CompuMethod {
         compu_method.set_content(content)?;
 
         Ok(compu_method)
-    }
-
-    /// Create a new "raw" `CompuMethod`, which only has a category but no content
-    pub fn new_raw(
-        name: &str,
-        package: &ArPackage,
-        category: CompuMethodCategory,
-    ) -> Result<Self, AutosarAbstractionError> {
-        let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
-        let compu_method = elements.create_named_sub_element(ElementName::CompuMethod, name)?;
-
-        compu_method
-            .create_sub_element(ElementName::Category)?
-            .set_character_data(category.to_string())?;
-
-        Ok(Self(compu_method))
     }
 
     /// Get the category of the `CompuMethod`
@@ -334,7 +320,7 @@ impl CompuMethod {
                 let upper_limit = compu_scale.upper_limit()?;
                 let content = compu_scale.content()?;
                 if let CompuScaleContent::RationalCoeffs { numerator, denominator } = content {
-                    Some(CompuMethodContent::Rational(CompumethodRationalContent {
+                    Some(CompuMethodContent::Rational(CompuMethodRationalContent {
                         direction,
                         denominator,
                         numerator,
@@ -360,7 +346,7 @@ impl CompuMethod {
                     let upper_limit = compu_scale.upper_limit()?;
                     let content = compu_scale.content()?;
                     if let CompuScaleContent::RationalCoeffs { numerator, denominator } = content {
-                        scale_rational_content.push(CompumethodRationalContent {
+                        scale_rational_content.push(CompuMethodRationalContent {
                             direction,
                             denominator,
                             numerator,
@@ -443,7 +429,7 @@ impl CompuMethod {
                     let upper_limit = compu_scale.upper_limit()?;
                     let content = compu_scale.content()?;
                     if let CompuScaleContent::RationalCoeffs { numerator, denominator } = content {
-                        scale_rational_content.push(CompumethodRationalContent {
+                        scale_rational_content.push(CompuMethodRationalContent {
                             direction,
                             denominator,
                             numerator,
@@ -851,9 +837,9 @@ pub enum CompuMethodContent {
     /// Linear conversion with multiple scales, each with its own limits
     ScaleLinear(Vec<CompuMethodScaleLinearContent>),
     /// Rational function conversion: `y = (n0 + n1 * x + n2 * x^2 + ...) / (d0 + d1 * x + d2 * x^2 + ...)`
-    Rational(CompumethodRationalContent),
+    Rational(CompuMethodRationalContent),
     /// Rational function conversion with multiple scales, each with its own limits
-    ScaleRational(Vec<CompumethodRationalContent>),
+    ScaleRational(Vec<CompuMethodRationalContent>),
     /// Text table conversion
     TextTable(Vec<CompuMethodTextTableContent>),
     /// Bitfield text table conversion
@@ -861,7 +847,7 @@ pub enum CompuMethodContent {
     /// Linear conversion with multiple scales and a text table
     ScaleLinearAndTextTable(Vec<CompuMethodScaleLinearContent>, Vec<CompuMethodTextTableContent>),
     /// Rational function conversion with multiple scales and a text table
-    ScaleRationalAndTextTable(Vec<CompumethodRationalContent>, Vec<CompuMethodTextTableContent>),
+    ScaleRationalAndTextTable(Vec<CompuMethodRationalContent>, Vec<CompuMethodTextTableContent>),
     /// Value table with no interpretation
     TabNoInterpretation(Vec<CompuMethodTabNoIntpContent>),
 }
@@ -902,7 +888,7 @@ pub struct CompuMethodScaleLinearContent {
 
 /// Parameters of a rational function conversion
 #[derive(Debug, Clone, PartialEq)]
-pub struct CompumethodRationalContent {
+pub struct CompuMethodRationalContent {
     /// direction of the conversion
     pub direction: CompuScaleDirection,
     /// list of numerator coefficients
@@ -998,7 +984,7 @@ mod test {
         assert_eq!(compu_method2.category(), Some(CompuMethodCategory::ScaleLinear));
         assert_eq!(compu_method2.content().unwrap(), content2);
 
-        let content3 = CompuMethodContent::Rational(CompumethodRationalContent {
+        let content3 = CompuMethodContent::Rational(CompuMethodRationalContent {
             direction: CompuScaleDirection::IntToPhys,
             numerator: vec![1.1, 2.2, 3.3, 4.4],
             denominator: vec![0.1, 0.2, 0.3],
@@ -1010,14 +996,14 @@ mod test {
         assert_eq!(compu_method3.content().unwrap(), content3);
 
         let content4 = CompuMethodContent::ScaleRational(vec![
-            CompumethodRationalContent {
+            CompuMethodRationalContent {
                 direction: CompuScaleDirection::IntToPhys,
                 numerator: vec![1.1, 2.2, 3.3, 4.4],
                 denominator: vec![0.1, 0.2, 0.3],
                 lower_limit: 0.0,
                 upper_limit: 100.0,
             },
-            CompumethodRationalContent {
+            CompuMethodRationalContent {
                 direction: CompuScaleDirection::IntToPhys,
                 numerator: vec![1.1, 2.2, 3.3, 4.4],
                 denominator: vec![0.1, 0.2, 0.3],
@@ -1098,14 +1084,14 @@ mod test {
 
         let content8 = CompuMethodContent::ScaleRationalAndTextTable(
             vec![
-                CompumethodRationalContent {
+                CompuMethodRationalContent {
                     direction: CompuScaleDirection::IntToPhys,
                     numerator: vec![1.1, 2.2, 3.3, 4.4],
                     denominator: vec![0.1, 0.2, 0.3],
                     lower_limit: 0.0,
                     upper_limit: 100.0,
                 },
-                CompumethodRationalContent {
+                CompuMethodRationalContent {
                     direction: CompuScaleDirection::IntToPhys,
                     numerator: vec![1.1, 2.2, 3.3, 4.4],
                     denominator: vec![0.1, 0.2, 0.3],
@@ -1132,34 +1118,5 @@ mod test {
         assert_eq!(compu_method8.content().unwrap(), content8);
         assert_eq!(compu_method8.int_to_phys_compu_scales().count(), 4);
         assert_eq!(compu_method8.phys_to_int_compu_scales().count(), 0);
-    }
-
-    #[test]
-    fn raw_compu_method() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/Package").unwrap();
-        let compu_method = CompuMethod::new_raw("compu_method", &package, CompuMethodCategory::Rational).unwrap();
-        assert_eq!(compu_method.category(), Some(CompuMethodCategory::Rational));
-
-        let compu_scale = compu_method
-            .create_compu_scale(CompuScaleDirection::IntToPhys, Some(0.5), Some(5.9))
-            .unwrap();
-        compu_scale
-            .set_content(CompuScaleContent::RationalCoeffs {
-                numerator: vec![1.0, 2.0, 3.0],
-                denominator: vec![],
-            })
-            .unwrap();
-
-        let content = compu_method.content().unwrap();
-        let reference_content = CompuMethodContent::Rational(CompumethodRationalContent {
-            direction: CompuScaleDirection::IntToPhys,
-            numerator: vec![1.0, 2.0, 3.0],
-            denominator: vec![],
-            lower_limit: 0.5,
-            upper_limit: 5.9,
-        });
-        assert_eq!(content, reference_content);
     }
 }

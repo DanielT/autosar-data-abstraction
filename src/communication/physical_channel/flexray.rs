@@ -37,7 +37,7 @@ impl FlexrayPhysicalChannel {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let cluster = system.create_flexray_cluster("Cluster", &package, &FlexrayClusterSettings::default()).unwrap();
     /// let channel = cluster.create_physical_channel("Channel", FlexrayChannelName::A).unwrap();
     /// let cluster_2 = channel.cluster().unwrap();
@@ -64,7 +64,7 @@ impl FlexrayPhysicalChannel {
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
     /// # let frame_package = ArPackage::get_or_create(&model, "/Frames").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let cluster = system.create_flexray_cluster("Cluster", &package, &FlexrayClusterSettings::default()).unwrap();
     /// let channel = cluster.create_physical_channel("Channel", FlexrayChannelName::A).unwrap();
     /// let frame = system.create_flexray_frame("Frame", 64, &frame_package).unwrap();
@@ -100,7 +100,7 @@ pub enum FlexrayChannelName {
 mod test {
     use crate::{
         communication::{FlexrayChannelName, FlexrayClusterSettings},
-        AbstractionElement, ArPackage, System, SystemCategory,
+        AbstractionElement, ArPackage, SystemCategory,
     };
     use autosar_data::{AutosarModel, AutosarVersion, ElementName};
 
@@ -109,7 +109,7 @@ mod test {
         let model = AutosarModel::new();
         model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
         let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
-        let system = System::new("System", &pkg, SystemCategory::SystemDescription).unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let settings = FlexrayClusterSettings::default();
         let cluster = system.create_flexray_cluster("FlxCluster", &pkg, &settings).unwrap();
 

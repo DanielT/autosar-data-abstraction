@@ -108,7 +108,7 @@ mod tests {
         let model = AutosarModel::new();
         let _file = model.create_file("test.arxml", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/Test").unwrap();
-        let system = System::new("System", &package, crate::SystemCategory::EcuExtract).unwrap();
+        let system = package.create_system("System", crate::SystemCategory::EcuExtract).unwrap();
         let settings = CanClusterSettings::default();
         let can_cluster = CanCluster::new("CanCluster", &package, &settings).unwrap();
 

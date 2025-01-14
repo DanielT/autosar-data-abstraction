@@ -159,6 +159,8 @@ pub trait AbstractImplementationDataType: AbstractionElement {
 //#########################################################
 
 /// An implementation data type; specifics are determined by the category
+///
+/// Use [`ArPackage::create_implementation_data_type`] to create a new implementation data type
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ImplementationDataType(Element);
 abstraction_element!(ImplementationDataType, ImplementationDataType);
@@ -167,7 +169,10 @@ impl AbstractImplementationDataType for ImplementationDataType {}
 
 impl ImplementationDataType {
     /// create a new implementation data type from an `ImplementationDataTypeSettings` structure
-    pub fn new(package: &ArPackage, settings: ImplementationDataTypeSettings) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(
+        package: &ArPackage,
+        settings: ImplementationDataTypeSettings,
+    ) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let implementation_data_type =
             elements.create_named_sub_element(ElementName::ImplementationDataType, settings.name())?;
@@ -473,7 +478,7 @@ element_iterator!(
 mod tests {
     use super::*;
     use autosar_data::{AutosarModel, AutosarVersion};
-    use datatype::{BaseTypeEncoding, CompuMethodCategory};
+    use datatype::{BaseTypeEncoding, CompuMethodLinearContent, CompuScaleDirection};
 
     #[test]
     fn test_impl_data_type() {
@@ -482,7 +487,19 @@ mod tests {
         let package = ArPackage::get_or_create(&model, "/DataTypes").unwrap();
         let base_type =
             SwBaseType::new("uint8", &package, 8, BaseTypeEncoding::None, None, None, Some("uint8")).unwrap();
-        let compu_method = CompuMethod::new_raw("linear", &package, CompuMethodCategory::Linear).unwrap();
+        let compu_method = CompuMethod::new(
+            "linear",
+            &package,
+            datatype::CompuMethodContent::Linear(CompuMethodLinearContent {
+                direction: CompuScaleDirection::IntToPhys,
+                offset: 42.0,
+                factor: 1.0,
+                divisor: 1.0,
+                lower_limit: None,
+                upper_limit: None,
+            }),
+        )
+        .unwrap();
         let data_constraint = DataConstr::new("constraint", &package).unwrap();
         let other_impl_data_type = ImplementationDataType::new(
             &package,

@@ -87,13 +87,15 @@ impl From<ImplementationDataType> for AutosarDataType {
 //#########################################################
 
 /// `Unit` represents a unit of measurement.
+///
+/// Use [`ArPackage::create_unit`] to create a new unit.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Unit(Element);
 abstraction_element!(Unit, Unit);
 
 impl Unit {
     /// Create a new unit
-    pub fn new(name: &str, package: &ArPackage, display_name: Option<&str>) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage, display_name: Option<&str>) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let unit = elements.create_named_sub_element(ElementName::Unit, name)?;
 
@@ -115,7 +117,7 @@ abstraction_element!(DataConstr, DataConstr);
 
 impl DataConstr {
     /// Create a new data constraint
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let data_constr = elements.create_named_sub_element(ElementName::DataConstr, name)?;
 

@@ -37,7 +37,7 @@ impl EcuInstance {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
     /// let can_controller = ecu_instance.create_can_communication_controller("CanCtrl").unwrap();
     /// ```
@@ -65,7 +65,7 @@ impl EcuInstance {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
     /// let ethernet_controller = ecu_instance
     ///     .create_ethernet_communication_controller("EthCtrl", Some("ab:cd:ef:01:02:03".to_string()))
@@ -96,7 +96,7 @@ impl EcuInstance {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
     /// let flexray_controller = ecu_instance
     ///     .create_flexray_communication_controller("FlexrayCtrl")
@@ -123,7 +123,7 @@ impl EcuInstance {
     /// # let model = AutosarModel::new();
     /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
     /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
     /// ecu_instance.create_flexray_communication_controller("FlexrayCtrl").unwrap();
     /// ecu_instance.create_can_communication_controller("CanCtrl").unwrap();
@@ -195,7 +195,7 @@ mod test {
         let model = AutosarModel::new();
         model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
         let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-        let system = System::new("System", &package, SystemCategory::SystemExtract).unwrap();
+        let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
         let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
         ecu_instance
             .create_flexray_communication_controller("FlexrayCtrl")

@@ -836,13 +836,15 @@ impl PduActivationRoutingGroup {
 /// A `SomeipSdServerServiceInstanceConfig` is a configuration for a `ProvidedServiceInstance`
 ///
 /// This configuration is a named element that is created separately and can be used by multiple `ProvidedServiceInstance`s.
+///
+/// Use [`ArPackage::create_someip_sd_server_service_instance_config`] to create a new `SomeipSdServerServiceInstanceConfig`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SomeipSdServerServiceInstanceConfig(Element);
 abstraction_element!(SomeipSdServerServiceInstanceConfig, SomeipSdServerServiceInstanceConfig);
 
 impl SomeipSdServerServiceInstanceConfig {
     /// create a new `SomeipSdServerServiceInstanceConfig` in the given package
-    pub fn new(name: &str, package: &ArPackage, ttl: u32) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage, ttl: u32) -> Result<Self, AutosarAbstractionError> {
         let pkg_elem = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let elem = pkg_elem.create_named_sub_element(ElementName::SomeipSdServerServiceInstanceConfig, name)?;
 
@@ -950,6 +952,8 @@ impl SomeipSdServerServiceInstanceConfig {
 /// A `SomeipSdServerEventGroupTimingConfig` contains the configuration for the timing of an `EventHandler`
 ///
 /// This configuration is a named element that is created separately and can be used by multiple `EventHandler`s.
+///
+/// Use [`ArPackage::create_someip_sd_server_event_group_timing_config`] to create a new `SomeipSdServerEventGroupTimingConfig`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SomeipSdServerEventGroupTimingConfig(Element);
 abstraction_element!(
@@ -959,7 +963,7 @@ abstraction_element!(
 
 impl SomeipSdServerEventGroupTimingConfig {
     /// create a new `SomeipSdServerEventGroupTimingConfig` in the given package
-    pub fn new(
+    pub(crate) fn new(
         name: &str,
         package: &ArPackage,
         request_response_delay: &RequestResponseDelay,
@@ -997,13 +1001,15 @@ impl SomeipSdServerEventGroupTimingConfig {
 /// A `SomeipSdClientServiceInstanceConfig` is a configuration for a `ConsumedServiceInstance`
 ///
 /// This configuration is a named element that is created separately and can be used by multiple `ConsumedServiceInstance`s.
+///
+/// Use [`ArPackage::create_someip_sd_client_service_instance_config`] to create a new `SomeipSdClientServiceInstanceConfig`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SomeipSdClientServiceInstanceConfig(Element);
 abstraction_element!(SomeipSdClientServiceInstanceConfig, SomeipSdClientServiceInstanceConfig);
 
 impl SomeipSdClientServiceInstanceConfig {
     /// create a new `SomeipSdClientServiceInstanceConfig` in the given package
-    pub fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
         let pkg_elem = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let elem = pkg_elem.create_named_sub_element(ElementName::SomeipSdClientServiceInstanceConfig, name)?;
 
@@ -1055,6 +1061,8 @@ impl SomeipSdClientServiceInstanceConfig {
 /// A `SomeipSdClientEventGroupTimingConfig` contains the configuration for the timing of a `ConsumedEventGroup`
 ///
 /// This configuration is a named element that is created separately and can be used by multiple `ConsumedEventGroup`s.
+///
+/// Use [`ArPackage::create_someip_sd_client_event_group_timing_config`] to create a new `SomeipSdClientEventGroupTimingConfig`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SomeipSdClientEventGroupTimingConfig(Element);
 abstraction_element!(
@@ -1064,7 +1072,7 @@ abstraction_element!(
 
 impl SomeipSdClientEventGroupTimingConfig {
     /// create a new `SomeipSdClientEventGroupTimingConfig` in the given package
-    pub fn new(name: &str, package: &ArPackage, time_to_live: u32) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage, time_to_live: u32) -> Result<Self, AutosarAbstractionError> {
         let pkg_elem = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let elem = pkg_elem.create_named_sub_element(ElementName::SomeipSdClientEventGroupTimingConfig, name)?;
         elem.create_sub_element(ElementName::TimeToLive)?
@@ -1441,7 +1449,7 @@ mod test {
     ///   - a socket address
     fn helper_create_test_objects(model: &AutosarModel) -> SocketAddress {
         let package = ArPackage::get_or_create(model, "/ethernet").unwrap();
-        let system = System::new("system", &package, SystemCategory::EcuExtract).unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let cluster = system.create_ethernet_cluster("ethcluster", &package).unwrap();
         let channel = cluster
             .create_physical_channel(
@@ -1825,7 +1833,7 @@ mod test {
         let model = AutosarModel::new();
         let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/package").unwrap();
-        let system = System::new("system", &package, SystemCategory::EcuExtract).unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let cluster = system.create_ethernet_cluster("ethcluster", &package).unwrap();
         let channel = cluster
             .create_physical_channel(
@@ -1948,7 +1956,7 @@ mod test {
         let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/package").unwrap();
 
-        let system = System::new("system", &package, SystemCategory::EcuExtract).unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let cluster = system.create_ethernet_cluster("ethcluster", &package).unwrap();
         let channel = cluster
             .create_physical_channel(
