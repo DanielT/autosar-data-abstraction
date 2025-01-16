@@ -676,7 +676,15 @@ impl System {
     /// # Ok(())}
     /// ```
     pub fn clusters(&self) -> impl Iterator<Item = Cluster> {
-        ClusterIterator::new(self)
+        self.0
+            .get_sub_element(ElementName::FibexElements)
+            .into_iter()
+            .flat_map(|fibexelems| fibexelems.sub_elements())
+            .filter_map(|ferc| {
+                ferc.get_sub_element(ElementName::FibexElementRef)
+                    .and_then(|fer| fer.get_reference_target().ok())
+                    .and_then(|elem| Cluster::try_from(elem).ok())
+            })
     }
 
     /// Create a `SocketConnectionIpduIdentifierSet` in the SYSTEM
@@ -990,65 +998,6 @@ impl Iterator for EcuInstanceIterator {
 }
 
 impl FusedIterator for EcuInstanceIterator {}
-
-//#########################################################
-
-#[doc(hidden)]
-pub struct ClusterIterator {
-    fibex_elements: Option<Element>,
-    position: usize,
-}
-
-impl ClusterIterator {
-    pub(crate) fn new(system: &System) -> Self {
-        let fibex_elements = system.0.get_sub_element(ElementName::FibexElements);
-
-        ClusterIterator {
-            fibex_elements,
-            position: 0,
-        }
-    }
-}
-
-impl Iterator for ClusterIterator {
-    type Item = Cluster;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let fibelem = self.fibex_elements.as_ref()?;
-
-        while let Some(fibrefcond) = fibelem.get_sub_element_at(self.position) {
-            self.position += 1;
-            if let Some(ref_element) = fibrefcond
-                .get_sub_element(ElementName::FibexElementRef)
-                .and_then(|r| r.get_reference_target().ok())
-            {
-                match ref_element.element_name() {
-                    ElementName::CanCluster => {
-                        if let Ok(can_cluster) = CanCluster::try_from(ref_element) {
-                            return Some(Cluster::Can(can_cluster));
-                        }
-                    }
-                    ElementName::EthernetCluster => {
-                        if let Ok(can_cluster) = EthernetCluster::try_from(ref_element) {
-                            return Some(Cluster::Ethernet(can_cluster));
-                        }
-                    }
-                    ElementName::FlexrayCluster => {
-                        if let Ok(can_cluster) = FlexrayCluster::try_from(ref_element) {
-                            return Some(Cluster::FlexRay(can_cluster));
-                        }
-                    }
-                    // missing: LIN, TTCAN, J1939
-                    _ => {}
-                }
-            }
-        }
-        self.fibex_elements = None;
-        None
-    }
-}
-
-impl FusedIterator for ClusterIterator {}
 
 //#########################################################
 

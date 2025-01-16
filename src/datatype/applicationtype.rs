@@ -1,6 +1,4 @@
-use crate::{
-    abstraction_element, datatype, element_iterator, AbstractionElement, ArPackage, AutosarAbstractionError, Element,
-};
+use crate::{abstraction_element, datatype, AbstractionElement, ArPackage, AutosarAbstractionError, Element};
 use autosar_data::ElementName;
 use datatype::{CompuMethod, DataConstr, Unit};
 
@@ -160,7 +158,11 @@ impl ApplicationRecordDataType {
 
     ///get an iterator over the record elements of the record data type
     pub fn record_elements(&self) -> impl Iterator<Item = ApplicationRecordElement> {
-        ApplicationRecordElementIterator::new(self.element().get_sub_element(ElementName::Elements))
+        self.element()
+            .get_sub_element(ElementName::Elements)
+            .into_iter()
+            .flat_map(|elements| elements.sub_elements())
+            .filter_map(|element| ApplicationRecordElement::try_from(element).ok())
     }
 }
 
@@ -443,10 +445,6 @@ impl ApplicationDataType {
             .string_value()
     }
 }
-
-//#########################################################
-
-element_iterator!(ApplicationRecordElementIterator, ApplicationRecordElement, Some);
 
 //#########################################################
 

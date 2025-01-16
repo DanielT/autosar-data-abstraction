@@ -1,6 +1,6 @@
 use crate::communication::{
     AbstractPdu, CommunicationDirection, FlexrayPhysicalChannel, Frame, FramePort, FrameTriggering, Pdu,
-    PduToFrameMapping, PduToFrameMappingIterator, PduTriggering,
+    PduToFrameMapping, PduTriggering,
 };
 use crate::{
     abstraction_element, make_unique_name, reflist_iterator, AbstractionElement, ArPackage, AutosarAbstractionError,
@@ -27,8 +27,12 @@ impl FlexrayFrame {
 
     /// returns an iterator over all PDUs in the frame
     #[must_use]
-    pub fn mapped_pdus(&self) -> PduToFrameMappingIterator {
-        PduToFrameMappingIterator::new(self.element().get_sub_element(ElementName::PduToFrameMappings))
+    pub fn mapped_pdus(&self) -> impl Iterator<Item = PduToFrameMapping> {
+        self.element()
+            .get_sub_element(ElementName::PduToFrameMappings)
+            .into_iter()
+            .flat_map(|elem| elem.sub_elements())
+            .filter_map(|elem| PduToFrameMapping::try_from(elem).ok())
     }
 
     /// Iterator over all [`FlexrayFrameTriggering`]s using this frame

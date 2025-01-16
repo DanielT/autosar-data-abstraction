@@ -1,5 +1,5 @@
 use crate::communication::{AbstractCluster, EthernetPhysicalChannel, EthernetVlanInfo};
-use crate::{abstraction_element, element_iterator, AbstractionElement, ArPackage, AutosarAbstractionError};
+use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError};
 use autosar_data::{Element, ElementName};
 
 /// An `EthernetCluster` contains all configuration items associated with an ethernet network.
@@ -112,20 +112,17 @@ impl EthernetCluster {
     /// }
     /// ```
     pub fn physical_channels(&self) -> impl Iterator<Item = EthernetPhysicalChannel> {
-        EthernetClusterChannelsIterator::new(
-            self.element()
-                .get_sub_element(ElementName::EthernetClusterVariants)
-                .and_then(|ecv| ecv.get_sub_element(ElementName::EthernetClusterConditional))
-                .and_then(|ecc| ecc.get_sub_element(ElementName::PhysicalChannels)),
-        )
+        self.element()
+            .get_sub_element(ElementName::EthernetClusterVariants)
+            .and_then(|ecv| ecv.get_sub_element(ElementName::EthernetClusterConditional))
+            .and_then(|ecc| ecc.get_sub_element(ElementName::PhysicalChannels))
+            .into_iter()
+            .flat_map(|phys_channel| phys_channel.sub_elements())
+            .filter_map(|elem| EthernetPhysicalChannel::try_from(elem).ok())
     }
 }
 
 impl AbstractCluster for EthernetCluster {}
-
-//##################################################################
-
-element_iterator!(EthernetClusterChannelsIterator, EthernetPhysicalChannel, Some);
 
 //##################################################################
 

@@ -1,8 +1,8 @@
 //! # Autosar Data Types
-//! 
+//!
 //! This module contains the implementation of the AUTOSAR data types, as well as supporting elements like compu methods and data constraints.
 
-use crate::{abstraction_element, element_iterator, AbstractionElement, ArPackage, AutosarAbstractionError};
+use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError};
 use autosar_data::{Element, ElementName};
 
 mod applicationtype;
@@ -95,7 +95,11 @@ abstraction_element!(Unit, Unit);
 
 impl Unit {
     /// Create a new unit
-    pub(crate) fn new(name: &str, package: &ArPackage, display_name: Option<&str>) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(
+        name: &str,
+        package: &ArPackage,
+        display_name: Option<&str>,
+    ) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let unit = elements.create_named_sub_element(ElementName::Unit, name)?;
 
@@ -138,7 +142,11 @@ impl DataConstr {
 
     /// Get all data constraint rules
     pub fn data_constr_rules(&self) -> impl Iterator<Item = DataConstrRule> {
-        DataConstrRulesIterator::new(self.element().get_sub_element(ElementName::DataConstrRules))
+        self.element()
+            .get_sub_element(ElementName::DataConstrRules)
+            .into_iter()
+            .flat_map(|rules| rules.sub_elements())
+            .filter_map(|elem| DataConstrRule::try_from(elem).ok())
     }
 }
 
@@ -232,10 +240,6 @@ pub enum DataConstrType {
     /// Physical value data constraint
     Physical,
 }
-
-//#########################################################
-
-element_iterator!(DataConstrRulesIterator, DataConstrRule, Some);
 
 //#########################################################
 

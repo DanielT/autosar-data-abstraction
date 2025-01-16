@@ -1,5 +1,5 @@
 use crate::communication::EthernetPhysicalChannel;
-use crate::{abstraction_element, element_iterator, AbstractionElement, AutosarAbstractionError};
+use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError};
 use autosar_data::{CharacterData, Element, ElementName, EnumItem};
 
 /// A network endpoint contains address information for a connection
@@ -112,7 +112,11 @@ impl NetworkEndpoint {
 
     /// iterator over all addresses in the `NetworkEndpoint`
     pub fn addresses(&self) -> impl Iterator<Item = NetworkEndpointAddress> {
-        NetworkEndpointAddressIterator::new(self.element().get_sub_element(ElementName::NetworkEndpointAddresses))
+        self.element()
+            .get_sub_element(ElementName::NetworkEndpointAddresses)
+            .into_iter()
+            .flat_map(|addresses| addresses.sub_elements())
+            .filter_map(|elem| NetworkEndpointAddress::try_from(elem).ok())
     }
 }
 
@@ -274,7 +278,3 @@ impl IPv6AddressSource {
         }
     }
 }
-
-//##################################################################
-
-element_iterator!(NetworkEndpointAddressIterator, NetworkEndpointAddress, Some);

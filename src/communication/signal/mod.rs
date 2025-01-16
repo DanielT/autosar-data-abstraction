@@ -4,8 +4,8 @@ use crate::communication::{
 };
 use crate::datatype::{CompuMethod, DataConstr, SwBaseType, Unit};
 use crate::{
-    abstraction_element, communication::ISignalToIPduMapping, element_iterator, make_unique_name, reflist_iterator,
-    AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance,
+    abstraction_element, communication::ISignalToIPduMapping, make_unique_name, reflist_iterator, AbstractionElement,
+    ArPackage, AutosarAbstractionError, EcuInstance,
 };
 use autosar_data::{AutosarDataError, Element, ElementName, EnumItem, WeakElement};
 
@@ -358,7 +358,15 @@ impl ISignalGroup {
     ///
     /// # Example
     pub fn signals(&self) -> impl Iterator<Item = ISignal> {
-        ISignalsIterator::new(self.element().get_sub_element(ElementName::ISignalRefs))
+        self.element()
+            .get_sub_element(ElementName::ISignalRefs)
+            .into_iter()
+            .flat_map(|elem| elem.sub_elements())
+            .filter_map(|elem| {
+                elem.get_reference_target()
+                    .ok()
+                    .and_then(|elem| ISignal::try_from(elem).ok())
+            })
     }
 
     /// add a data transformation to this signal group
@@ -578,7 +586,15 @@ impl ISignalTriggering {
 
     /// create an iterator over all signal ports that are connected to this signal triggering
     pub fn signal_ports(&self) -> impl Iterator<Item = ISignalPort> {
-        ISignalPortIterator::new(self.element().get_sub_element(ElementName::ISignalPortRefs))
+        self.element()
+            .get_sub_element(ElementName::ISignalPortRefs)
+            .into_iter()
+            .flat_map(|elem| elem.sub_elements())
+            .filter_map(|elem| {
+                elem.get_reference_target()
+                    .ok()
+                    .and_then(|elem| ISignalPort::try_from(elem).ok())
+            })
     }
 }
 
@@ -656,22 +672,6 @@ impl TryFrom<EnumItem> for TransferProperty {
         }
     }
 }
-
-//##################################################################
-
-element_iterator!(
-    ISignalPortIterator,
-    ISignalPort,
-    (|element: Element| element.get_reference_target().ok())
-);
-
-//##################################################################
-
-element_iterator!(
-    ISignalsIterator,
-    ISignal,
-    (|element: Element| element.get_reference_target().ok())
-);
 
 //##################################################################
 

@@ -3,15 +3,12 @@ use crate::communication::{
     FlexrayCommunicationController,
 };
 use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError};
-use autosar_data::{Element, ElementName, ElementsIterator};
+use autosar_data::{Element, ElementName};
 
 /// The `EcuInstance` represents one ECU in a `System`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcuInstance(Element);
 abstraction_element!(EcuInstance, EcuInstance);
-
-// #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-// pub struct EcuInstance(Element);
 
 impl EcuInstance {
     // Create a new EcuInstance
@@ -133,53 +130,11 @@ impl EcuInstance {
     /// # assert_eq!(ecu_instance.communication_controllers().count(), 2);
     /// ```
     pub fn communication_controllers(&self) -> impl Iterator<Item = CommunicationController> {
-        EcuInstanceControllersIterator::new(self)
-    }
-}
-
-//##################################################################
-
-#[doc(hidden)]
-pub struct EcuInstanceControllersIterator {
-    iter: Option<ElementsIterator>,
-}
-
-impl EcuInstanceControllersIterator {
-    fn new(ecu_instance: &EcuInstance) -> Self {
-        let iter = ecu_instance
-            .0
+        self.0
             .get_sub_element(ElementName::CommControllers)
-            .map(|cc| cc.sub_elements());
-        Self { iter }
-    }
-}
-
-impl Iterator for EcuInstanceControllersIterator {
-    type Item = CommunicationController;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let elements_iter = self.iter.as_mut()?;
-        for comm_ctrl in elements_iter {
-            match comm_ctrl.element_name() {
-                ElementName::CanCommunicationController => {
-                    if let Ok(can_ctrl) = CanCommunicationController::try_from(comm_ctrl) {
-                        return Some(CommunicationController::Can(can_ctrl));
-                    }
-                }
-                ElementName::EthernetCommunicationController => {
-                    if let Ok(eth_ctrl) = EthernetCommunicationController::try_from(comm_ctrl) {
-                        return Some(CommunicationController::Ethernet(eth_ctrl));
-                    }
-                }
-                ElementName::FlexrayCommunicationController => {
-                    if let Ok(flx_ctrl) = FlexrayCommunicationController::try_from(comm_ctrl) {
-                        return Some(CommunicationController::Flexray(flx_ctrl));
-                    }
-                }
-                _ => {}
-            }
-        }
-        None
+            .into_iter()
+            .flat_map(|cc| cc.sub_elements())
+            .filter_map(|ccelem| CommunicationController::try_from(ccelem).ok())
     }
 }
 

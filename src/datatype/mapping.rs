@@ -1,6 +1,4 @@
-use crate::{
-    abstraction_element, datatype, element_iterator, AbstractionElement, ArPackage, AutosarAbstractionError, Element,
-};
+use crate::{abstraction_element, datatype, AbstractionElement, ArPackage, AutosarAbstractionError, Element};
 use autosar_data::ElementName;
 use datatype::{ApplicationDataType, ImplementationDataType};
 
@@ -33,8 +31,12 @@ impl DataTypeMappingSet {
 
     /// Get an iterator over the `DataTypeMap`s in the `DataTypeMappingSet`
     #[must_use]
-    pub fn data_type_maps(&self) -> DataTypeMapIterator {
-        DataTypeMapIterator::new(self.element().get_sub_element(ElementName::DataTypeMaps))
+    pub fn data_type_maps(&self) -> impl Iterator<Item = DataTypeMap> {
+        self.element()
+            .get_sub_element(ElementName::DataTypeMaps)
+            .into_iter()
+            .flat_map(|maps| maps.sub_elements())
+            .filter_map(|elem| DataTypeMap::try_from(elem).ok())
     }
 }
 
@@ -87,10 +89,6 @@ impl DataTypeMap {
             .ok()
     }
 }
-
-//#########################################################
-
-element_iterator!(DataTypeMapIterator, DataTypeMap, Some);
 
 //#########################################################
 

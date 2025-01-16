@@ -1,6 +1,6 @@
 use crate::communication::{
     AbstractPdu, CanPhysicalChannel, CommunicationDirection, Frame, FramePort, FrameTriggering, Pdu, PduToFrameMapping,
-    PduToFrameMappingIterator, PduTriggering,
+    PduTriggering,
 };
 use crate::{
     abstraction_element, make_unique_name, reflist_iterator, AbstractionElement, ArPackage, AutosarAbstractionError,
@@ -27,7 +27,11 @@ impl CanFrame {
 
     /// returns an iterator over all PDUs in the frame
     pub fn mapped_pdus(&self) -> impl Iterator<Item = PduToFrameMapping> {
-        PduToFrameMappingIterator::new(self.element().get_sub_element(ElementName::PduToFrameMappings))
+        self.element()
+            .get_sub_element(ElementName::PduToFrameMappings)
+            .into_iter()
+            .flat_map(|elem| elem.sub_elements())
+            .filter_map(|elem| PduToFrameMapping::try_from(elem).ok())
     }
 
     /// Iterator over all [`CanFrameTriggering`]s using this frame

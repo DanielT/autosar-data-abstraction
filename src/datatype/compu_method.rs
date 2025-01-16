@@ -1,4 +1,4 @@
-use crate::{abstraction_element, element_iterator, AbstractionElement, ArPackage, AutosarAbstractionError};
+use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError};
 use autosar_data::{AttributeName, Element, ElementName};
 
 //#########################################################
@@ -12,7 +12,11 @@ abstraction_element!(CompuMethod, CompuMethod);
 
 impl CompuMethod {
     /// Create a new `CompuMethod`
-    pub(crate) fn new(name: &str, package: &ArPackage, content: CompuMethodContent) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(
+        name: &str,
+        package: &ArPackage,
+        content: CompuMethodContent,
+    ) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let compu_method = elements.create_named_sub_element(ElementName::CompuMethod, name)?;
 
@@ -574,22 +578,24 @@ impl CompuMethod {
 
     /// Create an iterator over the internal-to-physical `CompuScales`
     #[must_use]
-    pub fn int_to_phys_compu_scales(&self) -> CompuScaleIterator {
-        CompuScaleIterator::new(
-            self.element()
-                .get_sub_element(ElementName::CompuInternalToPhys)
-                .and_then(|citp| citp.get_sub_element(ElementName::CompuScales)),
-        )
+    pub fn int_to_phys_compu_scales(&self) -> impl Iterator<Item = CompuScale> {
+        self.element()
+            .get_sub_element(ElementName::CompuInternalToPhys)
+            .and_then(|citp| citp.get_sub_element(ElementName::CompuScales))
+            .into_iter()
+            .flat_map(|elem| elem.sub_elements())
+            .filter_map(|cs| CompuScale::try_from(cs).ok())
     }
 
     /// Create an iterator over the physical-to-internal `CompuScales`
     #[must_use]
-    pub fn phys_to_int_compu_scales(&self) -> CompuScaleIterator {
-        CompuScaleIterator::new(
-            self.element()
-                .get_sub_element(ElementName::CompuPhysToInternal)
-                .and_then(|citp| citp.get_sub_element(ElementName::CompuScales)),
-        )
+    pub fn phys_to_int_compu_scales(&self) -> impl Iterator<Item = CompuScale> {
+        self.element()
+            .get_sub_element(ElementName::CompuPhysToInternal)
+            .and_then(|citp| citp.get_sub_element(ElementName::CompuScales))
+            .into_iter()
+            .flat_map(|elem: Element| elem.sub_elements())
+            .filter_map(|cs| CompuScale::try_from(cs).ok())
     }
 }
 
@@ -929,10 +935,6 @@ pub struct CompuMethodTabNoIntpContent {
     /// output value
     pub value_out: f64,
 }
-
-//#########################################################
-
-element_iterator!(CompuScaleIterator, CompuScale, Some);
 
 //#########################################################
 

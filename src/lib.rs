@@ -211,45 +211,6 @@ impl From<ByteOrder> for EnumItem {
 
 //#########################################################
 
-macro_rules! element_iterator {
-    ($name: ident, $output: ident, $closure: tt) => {
-        #[doc(hidden)]
-        pub struct $name {
-            iter: Option<autosar_data::ElementsIterator>,
-        }
-
-        impl $name {
-            pub(crate) fn new(elem_container: Option<Element>) -> Self {
-                let iter = elem_container.map(|se| se.sub_elements());
-                Self { iter }
-            }
-        }
-
-        impl Iterator for $name {
-            type Item = $output;
-
-            fn next(&mut self) -> Option<Self::Item> {
-                let iter = self.iter.as_mut()?;
-                for element in iter.by_ref() {
-                    if let Some(sub_element) = $closure(element) {
-                        if let Ok(output_item) = $output::try_from(sub_element) {
-                            return Some(output_item);
-                        }
-                    }
-                }
-                self.iter = None;
-                None
-            }
-        }
-
-        impl std::iter::FusedIterator for $name {}
-    };
-}
-
-pub(crate) use element_iterator;
-
-//#########################################################
-
 macro_rules! reflist_iterator {
     ($name: ident, $output: ident) => {
         #[doc(hidden)]

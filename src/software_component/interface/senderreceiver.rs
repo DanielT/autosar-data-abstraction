@@ -1,6 +1,4 @@
-use crate::{
-    abstraction_element, datatype, element_iterator, AbstractionElement, ArPackage, AutosarAbstractionError, Element,
-};
+use crate::{abstraction_element, datatype, AbstractionElement, ArPackage, AutosarAbstractionError, Element};
 use autosar_data::ElementName;
 use datatype::AutosarDataType;
 
@@ -35,7 +33,11 @@ impl SenderReceiverInterface {
 
     /// iterate over all data elements
     pub fn data_elements(&self) -> impl Iterator<Item = VariableDataPrototype> {
-        DataElementIterator::new(self.element().get_sub_element(ElementName::DataElements))
+        self.element()
+            .get_sub_element(ElementName::DataElements)
+            .into_iter()
+            .flat_map(|data_elements| data_elements.sub_elements())
+            .filter_map(|elem| VariableDataPrototype::try_from(elem).ok())
     }
 }
 
@@ -62,7 +64,3 @@ impl VariableDataPrototype {
         SenderReceiverInterface::try_from(named_parent)
     }
 }
-
-//##################################################################
-
-element_iterator!(DataElementIterator, VariableDataPrototype, Some);

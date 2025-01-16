@@ -1,7 +1,7 @@
 use crate::communication::{CommunicationDirection, Pdu};
 use crate::{
-    abstraction_element, element_iterator, make_unique_name, reflist_iterator, AbstractionElement,
-    AutosarAbstractionError, ByteOrder, EcuInstance,
+    abstraction_element, make_unique_name, reflist_iterator, AbstractionElement, AutosarAbstractionError, ByteOrder,
+    EcuInstance,
 };
 
 mod can;
@@ -38,8 +38,12 @@ impl AbstractionElement for Frame {
 impl Frame {
     /// returns an iterator over all PDUs in the frame
     #[must_use]
-    pub fn mapped_pdus(&self) -> PduToFrameMappingIterator {
-        PduToFrameMappingIterator::new(self.element().get_sub_element(ElementName::PduToFrameMappings))
+    pub fn mapped_pdus(&self) -> impl Iterator<Item = PduToFrameMapping> {
+        self.element()
+            .get_sub_element(ElementName::PduToFrameMappings)
+            .into_iter()
+            .flat_map(|elem| elem.sub_elements())
+            .filter_map(|elem| PduToFrameMapping::try_from(elem).ok())
     }
 
     /// Iterator over all [`FrameTriggering`]s using this frame
@@ -252,14 +256,32 @@ impl FrameTriggering {
 
     /// iterate over all frame ports referenced by this frame triggering
     #[must_use]
-    pub fn frame_ports(&self) -> FramePortIterator {
-        FramePortIterator::new(self.element().get_sub_element(ElementName::FramePortRefs))
+    pub fn frame_ports(&self) -> impl Iterator<Item = FramePort> {
+        self.element()
+            .get_sub_element(ElementName::FramePortRefs)
+            .into_iter()
+            .flat_map(|elem| elem.sub_elements())
+            .filter_map(|fpref| {
+                fpref
+                    .get_reference_target()
+                    .ok()
+                    .and_then(|fp| FramePort::try_from(fp).ok())
+            })
     }
 
     /// iterate over all PDU triggerings used by this frame triggering
     #[must_use]
-    pub fn pdu_triggerings(&self) -> FtPduTriggeringsIterator {
-        FtPduTriggeringsIterator::new(self.element().get_sub_element(ElementName::PduTriggerings))
+    pub fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> {
+        self.element()
+            .get_sub_element(ElementName::PduTriggerings)
+            .into_iter()
+            .flat_map(|elem| elem.sub_elements())
+            .filter_map(|element| {
+                element
+                    .get_sub_element(ElementName::PduTriggeringRef)
+                    .and_then(|ptr| ptr.get_reference_target().ok())
+                    .and_then(|ptelem| PduTriggering::try_from(ptelem).ok())
+            })
     }
 }
 
@@ -385,26 +407,4 @@ impl FramePort {
 
 //##################################################################
 
-element_iterator!(PduToFrameMappingIterator, PduToFrameMapping, Some);
-
-//##################################################################
-
 reflist_iterator!(FrameTriggeringsIterator, FrameTriggering);
-
-//##################################################################
-
-element_iterator!(
-    FramePortIterator,
-    FramePort,
-    (|element: Element| element.get_reference_target().ok())
-);
-
-//##################################################################
-
-element_iterator!(
-    FtPduTriggeringsIterator,
-    PduTriggering,
-    (|element: Element| element
-        .get_sub_element(ElementName::PduTriggeringRef)
-        .and_then(|ptr| ptr.get_reference_target().ok()))
-);

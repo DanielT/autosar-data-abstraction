@@ -1,7 +1,4 @@
-use crate::{
-    abstraction_element, datatype, element_iterator, AbstractionElement, ArPackage, AutosarAbstractionError, Element,
-    EnumItem,
-};
+use crate::{abstraction_element, datatype, AbstractionElement, ArPackage, AutosarAbstractionError, Element, EnumItem};
 use autosar_data::ElementName;
 use datatype::{CompuMethod, DataConstr, SwBaseType};
 use std::fmt::Display;
@@ -21,7 +18,11 @@ pub trait AbstractImplementationDataType: AbstractionElement {
 
     /// create an iterator over the sub-elements of this implementation data type
     fn sub_elements(&self) -> impl Iterator<Item = ImplementationDataTypeElement> {
-        ImplementationDataTypeElementIterator::new(self.element().get_sub_element(ElementName::SubElements))
+        self.element()
+            .get_sub_element(ElementName::SubElements)
+            .into_iter()
+            .flat_map(|elem| elem.sub_elements())
+            .filter_map(|elem| ImplementationDataTypeElement::try_from(elem).ok())
     }
 
     /// get the `SwBaseType` of this implementation data type [category: VALUE]
@@ -463,14 +464,6 @@ impl ImplementationDataTypeSettings {
         }
     }
 }
-
-//#########################################################
-
-element_iterator!(
-    ImplementationDataTypeElementIterator,
-    ImplementationDataTypeElement,
-    Some
-);
 
 //#########################################################
 

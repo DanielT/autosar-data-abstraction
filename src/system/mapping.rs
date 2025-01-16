@@ -12,7 +12,7 @@ use software_component::{
 //##################################################################
 
 /// A `SystemMapping` contains mappings in the `System`
-/// 
+///
 /// it contains mappings between SWCs and ECUs, as well as between ports and signals
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SystemMapping(Element);
@@ -122,6 +122,7 @@ impl SystemMapping {
             root_composition_prototype,
         )
     }
+
     fn map_sender_receiver_to_signal_internal(
         &self,
         signal: &SystemSignal,

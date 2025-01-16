@@ -2,9 +2,7 @@ use crate::communication::{
     AbstractPdu, CommunicationDirection, EthernetCluster, GeneralPurposePdu, Pdu, PduCollectionTrigger, PduTriggering,
     PhysicalChannel,
 };
-use crate::{
-    abstraction_element, element_iterator, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance,
-};
+use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance};
 use autosar_data::{AutosarVersion, Element, ElementName, EnumItem};
 
 mod networkendpoint;
@@ -187,7 +185,11 @@ impl EthernetPhysicalChannel {
     /// # assert_eq!(channel.network_endpoints().count(), 1)
     /// ```
     pub fn network_endpoints(&self) -> impl Iterator<Item = NetworkEndpoint> {
-        NetworkEndpointIterator::new(self.element().get_sub_element(ElementName::NetworkEndpoints))
+        self.element()
+            .get_sub_element(ElementName::NetworkEndpoints)
+            .into_iter()
+            .flat_map(|ne| ne.sub_elements())
+            .filter_map(|ne_elem| NetworkEndpoint::try_from(ne_elem).ok())
     }
 
     /// create a socket address in the ethernet channel
@@ -272,11 +274,12 @@ impl EthernetPhysicalChannel {
     /// assert_eq!(channel.socket_addresses().count(), 1);
     /// ```
     pub fn socket_addresses(&self) -> impl Iterator<Item = SocketAddress> {
-        SocketAddressIterator::new(
-            self.element()
-                .get_sub_element(ElementName::SoAdConfig)
-                .and_then(|sc| sc.get_sub_element(ElementName::SocketAddresss)),
-        )
+        self.element()
+            .get_sub_element(ElementName::SoAdConfig)
+            .and_then(|sc| sc.get_sub_element(ElementName::SocketAddresss))
+            .into_iter()
+            .flat_map(|sa| sa.sub_elements())
+            .filter_map(|sa_elem| SocketAddress::try_from(sa_elem).ok())
     }
 
     pub(crate) fn ecu_connector(&self, ecu_instance: &EcuInstance) -> Option<Element> {
@@ -898,7 +901,16 @@ impl StaticSocketConnection {
 
     /// create an iterator over all `SoConIPduIdentifiers` in this static socket connection
     pub fn i_pdu_identifiers(&self) -> impl Iterator<Item = SoConIPduIdentifier> {
-        SoConIPduIdentifiersIterator::new(self.element().get_sub_element(ElementName::IPduIdentifiers))
+        self.element()
+            .get_sub_element(ElementName::IPduIdentifiers)
+            .into_iter()
+            .flat_map(|elem| elem.sub_elements())
+            .filter_map(|scirc: Element| {
+                scirc
+                    .get_sub_element(ElementName::SoConIPduIdentifierRef)
+                    .and_then(|sciir| sciir.get_reference_target().ok())
+                    .and_then(|scii| SoConIPduIdentifier::try_from(scii).ok())
+            })
     }
 }
 
@@ -1171,24 +1183,6 @@ impl TryFrom<EnumItem> for EventGroupControlType {
         }
     }
 }
-
-//##################################################################
-
-element_iterator!(NetworkEndpointIterator, NetworkEndpoint, Some);
-
-//##################################################################
-
-element_iterator!(SocketAddressIterator, SocketAddress, Some);
-
-//##################################################################
-
-element_iterator!(
-    SoConIPduIdentifiersIterator,
-    SoConIPduIdentifier,
-    (|scirc: Element| scirc
-        .get_sub_element(ElementName::SoConIPduIdentifierRef)
-        .and_then(|sciir| sciir.get_reference_target().ok()))
-);
 
 //##################################################################
 

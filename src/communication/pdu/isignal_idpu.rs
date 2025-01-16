@@ -1,8 +1,5 @@
 use crate::communication::{ISignal, ISignalGroup, Pdu, TransferProperty};
-use crate::{
-    abstraction_element, element_iterator, make_unique_name, AbstractionElement, ArPackage, AutosarAbstractionError,
-    ByteOrder,
-};
+use crate::{abstraction_element, make_unique_name, AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder};
 use autosar_data::{Element, ElementName, EnumItem};
 
 use super::{AbstractIpdu, AbstractPdu};
@@ -27,8 +24,12 @@ impl ISignalIPdu {
 
     /// returns an iterator over all signals mapped to the PDU
     #[must_use]
-    pub fn mapped_signals(&self) -> ISIgnalToIPduMappingsIterator {
-        ISIgnalToIPduMappingsIterator::new(self.element().get_sub_element(ElementName::ISignalToPduMappings))
+    pub fn mapped_signals(&self) -> impl Iterator<Item = ISignalToIPduMapping> {
+        self.element()
+            .get_sub_element(ElementName::ISignalToPduMappings)
+            .into_iter()
+            .flat_map(|mappings| mappings.sub_elements())
+            .filter_map(|elem| ISignalToIPduMapping::try_from(elem).ok())
     }
 
     /// map a signal to the `ISignalIPdu`
@@ -544,10 +545,6 @@ impl SignalMappingValidator {
         result
     }
 }
-
-//##################################################################
-
-element_iterator!(ISIgnalToIPduMappingsIterator, ISignalToIPduMapping, Some);
 
 //##################################################################
 

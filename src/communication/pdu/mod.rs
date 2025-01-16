@@ -1,7 +1,7 @@
 use crate::communication::{CommunicationDirection, ISignal, ISignalGroup, ISignalTriggering, PhysicalChannel};
 use crate::{
-    abstraction_element, element_iterator, make_unique_name, reflist_iterator, AbstractionElement, ArPackage,
-    AutosarAbstractionError, EcuInstance,
+    abstraction_element, make_unique_name, reflist_iterator, AbstractionElement, ArPackage, AutosarAbstractionError,
+    EcuInstance,
 };
 use autosar_data::{AutosarDataError, Element, ElementName, EnumItem};
 use std::str::FromStr;
@@ -559,14 +559,31 @@ impl PduTriggering {
 
     /// create an iterator over the `IPduPorts` that are connected to this `PduTriggering`
     #[must_use]
-    pub fn pdu_ports(&self) -> IPduPortIterator {
-        IPduPortIterator::new(self.element().get_sub_element(ElementName::IPduPortRefs))
+    pub fn pdu_ports(&self) -> impl Iterator<Item = IPduPort> {
+        self.element()
+            .get_sub_element(ElementName::IPduPortRefs)
+            .into_iter()
+            .flat_map(|ipprefs| ipprefs.sub_elements())
+            .filter_map(|ippref| {
+                ippref
+                    .get_reference_target()
+                    .ok()
+                    .and_then(|elem| IPduPort::try_from(elem).ok())
+            })
     }
 
     /// create an iterator over the `ISignalTriggerings` that are triggered by this `PduTriggering`
     #[must_use]
-    pub fn signal_triggerings(&self) -> PtSignalTriggeringsIterator {
-        PtSignalTriggeringsIterator::new(self.element().get_sub_element(ElementName::ISignalTriggerings))
+    pub fn signal_triggerings(&self) -> impl Iterator<Item = ISignalTriggering> {
+        self.element()
+            .get_sub_element(ElementName::ISignalTriggerings)
+            .into_iter()
+            .flat_map(|ists| ists.sub_elements())
+            .filter_map(|ist| {
+                ist.get_sub_element(ElementName::ISignalTriggeringRef)
+                    .and_then(|str| str.get_reference_target().ok())
+                    .and_then(|elem| ISignalTriggering::try_from(elem).ok())
+            })
     }
 
     /// add a signal triggering for a signal to this `PduTriggering`
@@ -681,22 +698,4 @@ impl TryFrom<EnumItem> for PduCollectionTrigger {
 
 //##################################################################
 
-element_iterator!(
-    IPduPortIterator,
-    IPduPort,
-    (|element: Element| element.get_reference_target().ok())
-);
-
-//##################################################################
-
 reflist_iterator!(PduTriggeringsIterator, PduTriggering);
-
-//##################################################################
-
-element_iterator!(
-    PtSignalTriggeringsIterator,
-    ISignalTriggering,
-    (|element: Element| element
-        .get_sub_element(ElementName::ISignalTriggeringRef)
-        .and_then(|str| str.get_reference_target().ok()))
-);

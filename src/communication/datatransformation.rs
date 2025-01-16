@@ -1,4 +1,4 @@
-use crate::{abstraction_element, element_iterator, AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder};
+use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder};
 use autosar_data::{AutosarVersion, Element, ElementName, EnumItem};
 
 /// A [`DataTransformationSet`] contains `DataTransformation`s and `TransformationTechnology`s used in communication
@@ -147,9 +147,35 @@ impl DataTransformation {
             .and_then(|dts| DataTransformationSet::try_from(dts).ok())
     }
 
-    /// Get the `TransformationTechnologies` in the `DataTransformation`
+    /// Create an iterator over the `TransformationTechnologies` in the `DataTransformation`
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::{*, communication::*};
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModel::new();
+    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = ArPackage::get_or_create(&model, "/pkg")?;
+    /// let dts = package.create_data_transformation_set("dts")?;
+    /// let config = TransformationTechnologyConfig::Com(ComTransformationTechnologyConfig { isignal_ipdu_length: 8 });
+    /// let ttech = dts.create_transformation_technology("ttech1", &config)?;
+    /// let dt = dts.create_data_transformation("dt", &[&ttech], true)?;
+    /// let mut ttech_iter = dt.transformation_technologies();
+    /// assert_eq!(ttech_iter.next(), Some(ttech));
+    /// # Ok(())}
+    /// ```
     pub fn transformation_technologies(&self) -> impl Iterator<Item = TransformationTechnology> {
-        TransformerChainRefIterator::new(self.element().get_sub_element(ElementName::TransformerChainRefs))
+        self.0
+            .get_sub_element(ElementName::TransformerChainRefs)
+            .into_iter()
+            .flat_map(|container| container.sub_elements())
+            .filter_map(|elem| {
+                elem.get_reference_target()
+                    .ok()
+                    .and_then(|ttech| TransformationTechnology::try_from(ttech).ok())
+            })
     }
 }
 
@@ -703,10 +729,14 @@ pub enum TransformationTechnologyConfig {
 /// For a generic trasformation, the mandatory values must be chosen by the user
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GenericTransformationTechnologyConfig {
-    protocol_name: String,
-    protocol_version: String,
-    header_length: u32,
-    in_place: bool,
+    /// The name of the custom protocol
+    pub protocol_name: String,
+    /// The version of the custom protocol
+    pub protocol_version: String,
+    /// The length of the header in bits
+    pub header_length: u32,
+    /// Should the transformation take place in the existing buffer or in a separate buffer?
+    pub in_place: bool,
 }
 
 //#########################################################
@@ -716,7 +746,7 @@ pub struct GenericTransformationTechnologyConfig {
 pub struct ComTransformationTechnologyConfig {
     /// The length of the `ISignalIpdu` tha will be transformed by this Com transformer.
     /// The value is only used up to AUTOSAR R20-11 (`AUTOSAR_00049`), where it is needed to calculate the buffer size.
-    isignal_ipdu_length: u32,
+    pub isignal_ipdu_length: u32,
 }
 
 //#########################################################
@@ -1208,14 +1238,6 @@ impl SomeIpTransformationISignalProps {
         }
     }
 }
-
-//#########################################################
-
-element_iterator!(
-    TransformerChainRefIterator,
-    TransformationTechnology,
-    (|element: Element| element.get_reference_target().ok())
-);
 
 //#########################################################
 

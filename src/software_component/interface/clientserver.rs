@@ -1,7 +1,4 @@
-use crate::{
-    abstraction_element, datatype, element_iterator, AbstractionElement, ArPackage, AutosarAbstractionError, Element,
-    EnumItem,
-};
+use crate::{abstraction_element, datatype, AbstractionElement, ArPackage, AutosarAbstractionError, Element, EnumItem};
 use autosar_data::ElementName;
 use datatype::AutosarDataType;
 
@@ -41,12 +38,20 @@ impl ClientServerInterface {
 
     /// iterate over all operations
     pub fn operations(&self) -> impl Iterator<Item = ClientServerOperation> {
-        ClientServerOperationIterator::new(self.element().get_sub_element(ElementName::Operations))
+        self.element()
+            .get_sub_element(ElementName::Operations)
+            .into_iter()
+            .flat_map(|operations| operations.sub_elements())
+            .filter_map(|elem| ClientServerOperation::try_from(elem).ok())
     }
 
     /// iterate over all application errors
     pub fn possible_errors(&self) -> impl Iterator<Item = ApplicationError> {
-        ApplicationErrorIterator::new(self.element().get_sub_element(ElementName::PossibleErrors))
+        self.element()
+            .get_sub_element(ElementName::PossibleErrors)
+            .into_iter()
+            .flat_map(|errors| errors.sub_elements())
+            .filter_map(|elem| ApplicationError::try_from(elem).ok())
     }
 }
 
@@ -110,14 +115,18 @@ impl ClientServerOperation {
 
     /// iterate over all arguments
     pub fn arguments(&self) -> impl Iterator<Item = ArgumentDataPrototype> {
-        ArgumentDataPrototypeIterator::new(self.element().get_sub_element(ElementName::Arguments))
+        self.element()
+            .get_sub_element(ElementName::Arguments)
+            .into_iter()
+            .flat_map(|arguments| arguments.sub_elements())
+            .filter_map(|elem| ArgumentDataPrototype::try_from(elem).ok())
     }
 }
 
 //##################################################################
 
 /// The `ArgumentDirection` defines the direction of an argument in a `ClientServerOperation`
-/// 
+///
 /// Input arguments are used to pass data from the client to the server and are usualy passed by value.
 /// Output arguments are used to pass data from the server to the client and are usually passed by reference.
 /// In/Out arguments are used to pass data in both directions and are usually passed by reference.
@@ -182,15 +191,3 @@ impl ArgumentDataPrototype {
         Ok(Self(argument))
     }
 }
-
-//##################################################################
-
-element_iterator!(ClientServerOperationIterator, ClientServerOperation, Some);
-
-//##################################################################
-
-element_iterator!(ApplicationErrorIterator, ApplicationError, Some);
-
-//##################################################################
-
-element_iterator!(ArgumentDataPrototypeIterator, ArgumentDataPrototype, Some);

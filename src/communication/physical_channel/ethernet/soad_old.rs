@@ -1,7 +1,7 @@
 use crate::communication::{
     AbstractPdu, EthernetPhysicalChannel, Pdu, PduCollectionTrigger, PduTriggering, SocketAddress, TpConfig,
 };
-use crate::{abstraction_element, element_iterator, AbstractionElement, ArPackage, AutosarAbstractionError};
+use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError};
 use autosar_data::{Element, ElementName, EnumItem};
 
 use super::EventGroupControlType;
@@ -379,7 +379,15 @@ impl SocketConnection {
 
     /// create an iterator over all PDU triggerings in this socket connection
     pub fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> {
-        SCPduTriggeringsIterator::new(self.element().get_sub_element(ElementName::Pdus))
+        self.element()
+            .get_sub_element(ElementName::Pdus)
+            .into_iter()
+            .flat_map(|pdus| pdus.sub_elements())
+            .filter_map(|scii: Element| {
+                scii.get_sub_element(ElementName::PduTriggeringRef)
+                    .and_then(|pt| pt.get_reference_target().ok())
+                    .and_then(|pt| PduTriggering::try_from(pt).ok())
+            })
     }
 
     /// set or remove the `client_ip_addr_from_connection_request` attribute for this socket connection
@@ -513,16 +521,6 @@ impl SoAdRoutingGroup {
             .and_then(|eval| eval.try_into().ok())
     }
 }
-
-//##################################################################
-
-element_iterator!(
-    SCPduTriggeringsIterator,
-    PduTriggering,
-    (|scii: Element| scii
-        .get_sub_element(ElementName::PduTriggeringRef)
-        .and_then(|pt| pt.get_reference_target().ok()))
-);
 
 //##################################################################
 

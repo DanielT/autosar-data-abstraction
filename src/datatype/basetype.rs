@@ -7,13 +7,13 @@ use std::fmt::Display;
 //#########################################################
 
 /// `SwBaseType` is a basic data type.
-/// 
+///
 /// It is used to define the data types of signals and variables.
-/// 
+///
 /// Use [`ArPackage::create_sw_base_type`] to create a new `SwBaseType`.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```
 /// # use autosar_data::*;
 /// # use autosar_data_abstraction::{*, datatype::*};

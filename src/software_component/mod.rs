@@ -4,8 +4,7 @@
 //! It also contains the definition of the composition hierarchy, and the connectors between components.
 
 use crate::{
-    abstraction_element, datatype, element_iterator, reflist_iterator, AbstractionElement, ArPackage,
-    AutosarAbstractionError, Element,
+    abstraction_element, datatype, reflist_iterator, AbstractionElement, ArPackage, AutosarAbstractionError, Element,
 };
 use autosar_data::ElementName;
 use datatype::DataTypeMappingSet;
@@ -88,8 +87,12 @@ pub trait AbstractSwComponentType: AbstractionElement {
     }
 
     /// get an iterator over the ports of the component
-    fn ports(&self) -> PortPrototypeIterator {
-        PortPrototypeIterator::new(self.element().get_sub_element(ElementName::Ports))
+    fn ports(&self) -> impl Iterator<Item = PortPrototype> {
+        self.element()
+            .get_sub_element(ElementName::Ports)
+            .into_iter()
+            .flat_map(|ports| ports.sub_elements())
+            .filter_map(|elem| PortPrototype::try_from(elem).ok())
     }
 
     /// create a new port group
@@ -158,7 +161,11 @@ impl CompositionSwComponentType {
 
     /// get an iterator over the components of the composition
     pub fn components(&self) -> impl Iterator<Item = SwComponentType> {
-        CompositionComponentsIter::new(self.element().get_sub_element(ElementName::Components))
+        self.element()
+            .get_sub_element(ElementName::Components)
+            .into_iter()
+            .flat_map(|components| components.sub_elements())
+            .filter_map(|elem| SwComponentType::try_from(elem).ok())
     }
 
     /// create a new delegation connector between an inner port and an outer port
@@ -716,15 +723,7 @@ impl ComponentPrototype {
 
 //##################################################################
 
-element_iterator!(CompositionComponentsIter, SwComponentType, Some);
-
-//##################################################################
-
 reflist_iterator!(ComponentPrototypeIterator, ComponentPrototype);
-
-//##################################################################
-
-element_iterator!(PortPrototypeIterator, PortPrototype, Some);
 
 //##################################################################
 
