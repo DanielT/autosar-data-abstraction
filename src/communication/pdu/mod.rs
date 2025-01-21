@@ -558,7 +558,6 @@ impl PduTriggering {
     }
 
     /// create an iterator over the `IPduPorts` that are connected to this `PduTriggering`
-    #[must_use]
     pub fn pdu_ports(&self) -> impl Iterator<Item = IPduPort> {
         self.element()
             .get_sub_element(ElementName::IPduPortRefs)
@@ -573,7 +572,6 @@ impl PduTriggering {
     }
 
     /// create an iterator over the `ISignalTriggerings` that are triggered by this `PduTriggering`
-    #[must_use]
     pub fn signal_triggerings(&self) -> impl Iterator<Item = ISignalTriggering> {
         self.element()
             .get_sub_element(ElementName::ISignalTriggerings)
@@ -699,3 +697,227 @@ impl TryFrom<EnumItem> for PduCollectionTrigger {
 //##################################################################
 
 reflist_iterator!(PduTriggeringsIterator, PduTriggering);
+
+//##################################################################
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::{
+        communication::{CanAddressingMode, CanClusterSettings, CanFrameType, TransferProperty},
+        ByteOrder, SystemCategory,
+    };
+    use autosar_data::{AutosarModel, AutosarVersion};
+
+    #[test]
+    fn test_pdus() {
+        let model = AutosarModel::new();
+        let _file = model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
+        let package = ArPackage::get_or_create(&model, "/pkg").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
+
+        let isignal_ipdu = system.create_isignal_ipdu("isignal_ipdu", &package, 1).unwrap();
+        let nm_pdu = system.create_nm_pdu("nm_pdu", &package, 1).unwrap();
+        let n_pdu = system.create_n_pdu("n_pdu", &package, 1).unwrap();
+        let dcm_ipdu = system.create_dcm_ipdu("dcm_ipdu", &package, 1).unwrap();
+        let gp_pdu = system
+            .create_general_purpose_pdu("gp_pdu", &package, 1, GeneralPurposePduCategory::Sd)
+            .unwrap();
+        let gp_ipdu = system
+            .create_general_purpose_ipdu("gp_ipdu", &package, 1, GeneralPurposeIPduCategory::Xcp)
+            .unwrap();
+        let container_ipdu = system.create_container_ipdu("container_ipdu", &package, 1).unwrap();
+        let secured_ipdu = system.create_secured_ipdu("secured_ipdu", &package, 1).unwrap();
+        let multiplexed_ipdu = system.create_multiplexed_ipdu("multiplexed_ipdu", &package, 1).unwrap();
+
+        let frame = system.create_flexray_frame("frame1", 64, &package).unwrap();
+        frame
+            .map_pdu(&isignal_ipdu, 0, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+        frame
+            .map_pdu(&nm_pdu, 8, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+        frame
+            .map_pdu(&n_pdu, 16, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+        frame
+            .map_pdu(&dcm_ipdu, 24, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+        frame
+            .map_pdu(&gp_pdu, 32, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+        frame
+            .map_pdu(&gp_ipdu, 40, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+        frame
+            .map_pdu(&container_ipdu, 48, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+        frame
+            .map_pdu(&secured_ipdu, 56, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+        frame
+            .map_pdu(&multiplexed_ipdu, 64, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+
+        let mut pdus_iter = frame.mapped_pdus();
+        assert_eq!(pdus_iter.next().unwrap().name().unwrap(), "isignal_ipdu");
+        assert_eq!(pdus_iter.next().unwrap().name().unwrap(), "nm_pdu");
+        assert_eq!(pdus_iter.next().unwrap().name().unwrap(), "n_pdu");
+        assert_eq!(pdus_iter.next().unwrap().name().unwrap(), "dcm_ipdu");
+        assert_eq!(pdus_iter.next().unwrap().name().unwrap(), "gp_pdu");
+        assert_eq!(pdus_iter.next().unwrap().name().unwrap(), "gp_ipdu");
+        assert_eq!(pdus_iter.next().unwrap().name().unwrap(), "container_ipdu");
+        assert_eq!(pdus_iter.next().unwrap().name().unwrap(), "secured_ipdu");
+        assert_eq!(pdus_iter.next().unwrap().name().unwrap(), "multiplexed_ipdu");
+        assert!(pdus_iter.next().is_none());
+    }
+
+    #[test]
+    fn test_pdu_triggering() {
+        let model = AutosarModel::new();
+        let _file = model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
+        let package = ArPackage::get_or_create(&model, "/pkg").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
+
+        // create an ISignalIPdu with a signal
+        let isignal_ipdu = system.create_isignal_ipdu("isignal_ipdu", &package, 1).unwrap();
+        let syssignal = package.create_system_signal("syssignal").unwrap();
+        let isignal = system.create_isignal("isignal", 1, &syssignal, None, &package).unwrap();
+        isignal_ipdu
+            .map_signal(
+                &isignal,
+                0,
+                ByteOrder::MostSignificantByteLast,
+                None,
+                TransferProperty::Triggered,
+            )
+            .unwrap();
+        // create an ISignalGroup with a second signal
+        let syssignal_group = package.create_system_signal_group("syssignal_group").unwrap();
+        let isignal_group = system
+            .create_i_signal_group("isignal_group", &syssignal_group, &package)
+            .unwrap();
+        let syssignal2 = package.create_system_signal("syssignal2").unwrap();
+        let isignal2 = system
+            .create_isignal("isignal2", 1, &syssignal2, None, &package)
+            .unwrap();
+        isignal_ipdu.map_signal_group(&isignal_group).unwrap();
+        isignal_ipdu
+            .map_signal(
+                &isignal2,
+                1,
+                ByteOrder::MostSignificantByteLast,
+                None,
+                TransferProperty::Triggered,
+            )
+            .unwrap();
+
+        // create a frame and map the ISignalIPdu to it
+        let can_cluster = system
+            .create_can_cluster("Cluster", &package, &CanClusterSettings::default())
+            .unwrap();
+        let channel = can_cluster.create_physical_channel("Channel").unwrap();
+        let frame = system.create_can_frame("frame", 8, &package).unwrap();
+        let frame_triggering = channel
+            .trigger_frame(&frame, 0x123, CanAddressingMode::Standard, CanFrameType::Can20)
+            .unwrap();
+        let _mapping = frame
+            .map_pdu(&isignal_ipdu, 0, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+
+        // create an EcuInstance, and connect it to the channel. The frame is reeived by the ECU
+        let ecu = system.create_ecu_instance("ecu", &package).unwrap();
+        let controller = ecu.create_can_communication_controller("controller").unwrap();
+        controller.connect_physical_channel("connection", &channel).unwrap();
+        frame_triggering
+            .connect_to_ecu(&ecu, CommunicationDirection::In)
+            .unwrap();
+
+        let pdu_triggering = frame_triggering.pdu_triggerings().next().unwrap();
+        assert_eq!(pdu_triggering.pdu_ports().count(), 1);
+        assert_eq!(pdu_triggering.signal_triggerings().count(), 3); // one for each signal, and another for the signal group
+
+        let pdu_port = pdu_triggering.pdu_ports().next().unwrap();
+        assert_eq!(pdu_port.ecu().unwrap().name().unwrap(), "ecu");
+        assert_eq!(pdu_port.communication_direction().unwrap(), CommunicationDirection::In);
+    }
+
+    #[test]
+    fn general_purpose_pdu() {
+        let model = AutosarModel::new();
+        let _file = model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
+        let package = ArPackage::get_or_create(&model, "/pkg").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
+
+        let gp_pdu1 = system
+            .create_general_purpose_pdu("gp_pdu1", &package, 1, GeneralPurposePduCategory::Sd)
+            .unwrap();
+        assert_eq!(gp_pdu1.category().unwrap(), GeneralPurposePduCategory::Sd);
+
+        let gp_pdu2 = system
+            .create_general_purpose_pdu("gp_pdu2", &package, 1, GeneralPurposePduCategory::GlobalTime)
+            .unwrap();
+        assert_eq!(gp_pdu2.category().unwrap(), GeneralPurposePduCategory::GlobalTime);
+
+        let gp_pdu3 = system
+            .create_general_purpose_pdu("gp_pdu3", &package, 1, GeneralPurposePduCategory::DoIp)
+            .unwrap();
+        assert_eq!(gp_pdu3.category().unwrap(), GeneralPurposePduCategory::DoIp);
+
+        // conversion of category to string and back
+        assert_eq!(
+            GeneralPurposePduCategory::from_str("SD").unwrap(),
+            GeneralPurposePduCategory::Sd
+        );
+        assert_eq!(
+            GeneralPurposePduCategory::from_str("GLOBAL_TIME").unwrap(),
+            GeneralPurposePduCategory::GlobalTime
+        );
+        assert_eq!(
+            GeneralPurposePduCategory::from_str("DOIP").unwrap(),
+            GeneralPurposePduCategory::DoIp
+        );
+        assert!(GeneralPurposePduCategory::from_str("invalid").is_err());
+    }
+
+    #[test]
+    fn create_general_purpose_ipdu() {
+        let model = AutosarModel::new();
+        let _file = model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
+        let package = ArPackage::get_or_create(&model, "/pkg").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
+
+        let gp_ipdu1 = system
+            .create_general_purpose_ipdu("gp_ipdu1", &package, 1, GeneralPurposeIPduCategory::Xcp)
+            .unwrap();
+        assert_eq!(gp_ipdu1.category().unwrap(), GeneralPurposeIPduCategory::Xcp);
+
+        let gp_ipdu2 = system
+            .create_general_purpose_ipdu("gp_ipdu2", &package, 1, GeneralPurposeIPduCategory::SomeipSegmentedIpdu)
+            .unwrap();
+        assert_eq!(
+            gp_ipdu2.category().unwrap(),
+            GeneralPurposeIPduCategory::SomeipSegmentedIpdu
+        );
+
+        let gp_ipdu3 = system
+            .create_general_purpose_ipdu("gp_ipdu3", &package, 1, GeneralPurposeIPduCategory::Dlt)
+            .unwrap();
+        assert_eq!(gp_ipdu3.category().unwrap(), GeneralPurposeIPduCategory::Dlt);
+
+        // conversion of category to string and back
+        assert_eq!(
+            GeneralPurposeIPduCategory::from_str("XCP").unwrap(),
+            GeneralPurposeIPduCategory::Xcp
+        );
+        assert_eq!(
+            GeneralPurposeIPduCategory::from_str("SOMEIP_SEGMENTED_IPDU").unwrap(),
+            GeneralPurposeIPduCategory::SomeipSegmentedIpdu
+        );
+        assert_eq!(
+            GeneralPurposeIPduCategory::from_str("DLT").unwrap(),
+            GeneralPurposeIPduCategory::Dlt
+        );
+        assert!(GeneralPurposeIPduCategory::from_str("invalid").is_err());
+    }
+}

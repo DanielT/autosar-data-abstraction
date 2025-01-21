@@ -78,9 +78,11 @@ impl SocketConnectionBundle {
         &self,
         client_port: &SocketAddress,
     ) -> Result<SocketConnection, AutosarAbstractionError> {
-        let server_port = self.server_port().ok_or_else(|| {
-            AutosarAbstractionError::InvalidParameter("SocketConnectionBundle has no server port".to_string())
-        })?;
+        let Some(server_port) = self.server_port() else {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "SocketConnectionBundle has no server port".to_string(),
+            ));
+        };
         let own_tp_config = server_port.tp_config();
         let remote_tp_config = client_port.tp_config();
         match (own_tp_config, remote_tp_config) {
@@ -354,7 +356,7 @@ impl SocketConnection {
         pdu_triggering: &PduTriggering,
         routing_group: &SoAdRoutingGroup,
     ) -> Result<(), AutosarAbstractionError> {
-        let scii = self
+        let Some(scii) = self
             .element()
             .get_or_create_sub_element(ElementName::Pdus)?
             .sub_elements()
@@ -364,11 +366,11 @@ impl SocketConnection {
                     .and_then(|pt| PduTriggering::try_from(pt).ok())
                     .is_some_and(|pt| pt == *pdu_triggering)
             })
-            .ok_or_else(|| {
-                AutosarAbstractionError::InvalidParameter(
-                    "Could not add SoAdRoutingGroup - PduTriggering not found".to_string(),
-                )
-            })?;
+        else {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "Could not add SoAdRoutingGroup - PduTriggering not found".to_string(),
+            ));
+        };
 
         scii.get_or_create_sub_element(ElementName::RoutingGroupRefs)?
             .create_sub_element(ElementName::RoutingGroupRef)?
@@ -403,11 +405,10 @@ impl SocketConnection {
             self.element()
                 .get_or_create_sub_element(ElementName::ClientIpAddrFromConnectionRequest)?
                 .set_character_data(value.to_string())?;
-        } else if let Some(elem) = self
-            .element()
-            .get_sub_element(ElementName::ClientIpAddrFromConnectionRequest)
-        {
-            self.element().remove_sub_element(elem)?;
+        } else {
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::ClientIpAddrFromConnectionRequest);
         }
         Ok(())
     }
@@ -418,8 +419,7 @@ impl SocketConnection {
         self.element()
             .get_sub_element(ElementName::ClientIpAddrFromConnectionRequest)
             .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.string_value())
-            .map(|val| val == "true" || val == "1")
+            .and_then(|cdata| cdata.parse_bool())
     }
 
     /// set or remove the `client_port_from_connection_request` attribute for this socket connection
@@ -432,11 +432,10 @@ impl SocketConnection {
             self.element()
                 .get_or_create_sub_element(ElementName::ClientPortFromConnectionRequest)?
                 .set_character_data(value.to_string())?;
-        } else if let Some(elem) = self
-            .element()
-            .get_sub_element(ElementName::ClientPortFromConnectionRequest)
-        {
-            self.element().remove_sub_element(elem)?;
+        } else {
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::ClientPortFromConnectionRequest);
         }
         Ok(())
     }
@@ -447,8 +446,7 @@ impl SocketConnection {
         self.element()
             .get_sub_element(ElementName::ClientPortFromConnectionRequest)
             .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.string_value())
-            .map(|val| val == "true" || val == "1")
+            .and_then(|cdata| cdata.parse_bool())
     }
 
     /// set or remove the RuntimeIpAddressConfiguration/RuntimePortConfiguration attributes for this socket connection
@@ -464,17 +462,36 @@ impl SocketConnection {
                 .get_or_create_sub_element(ElementName::RuntimePortConfiguration)?
                 .set_character_data(EnumItem::Sd)?;
         } else {
-            if let Some(elem) = self
+            let _ = self
                 .element()
-                .get_sub_element(ElementName::RuntimeIpAddressConfiguration)
-            {
-                self.element().remove_sub_element(elem)?;
-            }
-            if let Some(elem) = self.element().get_sub_element(ElementName::RuntimePortConfiguration) {
-                self.element().remove_sub_element(elem)?;
-            }
+                .remove_sub_element_kind(ElementName::RuntimeIpAddressConfiguration);
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::RuntimePortConfiguration);
         }
         Ok(())
+    }
+
+    /// get the value of the RuntimeIpAddressConfiguration attribute for this socket connection
+    #[must_use]
+    pub fn runtime_ip_address_configuration(&self) -> bool {
+        let enum_value = self
+            .element()
+            .get_sub_element(ElementName::RuntimeIpAddressConfiguration)
+            .and_then(|elem| elem.character_data())
+            .and_then(|cdata| cdata.enum_value());
+        enum_value == Some(EnumItem::Sd)
+    }
+
+    /// get the value of the RuntimePortConfiguration attribute for this socket connection
+    #[must_use]
+    pub fn runtime_port_configuration(&self) -> bool {
+        let enum_value = self
+            .element()
+            .get_sub_element(ElementName::RuntimePortConfiguration)
+            .and_then(|elem| elem.character_data())
+            .and_then(|cdata| cdata.enum_value());
+        enum_value == Some(EnumItem::Sd)
     }
 }
 
@@ -498,17 +515,25 @@ impl SoAdRoutingGroup {
         package: &ArPackage,
         control_type: Option<EventGroupControlType>,
     ) -> Result<Self, AutosarAbstractionError> {
-        let srg: Element = package
+        let srg_elem: Element = package
             .element()
             .get_or_create_sub_element(ElementName::Elements)?
             .create_named_sub_element(ElementName::SoAdRoutingGroup, name)?;
+        let srg = Self(srg_elem);
 
         if let Some(control_type) = control_type {
-            srg.create_sub_element(ElementName::EventGroupControlType)?
-                .set_character_data::<EnumItem>(control_type.into())?;
+            srg.set_control_type(control_type)?;
         }
 
-        Ok(Self(srg))
+        Ok(srg)
+    }
+
+    /// set the `EventGroupControlType` of this `SoAdRoutingGroup`
+    pub fn set_control_type(&self, control_type: EventGroupControlType) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::EventGroupControlType)?
+            .set_character_data::<EnumItem>(control_type.into())?;
+        Ok(())
     }
 
     /// get the `EventGroupControlType` of this `SoAdRoutingGroup`
@@ -612,10 +637,35 @@ mod test {
             .set_collection_trigger(&pt, PduCollectionTrigger::Never)
             .unwrap();
         assert_eq!(Some(PduCollectionTrigger::Never), connection.collection_trigger(&pt));
+        connection
+            .set_client_ip_addr_from_connection_request(Some(true))
+            .unwrap();
+        assert_eq!(connection.client_ip_addr_from_connection_request(), Some(true));
+        connection.set_client_ip_addr_from_connection_request(None).unwrap();
+        assert_eq!(connection.client_ip_addr_from_connection_request(), None);
+        connection.set_client_port_from_connection_request(Some(false)).unwrap();
+        assert_eq!(connection.client_port_from_connection_request(), Some(false));
+        connection.set_client_port_from_connection_request(None).unwrap();
+        assert_eq!(connection.client_port_from_connection_request(), None);
+        connection.set_runtime_address_configuration(true).unwrap();
+        assert_eq!(connection.runtime_ip_address_configuration(), true);
+        assert_eq!(connection.runtime_port_configuration(), true);
+        connection.set_runtime_address_configuration(false).unwrap();
+        assert_eq!(connection.runtime_ip_address_configuration(), false);
+        assert_eq!(connection.runtime_port_configuration(), false);
 
         let routing_group = system
             .create_so_ad_routing_group("RoutingGroup", &package, None)
             .unwrap();
         connection.add_routing_group(&pt, &routing_group).unwrap();
+
+        assert_eq!(routing_group.control_type(), None);
+        routing_group
+            .set_control_type(EventGroupControlType::TriggerUnicast)
+            .unwrap();
+        assert_eq!(
+            routing_group.control_type(),
+            Some(EventGroupControlType::TriggerUnicast)
+        );
     }
 }

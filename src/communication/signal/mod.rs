@@ -103,7 +103,11 @@ impl ISignal {
     pub fn signal_group(&self) -> Option<ISignalGroup> {
         let path = self.element().path().ok()?;
         let referrers = self.element().model().ok()?.get_references_to(&path);
-        for elem in referrers.iter().filter_map(WeakElement::upgrade) {
+
+        for elem in referrers
+            .iter()
+            .filter_map(|weak| weak.upgrade().and_then(|elem| elem.named_parent().ok().flatten()))
+        {
             if let Ok(grp) = ISignalGroup::try_from(elem) {
                 return Some(grp);
             }
@@ -684,11 +688,11 @@ mod tests {
     use super::*;
     use crate::{
         communication::{
-            DataTransformationSet, SomeIpMessageType, SomeIpTransformationISignalPropsConfig,
+            CanClusterSettings, DataTransformationSet, SomeIpMessageType, SomeIpTransformationISignalPropsConfig,
             SomeIpTransformationTechnologyConfig, TransformationTechnologyConfig,
         },
         datatype::{BaseTypeEncoding, CompuMethodContent, SwBaseType, Unit},
-        ByteOrder,
+        ByteOrder, SystemCategory,
     };
     use autosar_data::{AutosarModel, AutosarVersion};
 
@@ -697,14 +701,17 @@ mod tests {
         let model = AutosarModel::new();
         let _file = model.create_file("test.arxml", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/test").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let unit = Unit::new("unit", &package, Some("Unit Name")).unwrap();
         let compu_method = CompuMethod::new("compu_method", &package, CompuMethodContent::Identical).unwrap();
         let data_constr = DataConstr::new("data_constr", &package).unwrap();
         let sw_base_type =
             SwBaseType::new("sw_base_type", &package, 8, BaseTypeEncoding::None, None, None, None).unwrap();
 
-        let sys_signal = SystemSignal::new("sys_signal", &package).unwrap();
-        let signal = ISignal::new("signal", 8, &sys_signal, Some(&sw_base_type), &package).unwrap();
+        let sys_signal = package.create_system_signal("sys_signal").unwrap();
+        let signal = system
+            .create_isignal("signal", 8, &sys_signal, Some(&sw_base_type), &package)
+            .unwrap();
 
         sys_signal.set_unit(&unit).unwrap();
         sys_signal.set_compu_method(&compu_method).unwrap();
@@ -715,6 +722,22 @@ mod tests {
         assert_eq!(sys_signal.unit(), Some(unit));
         assert_eq!(sys_signal.compu_method(), Some(compu_method));
         assert_eq!(sys_signal.data_constr(), Some(data_constr));
+
+        // mappings
+        assert_eq!(signal.mappings().count(), 0);
+        let ipdu = system.create_isignal_ipdu("ipdu", &package, 8).unwrap();
+        let mapping = ipdu
+            .map_signal(
+                &signal,
+                0,
+                ByteOrder::MostSignificantByteLast,
+                None,
+                TransferProperty::Triggered,
+            )
+            .unwrap();
+        assert_eq!(signal.mappings().count(), 1);
+        assert_eq!(signal.mappings().next(), Some(mapping.clone()));
+        assert_eq!(mapping.signal().unwrap(), signal);
     }
 
     #[test]
@@ -802,9 +825,23 @@ mod tests {
             .unwrap();
 
         signal_group.add_data_transformation(&data_transformation).unwrap();
-
         assert_eq!(signal_group.data_transformations().count(), 1);
         assert_eq!(signal_group.data_transformations().next(), Some(data_transformation));
+
+        let someipxf_props = TransformationISignalPropsConfig::SomeIp(SomeIpTransformationISignalPropsConfig {
+            legacy_strings: None,
+            interface_version: None,
+            dynamic_length: None,
+            message_type: None,
+            size_of_array_length: None,
+            size_of_string_length: None,
+            size_of_struct_length: None,
+            size_of_union_length: None,
+        });
+        signal_group
+            .add_transformation_isignal_props(&transformer, &someipxf_props)
+            .unwrap();
+        assert_eq!(signal_group.transformation_isignal_props().count(), 1);
     }
 
     #[test]
@@ -825,5 +862,40 @@ mod tests {
 
         signal_group.add_signal(&signal).unwrap();
         assert_eq!(signal_group.signals().count(), 1);
+    }
+
+    #[test]
+    fn test_signal_triggering() {
+        let model = AutosarModel::new();
+        let _file = model.create_file("test.arxml", AutosarVersion::LATEST).unwrap();
+        let package = ArPackage::get_or_create(&model, "/test").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
+
+        let sw_base_type =
+            SwBaseType::new("sw_base_type", &package, 8, BaseTypeEncoding::None, None, None, None).unwrap();
+
+        let sys_signal = package.create_system_signal("sys_signal").unwrap();
+        let signal = system
+            .create_isignal("signal", 8, &sys_signal, Some(&sw_base_type), &package)
+            .unwrap();
+
+        // signal triggering
+        let cluster = system
+            .create_can_cluster("cluster", &package, &CanClusterSettings::default())
+            .unwrap();
+        let channel = cluster.create_physical_channel("channel").unwrap();
+        let st = ISignalTriggering::new(&signal, &channel.clone().into()).unwrap();
+
+        assert_eq!(st.physical_channel().unwrap(), channel.clone().into());
+
+        let ecuinstance = system.create_ecu_instance("ecu", &package).unwrap();
+        let controller = ecuinstance.create_can_communication_controller("controller").unwrap();
+        controller.connect_physical_channel("connection", &channel).unwrap();
+
+        assert_eq!(st.signal_ports().count(), 0);
+        let signal_port = st.connect_to_ecu(&ecuinstance, CommunicationDirection::In).unwrap();
+        assert_eq!(st.signal_ports().count(), 1);
+        assert_eq!(signal_port.ecu(), Some(ecuinstance));
+        assert_eq!(signal_port.communication_direction(), Some(CommunicationDirection::In));
     }
 }

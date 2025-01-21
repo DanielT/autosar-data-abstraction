@@ -3,6 +3,8 @@ use autosar_data::ElementName;
 use datatype::{CompuMethod, DataConstr, SwBaseType};
 use std::fmt::Display;
 
+use super::AbstractAutosarDataType;
+
 /// Interface for implementation data types, which provides default implementations for common operations
 pub trait AbstractImplementationDataType: AbstractionElement {
     /// get the category of this implementation data type
@@ -166,6 +168,7 @@ pub trait AbstractImplementationDataType: AbstractionElement {
 pub struct ImplementationDataType(Element);
 abstraction_element!(ImplementationDataType, ImplementationDataType);
 
+impl AbstractAutosarDataType for ImplementationDataType {}
 impl AbstractImplementationDataType for ImplementationDataType {}
 
 impl ImplementationDataType {
@@ -213,15 +216,10 @@ fn apply_impl_data_settings(
     element: &Element,
     settings: &ImplementationDataTypeSettings,
 ) -> Result<(), AutosarAbstractionError> {
-    if let Some(cat_elem) = element.get_sub_element(ElementName::Category) {
-        element.remove_sub_element(cat_elem)?;
-    }
-    if let Some(sub_elements_elem) = element.get_sub_element(ElementName::SubElements) {
-        element.remove_sub_element(sub_elements_elem)?;
-    }
-    if let Some(sw_data_def_props_elem) = element.get_sub_element(ElementName::SwDataDefProps) {
-        element.remove_sub_element(sw_data_def_props_elem)?;
-    }
+    // remove the existing sub-elements of the implementation data type
+    let _ = element.remove_sub_element_kind(ElementName::Category);
+    let _ = element.remove_sub_element_kind(ElementName::SubElements);
+    let _ = element.remove_sub_element_kind(ElementName::SwDataDefProps);
 
     match settings {
         ImplementationDataTypeSettings::Value {
@@ -507,6 +505,15 @@ mod tests {
         let settings = ImplementationDataTypeSettings::Structure {
             name: "Structure".to_string(),
             elements: vec![
+                ImplementationDataTypeSettings::Union {
+                    name: "union".to_string(),
+                    elements: vec![ImplementationDataTypeSettings::Value {
+                        name: "MyImplDataType1".to_string(),
+                        base_type: base_type.clone(),
+                        compu_method: Some(compu_method.clone()),
+                        data_constraint: Some(data_constraint.clone()),
+                    }],
+                },
                 ImplementationDataTypeSettings::Value {
                     name: "MyImplDataType1".to_string(),
                     base_type: base_type.clone(),
@@ -536,15 +543,61 @@ mod tests {
         assert_eq!(impl_data_type.category(), Some(ImplementationDataCategory::Structure));
 
         let sub_elements = impl_data_type.sub_elements().collect::<Vec<_>>();
-        assert_eq!(sub_elements.len(), 3);
-        assert_eq!(sub_elements[0].category(), Some(ImplementationDataCategory::Value));
-        assert_eq!(sub_elements[1].category(), Some(ImplementationDataCategory::Array));
+        assert_eq!(sub_elements.len(), 4);
+        assert_eq!(sub_elements[0].category(), Some(ImplementationDataCategory::Union));
+        assert_eq!(sub_elements[1].category(), Some(ImplementationDataCategory::Value));
+        assert_eq!(sub_elements[2].category(), Some(ImplementationDataCategory::Array));
         assert_eq!(
-            sub_elements[2].category(),
+            sub_elements[3].category(),
             Some(ImplementationDataCategory::TypeReference)
         );
 
         let settings2 = impl_data_type.settings().unwrap();
         assert_eq!(settings, settings2);
+    }
+
+    #[test]
+    fn implementation_data_category() {
+        assert_eq!(ImplementationDataCategory::Value.to_string(), "VALUE");
+        assert_eq!(ImplementationDataCategory::DataReference.to_string(), "DATA_REFERENCE");
+        assert_eq!(
+            ImplementationDataCategory::FunctionReference.to_string(),
+            "FUNCTION_REFERENCE"
+        );
+        assert_eq!(ImplementationDataCategory::TypeReference.to_string(), "TYPE_REFERENCE");
+        assert_eq!(ImplementationDataCategory::Structure.to_string(), "STRUCTURE");
+        assert_eq!(ImplementationDataCategory::Union.to_string(), "UNION");
+        assert_eq!(ImplementationDataCategory::Array.to_string(), "ARRAY");
+
+        assert_eq!(
+            ImplementationDataCategory::try_from("VALUE").unwrap(),
+            ImplementationDataCategory::Value
+        );
+        assert_eq!(
+            ImplementationDataCategory::try_from("DATA_REFERENCE").unwrap(),
+            ImplementationDataCategory::DataReference
+        );
+        assert_eq!(
+            ImplementationDataCategory::try_from("FUNCTION_REFERENCE").unwrap(),
+            ImplementationDataCategory::FunctionReference
+        );
+        assert_eq!(
+            ImplementationDataCategory::try_from("TYPE_REFERENCE").unwrap(),
+            ImplementationDataCategory::TypeReference
+        );
+        assert_eq!(
+            ImplementationDataCategory::try_from("STRUCTURE").unwrap(),
+            ImplementationDataCategory::Structure
+        );
+        assert_eq!(
+            ImplementationDataCategory::try_from("UNION").unwrap(),
+            ImplementationDataCategory::Union
+        );
+        assert_eq!(
+            ImplementationDataCategory::try_from("ARRAY").unwrap(),
+            ImplementationDataCategory::Array
+        );
+
+        assert!(ImplementationDataCategory::try_from("invalid").is_err());
     }
 }

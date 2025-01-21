@@ -16,6 +16,8 @@ pub use senderreceiver::*;
 pub struct ModeSwitchInterface(Element);
 abstraction_element!(ModeSwitchInterface, ModeSwitchInterface);
 
+impl AbstractPortInterface for ModeSwitchInterface {}
+
 impl ModeSwitchInterface {
     /// Create a new `ModeSwitchInterface`
     pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
@@ -34,6 +36,8 @@ impl ModeSwitchInterface {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ParameterInterface(Element);
 abstraction_element!(ParameterInterface, ParameterInterface);
+
+impl AbstractPortInterface for ParameterInterface {}
 
 impl ParameterInterface {
     /// Create a new `ParameterInterface`
@@ -54,6 +58,8 @@ impl ParameterInterface {
 pub struct NvDataInterface(Element);
 abstraction_element!(NvDataInterface, NvDataInterface);
 
+impl AbstractPortInterface for NvDataInterface {}
+
 impl NvDataInterface {
     /// Create a new `NvDataInterface`
     pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
@@ -73,6 +79,8 @@ impl NvDataInterface {
 pub struct TriggerInterface(Element);
 abstraction_element!(TriggerInterface, TriggerInterface);
 
+impl AbstractPortInterface for TriggerInterface {}
+
 impl TriggerInterface {
     /// Create a new `TriggerInterface`
     pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
@@ -82,6 +90,11 @@ impl TriggerInterface {
         Ok(Self(trigger_interface))
     }
 }
+
+//##################################################################
+
+/// The `AbstractPortInterface` trait is a marker trait for all port interfaces
+pub trait AbstractPortInterface: AbstractionElement {}
 
 //##################################################################
 
@@ -115,41 +128,7 @@ impl AbstractionElement for PortInterface {
     }
 }
 
-impl From<SenderReceiverInterface> for PortInterface {
-    fn from(sender_receiver_interface: SenderReceiverInterface) -> Self {
-        PortInterface::SenderReceiverInterface(sender_receiver_interface)
-    }
-}
-
-impl From<ClientServerInterface> for PortInterface {
-    fn from(client_server_interface: ClientServerInterface) -> Self {
-        PortInterface::ClientServerInterface(client_server_interface)
-    }
-}
-
-impl From<ModeSwitchInterface> for PortInterface {
-    fn from(mode_switch_interface: ModeSwitchInterface) -> Self {
-        PortInterface::ModeSwitchInterface(mode_switch_interface)
-    }
-}
-
-impl From<ParameterInterface> for PortInterface {
-    fn from(parameter_interface: ParameterInterface) -> Self {
-        PortInterface::ParameterInterface(parameter_interface)
-    }
-}
-
-impl From<NvDataInterface> for PortInterface {
-    fn from(nv_data_interface: NvDataInterface) -> Self {
-        PortInterface::NvDataInterface(nv_data_interface)
-    }
-}
-
-impl From<TriggerInterface> for PortInterface {
-    fn from(trigger_interface: TriggerInterface) -> Self {
-        PortInterface::TriggerInterface(trigger_interface)
-    }
-}
+impl AbstractPortInterface for PortInterface {}
 
 impl TryFrom<Element> for PortInterface {
     type Error = AutosarAbstractionError;
@@ -171,5 +150,89 @@ impl TryFrom<Element> for PortInterface {
                 dest: "PortInterface".to_string(),
             }),
         }
+    }
+}
+
+//##################################################################
+
+#[cfg(test)]
+mod test {
+    use crate::software_component::AbstractSwComponentType;
+
+    use super::*;
+    use autosar_data::{AutosarModel, AutosarVersion};
+
+    #[test]
+    fn test_interfaces() {
+        let model = AutosarModel::new();
+        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
+        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+
+        let sender_receiver_interface = package
+            .create_sender_receiver_interface("sender_receiver_interface")
+            .unwrap();
+        let client_server_interface = package
+            .create_client_server_interface("client_server_interface")
+            .unwrap();
+        let mode_switch_interface = package.create_mode_switch_interface("mode_switch_interface").unwrap();
+        let parameter_interface = package.create_parameter_interface("parameter_interface").unwrap();
+        let nv_data_interface = package.create_nv_data_interface("nv_data_interface").unwrap();
+        let trigger_interface = package.create_trigger_interface("trigger_interface").unwrap();
+
+        let composition = package.create_composition_sw_component_type("composition").unwrap();
+
+        let port_1 = composition.create_p_port("port_1", &sender_receiver_interface).unwrap();
+        assert!(matches!(
+            port_1.port_interface(),
+            Ok(PortInterface::SenderReceiverInterface(interface)) if interface == sender_receiver_interface
+        ));
+        assert_eq!(
+            port_1.port_interface().unwrap().element(),
+            sender_receiver_interface.element()
+        );
+
+        let port_2 = composition.create_p_port("port_2", &client_server_interface).unwrap();
+        assert!(matches!(
+            port_2.port_interface(),
+            Ok(PortInterface::ClientServerInterface(interface)) if interface == client_server_interface
+        ));
+        assert_eq!(
+            port_2.port_interface().unwrap().element(),
+            client_server_interface.element()
+        );
+
+        let port_3 = composition.create_p_port("port_3", &mode_switch_interface).unwrap();
+        assert!(matches!(
+            port_3.port_interface(),
+            Ok(PortInterface::ModeSwitchInterface(interface)) if interface == mode_switch_interface
+        ));
+        assert_eq!(
+            port_3.port_interface().unwrap().element(),
+            mode_switch_interface.element()
+        );
+
+        let port_4 = composition.create_p_port("port_4", &parameter_interface).unwrap();
+        assert!(matches!(
+            port_4.port_interface(),
+            Ok(PortInterface::ParameterInterface(interface)) if interface == parameter_interface
+        ));
+        assert_eq!(
+            port_4.port_interface().unwrap().element(),
+            parameter_interface.element()
+        );
+
+        let port_5 = composition.create_p_port("port_5", &nv_data_interface).unwrap();
+        assert!(matches!(
+            port_5.port_interface(),
+            Ok(PortInterface::NvDataInterface(interface)) if interface == nv_data_interface
+        ));
+        assert_eq!(port_5.port_interface().unwrap().element(), nv_data_interface.element());
+
+        let port_6 = composition.create_p_port("port_6", &trigger_interface).unwrap();
+        assert!(matches!(
+            port_6.port_interface(),
+            Ok(PortInterface::TriggerInterface(interface)) if interface == trigger_interface
+        ));
+        assert_eq!(port_6.port_interface().unwrap().element(), trigger_interface.element());
     }
 }

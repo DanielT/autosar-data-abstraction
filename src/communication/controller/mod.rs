@@ -76,6 +76,24 @@ impl From<FlexrayCommunicationController> for CommunicationController {
 /// A trait for all communication controllers
 pub trait AbstractCommunicationController: AbstractionElement {
     /// Get the `EcuInstance` that contains this `CommunicationController`
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::{*, communication::*};
+    /// # let model = AutosarModel::new();
+    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
+    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
+    /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
+    /// let can_controller = ecu_instance.create_can_communication_controller("CanCtrl").unwrap();
+    /// assert_eq!(ecu_instance, can_controller.ecu_instance().unwrap());
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model while trying to get the ECU-INSTANCE
     fn ecu_instance(&self) -> Result<EcuInstance, AutosarAbstractionError> {
         // Note: it is always OK to unwrap the result of named_parent() because
         // the parent of a CommunicationController is always an EcuInstance

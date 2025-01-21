@@ -254,3 +254,75 @@ impl SwcToEcuMapping {
             .and_then(|target| EcuInstance::try_from(target).ok())
     }
 }
+
+//#########################################################
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::{
+        datatype::{ApplicationPrimitiveCategory, ApplicationPrimitiveDataType},
+        ArPackage, SystemCategory,
+    };
+    use autosar_data::AutosarModel;
+
+    #[test]
+    fn mappings() {
+        let model = AutosarModel::new();
+        let _file = model
+            .create_file("filename", autosar_data::AutosarVersion::LATEST)
+            .unwrap();
+        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let system = package
+            .create_system("test_system", SystemCategory::EcuExtract)
+            .unwrap();
+        let mapping = system.get_or_create_mapping("test_mapping").unwrap();
+
+        let ecu = system.create_ecu_instance("test_ecu", &package).unwrap();
+        let root_composition_type = package.create_composition_sw_component_type("test_swc").unwrap();
+        let _root_composition = system
+            .set_root_sw_composition("test_root_composition", &root_composition_type)
+            .unwrap();
+
+        let ecu_composition_type = package
+            .create_composition_sw_component_type("Ecu_A_Composition")
+            .unwrap();
+        let ecu_composition_prototype = root_composition_type
+            .create_component("Ecu_A_Composition_Prototype", &ecu_composition_type)
+            .unwrap();
+
+        // map ecu_composition_prototype to the ecu
+        let swc_to_ecu = mapping
+            .map_swc_to_ecu("test_swc_to_ecu", &ecu_composition_prototype, &ecu)
+            .unwrap();
+
+        assert_eq!(swc_to_ecu.target_component().unwrap(), ecu_composition_prototype);
+        assert_eq!(swc_to_ecu.ecu_instance().unwrap(), ecu);
+
+        // map a signal to a port
+        let sys_signal = package.create_system_signal("test_signal").unwrap();
+
+        let sender_receiver_interface = package
+            .create_sender_receiver_interface("SenderReceiverInterface")
+            .unwrap();
+        let data_type = ApplicationPrimitiveDataType::new(
+            "Primitive",
+            &package,
+            ApplicationPrimitiveCategory::Value,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let data_element = sender_receiver_interface
+            .create_data_element("element", &data_type)
+            .unwrap();
+        let sr_port = ecu_composition_type
+            .create_r_port("test_port", &sender_receiver_interface)
+            .unwrap();
+
+        mapping
+            .map_sender_receiver_to_signal(&sys_signal, &data_element, &sr_port, &[], None)
+            .unwrap();
+    }
+}

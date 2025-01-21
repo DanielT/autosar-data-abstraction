@@ -17,6 +17,13 @@ pub use compu_method::*;
 pub use implementationtype::*;
 pub use mapping::*;
 
+//#########################################################
+
+/// `AbstractAutosarDataType` is a marker trait for all data types
+pub trait AbstractAutosarDataType: AbstractionElement {}
+
+//#########################################################
+
 /// `AutosarDataType` is the abstract base class for all data types in the AUTOSAR metamodel.
 ///
 /// It encapsulates both application data types and implementation data types.
@@ -48,39 +55,23 @@ impl TryFrom<Element> for AutosarDataType {
 
     fn try_from(element: Element) -> Result<Self, Self::Error> {
         match element.element_name() {
-            ElementName::ApplicationPrimitiveDataType => Ok(ApplicationPrimitiveDataType::try_from(element)?.into()),
-            ElementName::ApplicationArrayDataType => Ok(ApplicationArrayDataType::try_from(element)?.into()),
-            ElementName::ApplicationRecordDataType => Ok(ApplicationRecordDataType::try_from(element)?.into()),
-            ElementName::ImplementationDataType => Ok(ImplementationDataType::try_from(element)?.into()),
+            ElementName::ApplicationPrimitiveDataType => Ok(Self::ApplicationPrimitiveDataType(
+                ApplicationPrimitiveDataType::try_from(element)?,
+            )),
+            ElementName::ApplicationArrayDataType => Ok(Self::ApplicationArrayDataType(
+                ApplicationArrayDataType::try_from(element)?,
+            )),
+            ElementName::ApplicationRecordDataType => Ok(Self::ApplicationRecordDataType(
+                ApplicationRecordDataType::try_from(element)?,
+            )),
+            ElementName::ImplementationDataType => {
+                Ok(Self::ImplementationDataType(ImplementationDataType::try_from(element)?))
+            }
             _ => Err(AutosarAbstractionError::ConversionError {
                 element,
                 dest: "AutosarDataType".to_string(),
             }),
         }
-    }
-}
-
-impl From<ApplicationPrimitiveDataType> for AutosarDataType {
-    fn from(data_type: ApplicationPrimitiveDataType) -> Self {
-        AutosarDataType::ApplicationPrimitiveDataType(data_type)
-    }
-}
-
-impl From<ApplicationArrayDataType> for AutosarDataType {
-    fn from(data_type: ApplicationArrayDataType) -> Self {
-        AutosarDataType::ApplicationArrayDataType(data_type)
-    }
-}
-
-impl From<ApplicationRecordDataType> for AutosarDataType {
-    fn from(data_type: ApplicationRecordDataType) -> Self {
-        AutosarDataType::ApplicationRecordDataType(data_type)
-    }
-}
-
-impl From<ImplementationDataType> for AutosarDataType {
-    fn from(data_type: ImplementationDataType) -> Self {
-        AutosarDataType::ImplementationDataType(data_type)
     }
 }
 
@@ -198,35 +189,23 @@ impl DataConstrRule {
     /// get the lower limit
     #[must_use]
     pub fn lower_limit(&self) -> Option<f64> {
-        let cdata = self
-            .element()
+        self.element()
             .get_sub_element(ElementName::InternalConstrs)
-            .or_else(|| self.element().get_sub_element(ElementName::PhysConstrs))
-            .and_then(|constrs| constrs.get_sub_element(ElementName::LowerLimit))
-            .and_then(|limit| limit.character_data())?;
-
-        if let Some(value) = cdata.parse_integer::<i64>() {
-            Some(value as f64)
-        } else {
-            cdata.string_value().and_then(|s| s.parse::<f64>().ok())
-        }
+            .or(self.element().get_sub_element(ElementName::PhysConstrs))?
+            .get_sub_element(ElementName::LowerLimit)?
+            .character_data()?
+            .parse_float()
     }
 
     /// get the upper limit
     #[must_use]
     pub fn upper_limit(&self) -> Option<f64> {
-        let cdata = self
-            .element()
+        self.element()
             .get_sub_element(ElementName::InternalConstrs)
-            .or_else(|| self.element().get_sub_element(ElementName::PhysConstrs))
-            .and_then(|constrs| constrs.get_sub_element(ElementName::UpperLimit))
-            .and_then(|limit| limit.character_data())?;
-
-        if let Some(value) = cdata.parse_integer::<i64>() {
-            Some(value as f64)
-        } else {
-            cdata.string_value().and_then(|s| s.parse::<f64>().ok())
-        }
+            .or(self.element().get_sub_element(ElementName::PhysConstrs))?
+            .get_sub_element(ElementName::UpperLimit)?
+            .character_data()?
+            .parse_float()
     }
 }
 
@@ -272,5 +251,52 @@ mod test {
 
         let rules = data_constr.data_constr_rules().collect::<Vec<_>>();
         assert_eq!(rules.len(), 2);
+    }
+
+    #[test]
+    fn autosar_data_type() {
+        let model = AutosarModel::new();
+        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
+        let package = ArPackage::get_or_create(&model, "/DataTypes").unwrap();
+
+        let app_primitive = ApplicationPrimitiveDataType::new(
+            "Primitive",
+            &package,
+            ApplicationPrimitiveCategory::Value,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let app_array = ApplicationArrayDataType::new("Array", &package, &app_primitive, 1).unwrap();
+        let app_record = ApplicationRecordDataType::new("Record", &package).unwrap();
+        let base_type =
+            SwBaseType::new("uint8", &package, 8, BaseTypeEncoding::None, None, None, Some("uint8")).unwrap();
+        let impl_settings = ImplementationDataTypeSettings::Value {
+            name: "ImplValue".to_string(),
+            base_type: base_type.clone(),
+            compu_method: None,
+            data_constraint: None,
+        };
+        let impl_type = ImplementationDataType::new(&package, impl_settings).unwrap();
+
+        let app_primitive2 = AutosarDataType::try_from(app_primitive.element().clone()).unwrap();
+        assert!(matches!(
+            app_primitive2,
+            AutosarDataType::ApplicationPrimitiveDataType(_)
+        ));
+        assert_eq!(app_primitive2.element(), app_primitive.element());
+
+        let app_array2 = AutosarDataType::try_from(app_array.element().clone()).unwrap();
+        assert!(matches!(app_array2, AutosarDataType::ApplicationArrayDataType(_)));
+        assert_eq!(app_array2.element(), app_array.element());
+
+        let app_record2 = AutosarDataType::try_from(app_record.element().clone()).unwrap();
+        assert!(matches!(app_record2, AutosarDataType::ApplicationRecordDataType(_)));
+        assert_eq!(app_record2.element(), app_record.element());
+
+        let impl_type2 = AutosarDataType::try_from(impl_type.element().clone()).unwrap();
+        assert!(matches!(impl_type2, AutosarDataType::ImplementationDataType(_)));
+        assert_eq!(impl_type2.element(), impl_type.element());
     }
 }

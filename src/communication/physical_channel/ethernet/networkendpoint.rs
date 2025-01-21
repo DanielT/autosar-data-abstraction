@@ -278,3 +278,74 @@ impl IPv6AddressSource {
         }
     }
 }
+
+//##################################################################
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::{ArPackage, SystemCategory};
+    use autosar_data::{AutosarModel, AutosarVersion};
+
+    #[test]
+    fn test_network_endpoint_ipv4() {
+        let model = AutosarModel::new();
+        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
+        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
+        let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
+        let channel = cluster.create_physical_channel("Channel", None).unwrap();
+
+        // create a static socket connection between the local_socket and the remote_socket
+        let address1 = NetworkEndpointAddress::IPv4 {
+            address: Some("192.168.0.1".to_string()),
+            address_source: Some(IPv4AddressSource::Fixed),
+            default_gateway: Some("192.168.0.2".to_string()),
+            network_mask: Some("255.255.0.0".to_string()),
+        };
+        let network_endpoint = channel
+            .create_network_endpoint("RemoteAddress", address1.clone(), None)
+            .unwrap();
+        assert_eq!(network_endpoint.addresses().count(), 1);
+        assert_eq!(network_endpoint.addresses().next().unwrap(), address1);
+
+        let address2 = NetworkEndpointAddress::IPv4 {
+            address: None,
+            address_source: Some(IPv4AddressSource::AutoIp),
+            default_gateway: None,
+            network_mask: None,
+        };
+        network_endpoint.add_network_endpoint_address(address2).unwrap();
+        assert_eq!(network_endpoint.addresses().count(), 2);
+    }
+
+    #[test]
+    fn test_network_endpoint_ipv6() {
+        let model = AutosarModel::new();
+        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
+        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
+        let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
+        let channel = cluster.create_physical_channel("Channel", None).unwrap();
+
+        // create a static socket connection between the local_socket and the remote_socket
+        let address1 = NetworkEndpointAddress::IPv6 {
+            address: Some("2001:0db8:0000:0000:0000:0000:0000:0001".to_string()),
+            address_source: Some(IPv6AddressSource::Fixed),
+            default_router: Some("2001:0db8:0000:0000:0000:0000:0000:0002".to_string()),
+        };
+        let network_endpoint = channel
+            .create_network_endpoint("RemoteAddress", address1.clone(), None)
+            .unwrap();
+        assert_eq!(network_endpoint.addresses().count(), 1);
+        assert_eq!(network_endpoint.addresses().next().unwrap(), address1);
+
+        let address2 = NetworkEndpointAddress::IPv6 {
+            address: None,
+            address_source: Some(IPv6AddressSource::LinkLocal),
+            default_router: None,
+        };
+        network_endpoint.add_network_endpoint_address(address2).unwrap();
+        assert_eq!(network_endpoint.addresses().count(), 2);
+    }
+}

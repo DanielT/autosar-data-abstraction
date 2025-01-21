@@ -311,3 +311,98 @@ impl From<CanFrameType> for EnumItem {
 //##################################################################
 
 reflist_iterator!(CanFrameTriggeringsIterator, CanFrameTriggering);
+
+//##################################################################
+
+#[cfg(test)]
+mod test {
+    use autosar_data::{AutosarModel, AutosarVersion};
+
+    use super::*;
+    use crate::{communication::CanClusterSettings, SystemCategory};
+
+    #[test]
+    fn can_frame() {
+        let model = AutosarModel::new();
+        let _ = model.create_file("test", AutosarVersion::LATEST).unwrap();
+        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let system = package.create_system("System", SystemCategory::EcuExtract).unwrap();
+        let can_cluster = system
+            .create_can_cluster("Cluster", &package, &CanClusterSettings::default())
+            .unwrap();
+        let channel = can_cluster.create_physical_channel("Channel").unwrap();
+
+        let ecu_instance = system.create_ecu_instance("ECU", &package).unwrap();
+        let can_controller = ecu_instance.create_can_communication_controller("Controller").unwrap();
+        can_controller.connect_physical_channel("connection", &channel).unwrap();
+
+        let pdu1 = system.create_isignal_ipdu("pdu1", &package, 8).unwrap();
+        let pdu2 = system.create_isignal_ipdu("pdu2", &package, 8).unwrap();
+
+        // create frames
+        let frame1 = system.create_can_frame("frame1", 8, &package).unwrap();
+        let frame2 = system.create_can_frame("frame2", 8, &package).unwrap();
+
+        // map a PDU to the frame before it has been connected to the channel
+        let mapping1 = frame1
+            .map_pdu(&pdu1, 7, ByteOrder::MostSignificantByteFirst, None)
+            .unwrap();
+        assert!(frame1.mapped_pdus().count() == 1);
+        assert_eq!(frame1.mapped_pdus().next().unwrap(), mapping1);
+
+        // trigger both frames
+        let frame_triggering1 = channel
+            .trigger_frame(&frame1, 0x123, CanAddressingMode::Standard, CanFrameType::Can20)
+            .unwrap();
+        assert_eq!(frame1.frame_triggerings().count(), 1);
+        let frame_triggering2 = channel
+            .trigger_frame(&frame2, 0x456, CanAddressingMode::Standard, CanFrameType::Can20)
+            .unwrap();
+        assert_eq!(frame2.frame_triggerings().count(), 1);
+
+        // try to set an invalid identifier
+        let result = frame_triggering1.set_identifier(0xffff_ffff);
+        assert!(result.is_err());
+
+        // frame 1 already had a PDU mapped to it before it was connected to the channel, so a pdu triggering should have been created
+        assert_eq!(frame_triggering1.pdu_triggerings().count(), 1);
+        // frame 2 has no PDUs mapped to it, so it has no PDU triggerings
+        assert_eq!(frame_triggering2.pdu_triggerings().count(), 0);
+
+        // map a PDU to frame2 after it has been connected to the channel
+        let mapping2 = frame2
+            .map_pdu(&pdu2, 7, ByteOrder::MostSignificantByteFirst, None)
+            .unwrap();
+        assert!(frame2.mapped_pdus().count() == 1);
+        assert_eq!(frame2.mapped_pdus().next().unwrap(), mapping2);
+
+        // mapping the PDU to the connected frame should create a PDU triggering
+        assert_eq!(frame_triggering2.pdu_triggerings().count(), 1);
+
+        // connect the frame triggerings to an ECU
+        let port1 = frame_triggering1
+            .connect_to_ecu(&ecu_instance, CommunicationDirection::Out)
+            .unwrap();
+        let port2 = frame_triggering2
+            .connect_to_ecu(&ecu_instance, CommunicationDirection::In)
+            .unwrap();
+
+        assert_eq!(frame_triggering1.identifier().unwrap(), 0x123);
+        assert_eq!(
+            frame_triggering1.addressing_mode().unwrap(),
+            CanAddressingMode::Standard
+        );
+        assert_eq!(frame_triggering1.frame_type().unwrap(), CanFrameType::Can20);
+        assert_eq!(frame_triggering1.frame().unwrap(), frame1);
+        assert_eq!(frame_triggering1.physical_channel().unwrap(), channel);
+
+        assert_eq!(mapping1.pdu().unwrap(), pdu1.into());
+        assert_eq!(mapping1.byte_order().unwrap(), ByteOrder::MostSignificantByteFirst);
+        assert_eq!(mapping1.start_position().unwrap(), 7);
+
+        assert_eq!(port1.ecu().unwrap(), ecu_instance);
+        assert_eq!(port1.communication_direction().unwrap(), CommunicationDirection::Out);
+        assert_eq!(port2.ecu().unwrap(), ecu_instance);
+        assert_eq!(port2.communication_direction().unwrap(), CommunicationDirection::In);
+    }
+}

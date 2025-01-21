@@ -138,19 +138,24 @@ impl EthernetPhysicalChannel {
         if let Some(ecu_instance) = ecu {
             let version = self.0.min_version()?;
             if version <= AutosarVersion::Autosar_00046 {
-                let ne_element = network_endpoint.element().clone();
+                let ne_element = network_endpoint.element();
 
                 // get a connector referenced by this physical channel which is contained in the ecu_instance
                 if let Some(connector) = self.ecu_connector(ecu_instance) {
                     let _ = connector
                         .get_or_create_sub_element(ElementName::NetworkEndpointRefs)
                         .and_then(|ner| ner.create_sub_element(ElementName::NetworkEndpointRef))
-                        .and_then(|ner| ner.set_reference_target(&ne_element));
+                        .and_then(|ner| ner.set_reference_target(ne_element));
                 } else {
-                    // no connector between the ECU and this channel -> abort
-                    self.0
+                    // no connector between the ECU and this channel
+                    // -> abort after removing the network endpoint which was already created
+                    let _ = self
+                        .element()
                         .get_sub_element(ElementName::NetworkEndpoints)
-                        .and_then(|endpoints| endpoints.remove_sub_element(ne_element).ok());
+                        .and_then(|nes| nes.remove_sub_element(ne_element.clone()).ok());
+                    return Err(AutosarAbstractionError::InvalidParameter(
+                        "The ECU must be connected to the channel".to_string(),
+                    ));
                 }
             }
         }
@@ -387,7 +392,7 @@ impl EthernetPhysicalChannel {
     /// SD uses either socket connection bundles or static socket connections to communicate.
     ///
     /// `ecu` is the ECU that should be configured for SD.
-    /// `unicast_socket` is the socket address used for unicast rt/tx communication by the ECU.
+    /// `unicast_socket` is the socket address used for unicast rx/tx communication by the ECU.
     /// `unicast_rx_pdu` and `unicast_tx_pdu` are the `GeneralPurposePdus` used for the unicast communication.
     /// `common_config` contains common configuration settings that can be used for all SD ECUs.
     ///  - `multicast_rx_socket` is the socket address used for multicast communication by all SD ECUs.
@@ -668,7 +673,7 @@ impl EthernetPhysicalChannel {
                     .is_some_and(|sp| &sp == common_config.multicast_rx_socket)
                     && scb.bundled_connections().any(|sc| {
                         sc.client_ip_addr_from_connection_request() == Some(true)
-                            && sc.client_port().is_some_and(|cp| &cp == unicast_socket)
+                            && sc.client_port().is_some_and(|cp| &cp == common_config.remote_socket)
                             && sc.pdu_triggerings().count() == 1
                     })
             });
@@ -719,7 +724,7 @@ impl EthernetPhysicalChannel {
         };
         let ssc_unicast = unicast_socket.static_socket_connections().find(|ssc| {
             ssc.remote_socket().is_some_and(|rs| &rs == common_config.remote_socket)
-                && ssc.i_pdu_identifiers().count() == 2
+                && ssc.ipdu_identifiers().count() == 2
         });
 
         if ssc_unicast.is_none() {
@@ -765,11 +770,12 @@ impl EthernetPhysicalChannel {
             .multicast_rx_socket
             .static_socket_connections()
             .find(|ssc| {
-                ssc.remote_socket().is_some_and(|rs| &rs == unicast_socket) && ssc.i_pdu_identifiers().count() == 1
+                ssc.remote_socket().is_some_and(|rs| &rs == common_config.remote_socket)
+                    && ssc.ipdu_identifiers().count() == 1
             });
 
         let pt_multicast_rx = if let Some(pt) = ssc_multicast
-            .and_then(|ssc| ssc.i_pdu_identifiers().next())
+            .and_then(|ssc| ssc.ipdu_identifiers().next())
             .and_then(|ipi| ipi.pdu_triggering())
         {
             // the PduTriggering already exists, return it
@@ -856,24 +862,24 @@ impl StaticSocketConnection {
         tcp_connect_timeout: Option<f64>,
     ) -> Result<Self, AutosarAbstractionError> {
         let connections = parent.get_or_create_sub_element(ElementName::StaticSocketConnections)?;
-        let ssc = connections.create_named_sub_element(ElementName::StaticSocketConnection, name)?;
+        let ssc_elem = connections.create_named_sub_element(ElementName::StaticSocketConnection, name)?;
 
-        ssc.create_sub_element(ElementName::RemoteAddresss)?
+        ssc_elem
+            .create_sub_element(ElementName::RemoteAddresss)?
             .create_sub_element(ElementName::SocketAddressRefConditional)?
             .create_sub_element(ElementName::SocketAddressRef)?
             .set_reference_target(remote_address.element())?;
 
+        let ssc = Self(ssc_elem);
         if let Some(role) = tcp_role {
-            ssc.create_sub_element(ElementName::TcpRole)?
-                .set_character_data::<EnumItem>(role.into())?;
+            ssc.set_tcp_role(role)?;
         }
 
         if let Some(timeout) = tcp_connect_timeout {
-            ssc.create_sub_element(ElementName::TcpConnectTimeout)?
-                .set_character_data(timeout)?;
+            ssc.set_tcp_connect_timeout(timeout)?;
         }
 
-        Ok(Self(ssc))
+        Ok(ssc)
     }
 
     /// get the socket address containing this static socket connection
@@ -885,7 +891,13 @@ impl StaticSocketConnection {
     /// get the remote socket of this connection
     #[must_use]
     pub fn remote_socket(&self) -> Option<SocketAddress> {
-        let remote_socket = self.element().get_sub_element(ElementName::RemoteAddresss)?;
+        let remote_socket = self
+            .element()
+            .get_sub_element(ElementName::RemoteAddresss)?
+            .get_sub_element(ElementName::SocketAddressRefConditional)?
+            .get_sub_element(ElementName::SocketAddressRef)?
+            .get_reference_target()
+            .ok()?;
         SocketAddress::try_from(remote_socket).ok()
     }
 
@@ -900,7 +912,7 @@ impl StaticSocketConnection {
     }
 
     /// create an iterator over all `SoConIPduIdentifiers` in this static socket connection
-    pub fn i_pdu_identifiers(&self) -> impl Iterator<Item = SoConIPduIdentifier> {
+    pub fn ipdu_identifiers(&self) -> impl Iterator<Item = SoConIPduIdentifier> {
         self.element()
             .get_sub_element(ElementName::IPduIdentifiers)
             .into_iter()
@@ -911,6 +923,41 @@ impl StaticSocketConnection {
                     .and_then(|sciir| sciir.get_reference_target().ok())
                     .and_then(|scii| SoConIPduIdentifier::try_from(scii).ok())
             })
+    }
+
+    /// set the TCP role of this static socket connection
+    pub fn set_tcp_role(&self, role: TcpRole) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::TcpRole)?
+            .set_character_data::<EnumItem>(role.into())?;
+        Ok(())
+    }
+
+    /// get the TCP role of this static socket connection
+    #[must_use]
+    pub fn tcp_role(&self) -> Option<TcpRole> {
+        self.element()
+            .get_sub_element(ElementName::TcpRole)
+            .and_then(|elem| elem.character_data())
+            .and_then(|cdata| cdata.enum_value())
+            .and_then(|enumitem| enumitem.try_into().ok())
+    }
+
+    /// set the TCP connect timeout of this static socket connection
+    pub fn set_tcp_connect_timeout(&self, timeout: f64) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::TcpConnectTimeout)?
+            .set_character_data(timeout)?;
+        Ok(())
+    }
+
+    /// get the TCP connect timeout of this static socket connection
+    #[must_use]
+    pub fn tcp_connect_timeout(&self) -> Option<f64> {
+        self.element()
+            .get_sub_element(ElementName::TcpConnectTimeout)
+            .and_then(|elem| elem.character_data())
+            .and_then(|cdata| cdata.parse_float())
     }
 }
 
@@ -935,7 +982,7 @@ impl SocketConnectionIpduIdentifierSet {
     }
 
     /// create a new `SoConIPduIdentifier` in this set
-    pub fn create_socon_ipdu_identifier<T: Into<Pdu> + Clone>(
+    pub fn create_socon_ipdu_identifier<T: AbstractPdu>(
         &self,
         name: &str,
         pdu: &T,
@@ -988,11 +1035,7 @@ impl SoConIPduIdentifier {
         collection_trigger: Option<PduCollectionTrigger>,
     ) -> Result<Self, AutosarAbstractionError> {
         let scii = Self(parent.create_named_sub_element(ElementName::SoConIPduIdentifier, name)?);
-
-        let pt = PduTriggering::new(pdu, &channel.clone().into())?;
-        scii.element()
-            .create_sub_element(ElementName::PduTriggeringRef)?
-            .set_reference_target(pt.element())?;
+        scii.set_pdu_internal(pdu, channel)?;
 
         if let Some(header_id) = header_id {
             scii.set_header_id(header_id)?;
@@ -1027,9 +1070,12 @@ impl SoConIPduIdentifier {
                 if old_pdu == *pdu {
                     return Ok(());
                 }
-                // remove old pdu
-                // -> pt_old.remove();
-                todo!("remove() is not implemented yet");
+                // remove old pdu_triggering - ideally this should use a remove() method on the
+                // PduTriggering, but for now there is a "manual" implementation
+                channel
+                    .element()
+                    .get_sub_element(ElementName::PduTriggerings)
+                    .and_then(|pts| pts.remove_sub_element(pt_old.element().clone()).ok());
             }
         }
         let pt_new = PduTriggering::new(pdu, &channel.clone().into())?;
@@ -1042,7 +1088,7 @@ impl SoConIPduIdentifier {
     /// set the header id for this `SoConIPduIdentifier`
     pub fn set_header_id(&self, header_id: u64) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::HeaderId)?
+            .get_or_create_sub_element(ElementName::HeaderId)?
             .set_character_data(header_id)?;
         Ok(())
     }
@@ -1050,7 +1096,7 @@ impl SoConIPduIdentifier {
     /// set the timeout for this `SoConIPduIdentifier`
     pub fn set_timeout(&self, timeout: f64) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::PduCollectionPduTimeout)?
+            .get_or_create_sub_element(ElementName::PduCollectionPduTimeout)?
             .set_character_data(timeout)?;
         Ok(())
     }
@@ -1058,7 +1104,7 @@ impl SoConIPduIdentifier {
     /// set the collection trigger for this `SoConIPduIdentifier`
     pub fn set_collection_trigger(&self, trigger: PduCollectionTrigger) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::PduCollectionTrigger)?
+            .get_or_create_sub_element(ElementName::PduCollectionTrigger)?
             .set_character_data::<EnumItem>(trigger.into())?;
         Ok(())
     }
@@ -1189,11 +1235,76 @@ impl TryFrom<EnumItem> for EventGroupControlType {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{ArPackage, SystemCategory};
+    use crate::{communication::GeneralPurposePduCategory, ArPackage, System, SystemCategory};
     use autosar_data::{AutosarModel, AutosarVersion};
 
     #[test]
-    fn channel() {
+    fn channel_network_endpoint() {
+        let model = AutosarModel::new();
+        // note: for this test, the version should be < AUTOSAR_00046
+        model.create_file("filename", AutosarVersion::Autosar_00044).unwrap();
+        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
+        let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
+        let channel = cluster.create_physical_channel("Channel", None).unwrap();
+
+        // create a network endpoint that is not referenced by an ECU
+        let endpoint = channel
+            .create_network_endpoint(
+                "Endpoint",
+                NetworkEndpointAddress::IPv4 {
+                    address: Some("192.168.0.1".to_string()),
+                    address_source: None,
+                    default_gateway: None,
+                    network_mask: None,
+                },
+                None,
+            )
+            .unwrap();
+        assert_eq!(channel.network_endpoints().next().unwrap(), endpoint);
+
+        // create a network endpoint that is referenced by an ECU
+        // references from the ECU to the network endpoint are only used when the version is <= AUTOSAR_00046
+        // variant 1 - the ECU is not connected to the channel, so it is not allowed to reference the endpoint
+        let ecu = system.create_ecu_instance("ECU", &pkg).unwrap();
+        let result = channel.create_network_endpoint(
+            "Endpoint1",
+            NetworkEndpointAddress::IPv4 {
+                address: Some("192.168.0.2".to_string()),
+                address_source: None,
+                default_gateway: None,
+                network_mask: None,
+            },
+            Some(&ecu),
+        );
+        assert!(result.is_err());
+        assert_eq!(channel.network_endpoints().next().unwrap(), endpoint);
+
+        // variant 2 - the ECU is connected to the channel, so it is allowed to reference the endpoint
+        let ethernet_controller = ecu
+            .create_ethernet_communication_controller("Controller", Some("01:23:45:ab:cd:ef".to_string()))
+            .unwrap();
+        ethernet_controller
+            .connect_physical_channel("connection", &channel)
+            .unwrap();
+        let endpoint = channel
+            .create_network_endpoint(
+                "Endpoint2",
+                NetworkEndpointAddress::IPv4 {
+                    address: Some("192.168.0.2".to_string()),
+                    address_source: None,
+                    default_gateway: None,
+                    network_mask: None,
+                },
+                Some(&ecu),
+            )
+            .unwrap();
+        assert_eq!(channel.network_endpoints().last().unwrap(), endpoint);
+        assert_eq!(channel.network_endpoints().count(), 2);
+    }
+
+    #[test]
+    fn channel_vlan() {
         let model = AutosarModel::new();
         model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
         let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
@@ -1221,5 +1332,409 @@ mod test {
         elem_vlanid.set_character_data(1).unwrap();
         let vi = channel.vlan_info().unwrap();
         assert_eq!(vi.vlan_id, 1);
+    }
+
+    #[test]
+    fn sd_configuration_old() {
+        let model = AutosarModel::new();
+        // note: for this test, the version should be < AUTOSAR_00046
+        model.create_file("filename", AutosarVersion::Autosar_00044).unwrap();
+        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
+        let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
+        let channel = cluster.create_physical_channel("Channel", None).unwrap();
+
+        let ecu = system.create_ecu_instance("ECU", &pkg).unwrap();
+        let controller = ecu
+            .create_ethernet_communication_controller("EthController", None)
+            .unwrap();
+        controller.connect_physical_channel("connection", &channel).unwrap();
+
+        let (
+            unicast_socket,
+            multicast_rx_socket,
+            remote_anyaddr_socket,
+            unicast_rx_pdu,
+            unicast_tx_pdu,
+            multicast_rx_pdu,
+        ) = prepare_sd_config_items(&pkg, &system, &channel, &ecu);
+
+        let common_config = CommonServiceDiscoveryConfig {
+            multicast_rx_socket: &multicast_rx_socket,
+            multicast_rx_pdu: &multicast_rx_pdu,
+            remote_socket: &remote_anyaddr_socket,
+            name_prefix: None,
+            prefer_static_socket_connections: false,
+            ipdu_identifier_set: None,
+        };
+
+        let result = channel.configure_service_discovery_for_ecu(
+            &ecu,
+            &unicast_socket,
+            &unicast_rx_pdu,
+            &unicast_tx_pdu,
+            &common_config,
+        );
+        assert!(result.is_ok());
+
+        let connection_bundles = channel
+            .element()
+            .get_sub_element(ElementName::SoAdConfig)
+            .unwrap()
+            .get_sub_element(ElementName::ConnectionBundles)
+            .unwrap();
+        assert_eq!(connection_bundles.sub_elements().count(), 2);
+        assert!(connection_bundles
+            .sub_elements()
+            .filter_map(|elem| SocketConnectionBundle::try_from(elem).ok())
+            .any(|scb| {
+                scb.server_port().is_some_and(|sp| sp == unicast_socket)
+                    && scb.bundled_connections().any(|sc| {
+                        sc.client_ip_addr_from_connection_request() == Some(true)
+                            && sc.client_port().is_some_and(|cp| &cp == common_config.remote_socket)
+                            && sc.pdu_triggerings().count() == 2
+                    })
+            }));
+        assert!(connection_bundles
+            .sub_elements()
+            .filter_map(|elem| SocketConnectionBundle::try_from(elem).ok())
+            .any(|scb| {
+                scb.server_port()
+                    .is_some_and(|sp| &sp == common_config.multicast_rx_socket)
+                    && scb.bundled_connections().any(|sc| {
+                        sc.client_ip_addr_from_connection_request() == Some(true)
+                            && sc.client_port().is_some_and(|cp| &cp == common_config.remote_socket)
+                            && sc.pdu_triggerings().count() == 1
+                    })
+            }));
+
+        // run the function again. This should not create new elements
+        let result = channel.configure_service_discovery_for_ecu(
+            &ecu,
+            &unicast_socket,
+            &unicast_rx_pdu,
+            &unicast_tx_pdu,
+            &common_config,
+        );
+        assert!(result.is_ok());
+        assert_eq!(connection_bundles.sub_elements().count(), 2);
+    }
+
+    #[test]
+    fn sd_configuration_new() {
+        let model = AutosarModel::new();
+        // note: for this test, the version should be < AUTOSAR_00046
+        model.create_file("filename", AutosarVersion::Autosar_00053).unwrap();
+        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
+        let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
+        let channel = cluster.create_physical_channel("Channel", None).unwrap();
+
+        let ecu = system.create_ecu_instance("ECU", &pkg).unwrap();
+        let controller = ecu
+            .create_ethernet_communication_controller("EthController", None)
+            .unwrap();
+        controller.connect_physical_channel("connection", &channel).unwrap();
+
+        let (
+            unicast_socket,
+            multicast_rx_socket,
+            remote_anyaddr_socket,
+            unicast_rx_pdu,
+            unicast_tx_pdu,
+            multicast_rx_pdu,
+        ) = prepare_sd_config_items(&pkg, &system, &channel, &ecu);
+        let ipdu_identifier_set = system
+            .create_socket_connection_ipdu_identifier_set("IpduIdentifierSet", &pkg)
+            .unwrap();
+
+        let common_config = CommonServiceDiscoveryConfig {
+            multicast_rx_socket: &multicast_rx_socket,
+            multicast_rx_pdu: &multicast_rx_pdu,
+            remote_socket: &remote_anyaddr_socket,
+            name_prefix: None,
+            prefer_static_socket_connections: true,
+            ipdu_identifier_set: Some(&ipdu_identifier_set),
+        };
+
+        let result = channel.configure_service_discovery_for_ecu(
+            &ecu,
+            &unicast_socket,
+            &unicast_rx_pdu,
+            &unicast_tx_pdu,
+            &common_config,
+        );
+        assert!(result.is_ok());
+
+        // check if the static socket connections were created
+        assert!(unicast_socket.static_socket_connections().count() == 1);
+        assert!(unicast_socket.static_socket_connections().any(|ssc| {
+            ssc.remote_socket().is_some_and(|rs| &rs == common_config.remote_socket)
+                && ssc.ipdu_identifiers().count() == 2
+        }));
+
+        assert!(multicast_rx_socket.static_socket_connections().count() == 1);
+        assert!(multicast_rx_socket.static_socket_connections().any(|ssc| {
+            ssc.remote_socket().is_some_and(|rs| &rs == common_config.remote_socket)
+                && ssc.ipdu_identifiers().count() == 1
+        }));
+
+        // run the function again. This should not create new elements
+        let result = channel.configure_service_discovery_for_ecu(
+            &ecu,
+            &unicast_socket,
+            &unicast_rx_pdu,
+            &unicast_tx_pdu,
+            &common_config,
+        );
+        assert!(result.is_ok());
+
+        assert!(unicast_socket.static_socket_connections().count() == 1);
+        assert!(multicast_rx_socket.static_socket_connections().count() == 1);
+    }
+
+    fn prepare_sd_config_items(
+        pkg: &ArPackage,
+        system: &System,
+        channel: &EthernetPhysicalChannel,
+        ecu: &EcuInstance,
+    ) -> (
+        SocketAddress,
+        SocketAddress,
+        SocketAddress,
+        GeneralPurposePdu,
+        GeneralPurposePdu,
+        GeneralPurposePdu,
+    ) {
+        let network_address = NetworkEndpointAddress::IPv4 {
+            address: Some("192.168.0.1".to_string()),
+            address_source: Some(IPv4AddressSource::Fixed),
+            default_gateway: Some("192.168.0.200".to_string()),
+            network_mask: Some("255.255.255.0".to_string()),
+        };
+        let network_endpoint = channel
+            .create_network_endpoint("local_endpoint", network_address, None)
+            .unwrap();
+        let unicast_socket = channel
+            .create_socket_address(
+                "UnicastSocket",
+                &network_endpoint,
+                &TpConfig::UdpTp {
+                    port_number: Some(30490),
+                    port_dynamically_assigned: None,
+                },
+                SocketAddressType::Unicast(Some(ecu.clone())),
+            )
+            .unwrap();
+        let multicast_rx_endpoint = channel
+            .create_network_endpoint(
+                "MulticastEndpoint",
+                NetworkEndpointAddress::IPv4 {
+                    address: Some("239.0.0.1".to_string()),
+                    address_source: Some(IPv4AddressSource::Fixed),
+                    default_gateway: None,
+                    network_mask: None,
+                },
+                None,
+            )
+            .unwrap();
+        let multicast_rx_socket = channel
+            .create_socket_address(
+                "MulticastSocket",
+                &multicast_rx_endpoint,
+                &TpConfig::UdpTp {
+                    port_number: Some(30490),
+                    port_dynamically_assigned: None,
+                },
+                SocketAddressType::Multicast(vec![ecu.clone()]),
+            )
+            .unwrap();
+        let remote_anyaddr_endpoint = channel
+            .create_network_endpoint(
+                "RemoteEndpoint",
+                NetworkEndpointAddress::IPv4 {
+                    address: Some("ANY".to_string()),
+                    address_source: None,
+                    default_gateway: None,
+                    network_mask: None,
+                },
+                None,
+            )
+            .unwrap();
+        let remote_anyaddr_socket = channel
+            .create_socket_address(
+                "RemoteSocket",
+                &remote_anyaddr_endpoint,
+                &TpConfig::UdpTp {
+                    port_number: None,
+                    port_dynamically_assigned: Some(true),
+                },
+                SocketAddressType::Unicast(None),
+            )
+            .unwrap();
+        let unicast_rx_pdu = system
+            .create_general_purpose_pdu("UnicastRxPdu", &pkg, 0, GeneralPurposePduCategory::Sd)
+            .unwrap();
+        let unicast_tx_pdu = system
+            .create_general_purpose_pdu("UnicastTxPdu", &pkg, 0, GeneralPurposePduCategory::Sd)
+            .unwrap();
+        let multicast_rx_pdu = system
+            .create_general_purpose_pdu("MulticastRxPdu", &pkg, 0, GeneralPurposePduCategory::Sd)
+            .unwrap();
+        (
+            unicast_socket,
+            multicast_rx_socket,
+            remote_anyaddr_socket,
+            unicast_rx_pdu,
+            unicast_tx_pdu,
+            multicast_rx_pdu,
+        )
+    }
+
+    #[test]
+    fn socon_ipdu_identifier() {
+        let model = AutosarModel::new();
+        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
+        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
+        let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
+        let channel = cluster.create_physical_channel("Channel", None).unwrap();
+        let ecu = system.create_ecu_instance("ECU", &pkg).unwrap();
+        let ipdu_identifier_set = system
+            .create_socket_connection_ipdu_identifier_set("IpduIdentifierSet", &pkg)
+            .unwrap();
+        let pdu = system
+            .create_general_purpose_pdu("Pdu", &pkg, 1, GeneralPurposePduCategory::Sd)
+            .unwrap();
+        let pdu2 = system
+            .create_general_purpose_pdu("Pdu2", &pkg, 2, GeneralPurposePduCategory::Sd)
+            .unwrap();
+        let controller = ecu
+            .create_ethernet_communication_controller("Controller", Some("01:23:45:ab:cd:ef".to_string()))
+            .unwrap();
+        controller.connect_physical_channel("connection", &channel).unwrap();
+
+        let socon_ipdu_identifier = ipdu_identifier_set
+            .create_socon_ipdu_identifier(
+                "SoConIPduIdentifier",
+                &pdu,
+                &channel,
+                Some(SoConIPduIdentifier::SD_HEADER_ID),
+                Some(0.1),
+                Some(PduCollectionTrigger::Always),
+            )
+            .unwrap();
+        assert_eq!(
+            socon_ipdu_identifier.pdu_triggering().unwrap().pdu().unwrap(),
+            pdu.into()
+        );
+        assert_eq!(
+            socon_ipdu_identifier.header_id().unwrap(),
+            SoConIPduIdentifier::SD_HEADER_ID
+        );
+        assert_eq!(socon_ipdu_identifier.timeout().unwrap(), 0.1);
+        assert_eq!(
+            socon_ipdu_identifier.collection_trigger().unwrap(),
+            PduCollectionTrigger::Always
+        );
+
+        socon_ipdu_identifier.set_pdu(&pdu2, &channel).unwrap();
+        assert_eq!(
+            socon_ipdu_identifier.pdu_triggering().unwrap().pdu().unwrap(),
+            pdu2.into()
+        );
+        socon_ipdu_identifier.set_timeout(0.2).unwrap();
+        assert_eq!(socon_ipdu_identifier.timeout().unwrap(), 0.2);
+        socon_ipdu_identifier
+            .set_collection_trigger(PduCollectionTrigger::Never)
+            .unwrap();
+        assert_eq!(
+            socon_ipdu_identifier.collection_trigger().unwrap(),
+            PduCollectionTrigger::Never
+        );
+        socon_ipdu_identifier.set_header_id(0x1234).unwrap();
+        assert_eq!(socon_ipdu_identifier.header_id().unwrap(), 0x1234);
+    }
+
+    #[test]
+    pub fn static_socket_connection() {
+        let model = AutosarModel::new();
+        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
+        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
+        let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
+        let channel = cluster.create_physical_channel("Channel", None).unwrap();
+
+        // create a static socket connection between the local_socket and the remote_socket
+        let remote_address = NetworkEndpointAddress::IPv4 {
+            address: Some("192.168.0.1".to_string()),
+            address_source: Some(IPv4AddressSource::Fixed),
+            default_gateway: None,
+            network_mask: None,
+        };
+        let remote_endpoint = channel
+            .create_network_endpoint("RemoteAddress", remote_address, None)
+            .unwrap();
+        let remote_socket = channel
+            .create_socket_address(
+                "RemoteSocket",
+                &remote_endpoint,
+                &TpConfig::UdpTp {
+                    port_number: Some(12345),
+                    port_dynamically_assigned: None,
+                },
+                SocketAddressType::Unicast(None),
+            )
+            .unwrap();
+        let local_address = NetworkEndpointAddress::IPv4 {
+            address: Some("192.168.0.2".to_string()),
+            address_source: Some(IPv4AddressSource::Fixed),
+            default_gateway: None,
+            network_mask: None,
+        };
+        let local_endpoint = channel
+            .create_network_endpoint("LocalAddress", local_address, None)
+            .unwrap();
+        let local_socket = channel
+            .create_socket_address(
+                "LocalSocket",
+                &local_endpoint,
+                &TpConfig::UdpTp {
+                    port_number: Some(12346),
+                    port_dynamically_assigned: None,
+                },
+                SocketAddressType::Unicast(None),
+            )
+            .unwrap();
+        let ssc = local_socket
+            .create_static_socket_connection("ssc", &remote_socket, None, None)
+            .unwrap();
+        assert_eq!(ssc.remote_socket().unwrap(), remote_socket);
+        assert_eq!(ssc.tcp_role(), None);
+        ssc.set_tcp_role(TcpRole::Connect).unwrap();
+        assert_eq!(ssc.tcp_role().unwrap(), TcpRole::Connect);
+        ssc.set_tcp_connect_timeout(0.3333).unwrap();
+        assert_eq!(ssc.tcp_connect_timeout().unwrap(), 0.3333);
+
+        // add an IPduIdentifier to the static socket connection
+        assert_eq!(ssc.ipdu_identifiers().count(), 0);
+        let ipdu_identifier_set = system
+            .create_socket_connection_ipdu_identifier_set("IpduIdentifierSet", &pkg)
+            .unwrap();
+        let pdu = GeneralPurposePdu::new("Pdu", &pkg, 0, GeneralPurposePduCategory::Sd).unwrap();
+        let socon_ipdu_identifier = ipdu_identifier_set
+            .create_socon_ipdu_identifier(
+                "SoConIPduIdentifier",
+                &pdu,
+                &channel,
+                Some(SoConIPduIdentifier::SD_HEADER_ID),
+                Some(0.1),
+                Some(PduCollectionTrigger::Always),
+            )
+            .unwrap();
+        ssc.add_ipdu_identifier(&socon_ipdu_identifier).unwrap();
+        assert_eq!(ssc.ipdu_identifiers().count(), 1);
+        assert_eq!(ssc.ipdu_identifiers().next().unwrap(), socon_ipdu_identifier);
+        assert_eq!(ssc.socket_address().unwrap(), local_socket);
     }
 }

@@ -123,6 +123,28 @@ impl DoIpTpConnection {
         Ok(Self(tp_connection_elem))
     }
 
+    /// get the name of the connection
+    ///
+    /// In early versions of the Autosar standard, TpConnections were not identifiable.
+    /// This was fixed later by adding the Ident sub-element. This method returns the name
+    /// provied in the Ident element, if it exists.
+    #[must_use]
+    pub fn name(&self) -> Option<String> {
+        self.element()
+            .get_sub_element(ElementName::Ident)
+            .and_then(|elem| elem.item_name())
+    }
+
+    /// set the name of the connection
+    pub fn set_name(&self, name: &str) -> Result<(), AutosarAbstractionError> {
+        if let Some(ident_elem) = self.element().get_sub_element(ElementName::Ident) {
+            ident_elem.set_item_name(name)?;
+        } else {
+            self.element().create_named_sub_element(ElementName::Ident, name)?;
+        }
+        Ok(())
+    }
+
     /// get the source `DoIpLogicAddress`
     #[must_use]
     pub fn source(&self) -> Option<DoIpLogicAddress> {
@@ -273,7 +295,7 @@ mod test {
 
         let doip_tp_connection = doip_tp_config
             .create_doip_tp_connection(
-                None,
+                Some("connection_name"),
                 &doip_logic_address_source,
                 &doip_logic_address_target,
                 &pdu_triggering,
@@ -282,6 +304,15 @@ mod test {
         assert_eq!(doip_tp_connection.source(), Some(doip_logic_address_source.clone()));
         assert_eq!(doip_tp_connection.target(), Some(doip_logic_address_target.clone()));
         assert_eq!(doip_tp_connection.tp_sdu_triggering(), Some(pdu_triggering.clone()));
+
+        assert_eq!(doip_tp_connection.name().unwrap(), "connection_name");
+        doip_tp_connection.set_name("other_name").unwrap();
+        assert_eq!(doip_tp_connection.name().unwrap(), "other_name");
+        doip_tp_connection
+            .element()
+            .remove_sub_element_kind(ElementName::Ident)
+            .unwrap();
+        assert_eq!(doip_tp_connection.name(), None);
 
         let doip_tp_connections: Vec<DoIpTpConnection> = doip_tp_config.doip_tp_connections().collect();
         assert_eq!(doip_tp_connections.len(), 1);

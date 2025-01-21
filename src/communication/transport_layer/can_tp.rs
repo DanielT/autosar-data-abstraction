@@ -24,7 +24,7 @@ impl CanTpConfig {
     }
 
     /// add a `CanTp` ECU to the configuration
-    pub fn add_ecu(&self, tp_ecu: CanTpEcu) -> Result<(), AutosarAbstractionError> {
+    pub fn add_ecu(&self, tp_ecu: &CanTpEcu) -> Result<(), AutosarAbstractionError> {
         let ecu_collection = self.element().get_or_create_sub_element(ElementName::TpEcus)?;
         let ecu_elem = ecu_collection.create_sub_element(ElementName::CanTpEcu)?;
         tp_ecu.set(&ecu_elem)?;
@@ -142,6 +142,8 @@ impl CanTpEcu {
         let ecu_instance = element
             .get_sub_element(ElementName::EcuInstanceRef)?
             .get_reference_target()
+            .ok()?
+            .try_into()
             .ok()?;
         let cycle_time_main_function = element
             .get_sub_element(ElementName::CycleTimeMainFunction)
@@ -149,7 +151,7 @@ impl CanTpEcu {
             .and_then(|cdata| cdata.parse_float());
 
         Some(Self {
-            ecu_instance: EcuInstance::try_from(ecu_instance).unwrap(),
+            ecu_instance,
             cycle_time_main_function,
         })
     }
@@ -162,7 +164,7 @@ impl CanTpEcu {
         if let Some(cycle_time) = self.cycle_time_main_function {
             element
                 .get_or_create_sub_element(ElementName::CycleTimeMainFunction)?
-                .set_character_data(cycle_time.to_string())?;
+                .set_character_data(cycle_time)?;
         }
 
         Ok(())
@@ -589,21 +591,34 @@ mod test {
             .connect_physical_channel("name", &can_channel)
             .unwrap();
 
-        let can_tp_config = CanTpConfig::new("can_tp_config", &package, &can_cluster).unwrap();
-        can_tp_config
-            .add_ecu(CanTpEcu {
-                ecu_instance,
-                cycle_time_main_function: None,
-            })
+        let can_tp_config = system
+            .create_can_tp_config("can_tp_config", &package, &can_cluster)
             .unwrap();
+        let can_tp_ecu = CanTpEcu {
+            ecu_instance,
+            cycle_time_main_function: Some(1.0),
+        };
+        can_tp_config.add_ecu(&can_tp_ecu).unwrap();
+        assert_eq!(can_tp_config.ecus().count(), 1);
+        assert_eq!(can_tp_config.ecus().next().unwrap(), can_tp_ecu);
 
         let address = can_tp_config.create_address("address", 0x1234).unwrap();
+        assert_eq!(can_tp_config.addresses().count(), 1);
+        assert_eq!(can_tp_config.addresses().next().unwrap(), address);
+
         let channel = can_tp_config
             .create_can_tp_channel("channel", 1, CanTpChannelMode::FullDuplex)
             .unwrap();
+        let channel2 = can_tp_config
+            .create_can_tp_channel("channel2", 2, CanTpChannelMode::FullDuplex)
+            .unwrap();
+        assert_eq!(channel.channel_id().unwrap(), 1);
+        assert_eq!(channel.channel_mode().unwrap(), CanTpChannelMode::FullDuplex);
 
         let data_pdu = system.create_n_pdu("data_pdu", &package, 8).unwrap();
+        let data_pdu2 = system.create_n_pdu("data_pdu2", &package, 8).unwrap();
         let tp_sdu = system.create_dcm_ipdu("ipdu", &package, 4096).unwrap();
+        let tp_sdu2 = system.create_dcm_ipdu("ipdu2", &package, 4096).unwrap();
 
         let connection = can_tp_config
             .create_can_tp_connection(
@@ -611,15 +626,52 @@ mod test {
                 CanTpAddressingFormat::Standard,
                 &channel,
                 &data_pdu,
-                &tp_sdu.into(),
+                &tp_sdu.clone().into(),
                 false,
             )
             .unwrap();
+        assert_eq!(can_tp_config.connections().count(), 1);
+        assert_eq!(can_tp_config.connections().next().unwrap(), connection);
+
+        assert_eq!(connection.name().unwrap(), "connection");
+        // in a CanTpConnection, the name is provided by the optional IDENT sub-element
+        connection
+            .element()
+            .remove_sub_element_kind(ElementName::Ident)
+            .unwrap();
+        assert_eq!(connection.name(), None);
+        connection.set_name("new_name").unwrap();
+        assert_eq!(connection.name().unwrap(), "new_name");
+
+        assert_eq!(connection.channel().unwrap(), channel);
+        connection.set_channel(&channel2).unwrap();
+        assert_eq!(connection.channel().unwrap(), channel2);
+
+        assert_eq!(connection.data_pdu().unwrap(), data_pdu);
+        connection.set_data_pdu(&data_pdu2).unwrap();
+        assert_eq!(connection.data_pdu().unwrap(), data_pdu2);
+
+        assert_eq!(connection.tp_sdu().unwrap(), tp_sdu.into());
+        connection.set_tp_sdu(&tp_sdu2).unwrap();
+        assert_eq!(connection.tp_sdu().unwrap(), tp_sdu2.into());
+
+        assert_eq!(connection.addressing_format().unwrap(), CanTpAddressingFormat::Standard);
+        connection
+            .set_addressing_format(CanTpAddressingFormat::Extended)
+            .unwrap();
+        assert_eq!(connection.addressing_format().unwrap(), CanTpAddressingFormat::Extended);
+
+        assert_eq!(connection.padding_activation().unwrap(), false);
+        connection.set_padding_activation(true).unwrap();
+        assert_eq!(connection.padding_activation().unwrap(), true);
 
         let node = can_tp_config.create_can_tp_node("node").unwrap();
+        assert_eq!(can_tp_config.nodes().count(), 1);
+        assert_eq!(can_tp_config.nodes().next().unwrap(), node);
+
         node.set_address(&address).unwrap();
-        node.set_connector(&connector).unwrap();
         assert_eq!(node.address().unwrap(), address);
+        node.set_connector(&connector).unwrap();
         assert_eq!(node.connector().unwrap(), connector);
         connection.set_transmitter(&node).unwrap();
         assert_eq!(connection.transmitter().unwrap(), node);

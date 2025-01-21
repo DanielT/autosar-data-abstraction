@@ -48,7 +48,7 @@ impl ArPackage {
             pkg_elem.try_into()
         } else {
             let mut parts_iter = package_path.split('/');
-            if parts_iter.next().unwrap_or("-") != "" {
+            if !parts_iter.next().unwrap_or("-").is_empty() {
                 return Err(AutosarAbstractionError::InvalidPath(package_path.to_string()));
             }
             let mut pkg_elem = model.root_element();
@@ -1047,6 +1047,24 @@ mod test {
         model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
         let package = ArPackage::get_or_create(&model, "/some/package").unwrap();
 
+        // create a new application primitive data type
+        let primitive_data_type = package
+            .create_application_primitive_data_type(
+                "ApplicationPrimitiveDataType",
+                ApplicationPrimitiveCategory::Value,
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+        assert_eq!(primitive_data_type.name().unwrap(), "ApplicationPrimitiveDataType");
+
+        // create a new application array data type
+        let array_data_type = package
+            .create_application_array_data_type("ApplicationArrayDataType", &primitive_data_type, 4)
+            .unwrap();
+        assert_eq!(array_data_type.name().unwrap(), "ApplicationArrayDataType");
+
         // create a new application record data type
         let data_type = package
             .create_application_record_data_type("ApplicationRecordDataType")
@@ -1293,92 +1311,139 @@ mod test {
         package.create_unit("Unit", Some("UnitDisplayName")).unwrap();
 
         let mut elements = package.elements();
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::ApplicationRecordDataType(_)));
+        assert_eq!(item.element().element_name(), ElementName::ApplicationRecordDataType);
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::ApplicationSwComponentType(_)));
+        assert_eq!(item.element().element_name(), ElementName::ApplicationSwComponentType);
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::ClientServerInterface(_)));
+        assert_eq!(item.element().element_name(), ElementName::ClientServerInterface);
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::ComplexDeviceDriverSwComponentType(_)));
+        assert_eq!(
+            item.element().element_name(),
+            ElementName::ComplexDeviceDriverSwComponentType
+        );
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::CompositionSwComponentType(_)));
+        assert_eq!(item.element().element_name(), ElementName::CompositionSwComponentType);
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::CompuMethod(_)));
+        assert_eq!(item.element().element_name(), ElementName::CompuMethod);
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::DataConstr(_)));
+        assert_eq!(item.element().element_name(), ElementName::DataConstr);
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::DataTransformationSet(_)));
+        assert_eq!(item.element().element_name(), ElementName::DataTransformationSet);
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::DataTypeMappingSet(_)));
+        assert_eq!(item.element().element_name(), ElementName::DataTypeMappingSet);
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::EcuAbstractionSwComponentType(_)));
+        assert_eq!(
+            item.element().element_name(),
+            ElementName::EcuAbstractionSwComponentType
+        );
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::SwBaseType(_)));
+        assert_eq!(item.element().element_name(), ElementName::SwBaseType);
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::ImplementationDataType(_)));
+        assert_eq!(item.element().element_name(), ElementName::ImplementationDataType);
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::ModeSwitchInterface(_)));
+        assert_eq!(item.element().element_name(), ElementName::ModeSwitchInterface);
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::NvDataInterface(_)));
+        assert_eq!(item.element().element_name(), ElementName::NvDataInterface);
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::ParameterInterface(_)));
+        assert_eq!(item.element().element_name(), ElementName::ParameterInterface);
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::SenderReceiverInterface(_)));
+        assert_eq!(item.element().element_name(), ElementName::SenderReceiverInterface);
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::SensorActuatorSwComponentType(_)));
+        assert_eq!(
+            item.element().element_name(),
+            ElementName::SensorActuatorSwComponentType
+        );
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::ServiceSwComponentType(_)));
+        assert_eq!(item.element().element_name(), ElementName::ServiceSwComponentType);
+
+        let item = elements.next().unwrap();
         assert!(matches!(
-            elements.next().unwrap(),
-            ArPackageElement::ApplicationRecordDataType(_)
-        ));
-        assert!(matches!(
-            elements.next().unwrap(),
-            ArPackageElement::ApplicationSwComponentType(_)
-        ));
-        assert!(matches!(
-            elements.next().unwrap(),
-            ArPackageElement::ClientServerInterface(_)
-        ));
-        assert!(matches!(
-            elements.next().unwrap(),
-            ArPackageElement::ComplexDeviceDriverSwComponentType(_)
-        ));
-        assert!(matches!(
-            elements.next().unwrap(),
-            ArPackageElement::CompositionSwComponentType(_)
-        ));
-        assert!(matches!(elements.next().unwrap(), ArPackageElement::CompuMethod(_)));
-        assert!(matches!(elements.next().unwrap(), ArPackageElement::DataConstr(_)));
-        assert!(matches!(
-            elements.next().unwrap(),
-            ArPackageElement::DataTransformationSet(_)
-        ));
-        assert!(matches!(
-            elements.next().unwrap(),
-            ArPackageElement::DataTypeMappingSet(_)
-        ));
-        assert!(matches!(
-            elements.next().unwrap(),
-            ArPackageElement::EcuAbstractionSwComponentType(_)
-        ));
-        assert!(matches!(elements.next().unwrap(), ArPackageElement::SwBaseType(_)));
-        assert!(matches!(
-            elements.next().unwrap(),
-            ArPackageElement::ImplementationDataType(_)
-        ));
-        assert!(matches!(
-            elements.next().unwrap(),
-            ArPackageElement::ModeSwitchInterface(_)
-        ));
-        assert!(matches!(elements.next().unwrap(), ArPackageElement::NvDataInterface(_)));
-        assert!(matches!(
-            elements.next().unwrap(),
-            ArPackageElement::ParameterInterface(_)
-        ));
-        assert!(matches!(
-            elements.next().unwrap(),
-            ArPackageElement::SenderReceiverInterface(_)
-        ));
-        assert!(matches!(
-            elements.next().unwrap(),
-            ArPackageElement::SensorActuatorSwComponentType(_)
-        ));
-        assert!(matches!(
-            elements.next().unwrap(),
-            ArPackageElement::ServiceSwComponentType(_)
-        ));
-        assert!(matches!(
-            elements.next().unwrap(),
+            item,
             ArPackageElement::SomeipSdClientEventGroupTimingConfig(_)
         ));
+        assert_eq!(
+            item.element().element_name(),
+            ElementName::SomeipSdClientEventGroupTimingConfig
+        );
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::SomeipSdClientServiceInstanceConfig(_)));
+        assert_eq!(
+            item.element().element_name(),
+            ElementName::SomeipSdClientServiceInstanceConfig
+        );
+
+        let item = elements.next().unwrap();
         assert!(matches!(
-            elements.next().unwrap(),
-            ArPackageElement::SomeipSdClientServiceInstanceConfig(_)
-        ));
-        assert!(matches!(
-            elements.next().unwrap(),
+            item,
             ArPackageElement::SomeipSdServerEventGroupTimingConfig(_)
         ));
-        assert!(matches!(
-            elements.next().unwrap(),
-            ArPackageElement::SomeipSdServerServiceInstanceConfig(_)
-        ));
-        assert!(matches!(elements.next().unwrap(), ArPackageElement::System(_)));
-        assert!(matches!(elements.next().unwrap(), ArPackageElement::SystemSignal(_)));
-        assert!(matches!(
-            elements.next().unwrap(),
-            ArPackageElement::SystemSignalGroup(_)
-        ));
-        assert!(matches!(
-            elements.next().unwrap(),
-            ArPackageElement::TriggerInterface(_)
-        ));
-        assert!(matches!(elements.next().unwrap(), ArPackageElement::Unit(_)));
+        assert_eq!(
+            item.element().element_name(),
+            ElementName::SomeipSdServerEventGroupTimingConfig
+        );
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::SomeipSdServerServiceInstanceConfig(_)));
+        assert_eq!(
+            item.element().element_name(),
+            ElementName::SomeipSdServerServiceInstanceConfig
+        );
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::System(_)));
+        assert_eq!(item.element().element_name(), ElementName::System);
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::SystemSignal(_)));
+        assert_eq!(item.element().element_name(), ElementName::SystemSignal);
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::SystemSignalGroup(_)));
+        assert_eq!(item.element().element_name(), ElementName::SystemSignalGroup);
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::TriggerInterface(_)));
+        assert_eq!(item.element().element_name(), ElementName::TriggerInterface);
+
+        let item = elements.next().unwrap();
+        assert!(matches!(item, ArPackageElement::Unit(_)));
+        assert_eq!(item.element().element_name(), ElementName::Unit);
     }
 }

@@ -23,7 +23,6 @@ impl ISignalIPdu {
     }
 
     /// returns an iterator over all signals mapped to the PDU
-    #[must_use]
     pub fn mapped_signals(&self) -> impl Iterator<Item = ISignalToIPduMapping> {
         self.element()
             .get_sub_element(ElementName::ISignalToPduMappings)
@@ -66,7 +65,7 @@ impl ISignalIPdu {
         }
 
         if let Some(signal_group) = signal.signal_group() {
-            if self
+            if !self
                 .mapped_signals()
                 .filter_map(|mapping| mapping.signal_group())
                 .any(|grp| grp == signal_group)
@@ -96,7 +95,7 @@ impl ISignalIPdu {
             .element()
             .get_or_create_sub_element(ElementName::ISignalToPduMappings)?;
 
-        ISignalToIPduMapping::new(
+        ISignalToIPduMapping::new_with_signal(
             &name,
             &mappings,
             signal,
@@ -135,7 +134,7 @@ impl ISignalIPdu {
             .element()
             .get_or_create_sub_element(ElementName::ISignalToPduMappings)?;
 
-        ISignalToIPduMapping::new_group(&name, &mappings, signal_group)
+        ISignalToIPduMapping::new_with_group(&name, &mappings, signal_group)
     }
 
     /// set the transmission timing of the PDU
@@ -285,13 +284,13 @@ impl From<ISignalIPdu> for Pdu {
 
 //##################################################################
 
-/// `ISignalToIPduMapping` connects an isignal to an isignalipdu
+/// `ISignalToIPduMapping` connects an `ISignal` or `ISignalGroup` to an `ISignalToIPdu`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ISignalToIPduMapping(Element);
 abstraction_element!(ISignalToIPduMapping, ISignalToIPduMapping);
 
 impl ISignalToIPduMapping {
-    fn new(
+    fn new_with_signal(
         name: &str,
         mappings: &Element,
         signal: &ISignal,
@@ -322,7 +321,11 @@ impl ISignalToIPduMapping {
         Ok(Self(signal_mapping))
     }
 
-    fn new_group(name: &str, mappings: &Element, signal_group: &ISignalGroup) -> Result<Self, AutosarAbstractionError> {
+    fn new_with_group(
+        name: &str,
+        mappings: &Element,
+        signal_group: &ISignalGroup,
+    ) -> Result<Self, AutosarAbstractionError> {
         let signal_mapping = mappings.create_named_sub_element(ElementName::ISignalToIPduMapping, name)?;
         signal_mapping
             .create_sub_element(ElementName::ISignalGroupRef)?
@@ -357,7 +360,7 @@ impl ISignalToIPduMapping {
     pub fn start_position(&self) -> Option<u32> {
         self.element()
             .get_sub_element(ElementName::StartPosition)
-            .and_then(|pbo| pbo.character_data())
+            .and_then(|sp_elem| sp_elem.character_data())
             .and_then(|cdata| cdata.parse_integer())
     }
 
@@ -366,8 +369,8 @@ impl ISignalToIPduMapping {
     #[must_use]
     pub fn update_bit(&self) -> Option<u32> {
         self.element()
-            .get_sub_element(ElementName::StartPosition)
-            .and_then(|pbo| pbo.character_data())
+            .get_sub_element(ElementName::UpdateIndicationBitPosition)
+            .and_then(|uibp| uibp.character_data())
             .and_then(|cdata| cdata.parse_integer())
     }
 
@@ -551,8 +554,76 @@ impl SignalMappingValidator {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::ByteOrder;
+    use crate::{ByteOrder, SystemCategory};
     use autosar_data::{AutosarModel, AutosarVersion};
+
+    #[test]
+    fn isignal_ipdu() {
+        let model = AutosarModel::new();
+        let _file = model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
+        let package = ArPackage::get_or_create(&model, "/pkg").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
+
+        let pdu = system.create_isignal_ipdu("isignal_ipdu", &package, 8).unwrap();
+        assert_eq!(pdu.name().unwrap(), "isignal_ipdu");
+        assert_eq!(pdu.length().unwrap(), 8);
+
+        // create a signal and map it to the PDU
+        let syssignal = package.create_system_signal("syssignal").unwrap();
+        let isignal = system.create_isignal("isignal", 4, &syssignal, None, &package).unwrap();
+        let mapping = pdu
+            .map_signal(
+                &isignal,
+                0,
+                ByteOrder::MostSignificantByteFirst,
+                Some(5),
+                TransferProperty::Triggered,
+            )
+            .unwrap();
+        assert_eq!(mapping.signal().unwrap(), isignal);
+        assert_eq!(mapping.byte_order().unwrap(), ByteOrder::MostSignificantByteFirst);
+        assert_eq!(mapping.start_position().unwrap(), 0);
+        assert_eq!(mapping.update_bit(), Some(5));
+        assert_eq!(mapping.transfer_property().unwrap(), TransferProperty::Triggered);
+
+        // create a signal group which contains a signal
+        let syssignal_group = package.create_system_signal_group("syssignal_group").unwrap();
+        let signal_group = system
+            .create_i_signal_group("signal_group", &syssignal_group, &package)
+            .unwrap();
+        let grouped_syssignal = package.create_system_signal("groups_syssignal").unwrap();
+        syssignal_group.add_signal(&grouped_syssignal).unwrap();
+        let grouped_isignal = system
+            .create_isignal("grouped_isignal", 4, &grouped_syssignal, None, &package)
+            .unwrap();
+        signal_group.add_signal(&grouped_isignal).unwrap();
+        assert_eq!(grouped_isignal.signal_group().unwrap(), signal_group);
+
+        // map the signal to the PDU - this should fail, because the signal is part of an unmapped signal group
+        let result = pdu.map_signal(
+            &grouped_isignal,
+            9,
+            ByteOrder::MostSignificantByteFirst,
+            None,
+            TransferProperty::Triggered,
+        );
+        assert!(result.is_err());
+
+        // map the signal group to the PDU
+        let mapping = pdu.map_signal_group(&signal_group).unwrap();
+        assert_eq!(mapping.signal_group().unwrap(), signal_group);
+
+        // map the grouped signal to the PDU - this should now work
+        let _mapping = pdu
+            .map_signal(
+                &grouped_isignal,
+                9,
+                ByteOrder::MostSignificantByteFirst,
+                None,
+                TransferProperty::Triggered,
+            )
+            .unwrap();
+    }
 
     #[test]
     fn validate_signal_mapping() {

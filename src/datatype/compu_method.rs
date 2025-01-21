@@ -44,12 +44,9 @@ impl CompuMethod {
     pub fn set_content(&self, content: CompuMethodContent) -> Result<(), AutosarAbstractionError> {
         let compu_method = self.element();
 
-        if let Some(compu_internal_to_phys) = compu_method.get_sub_element(ElementName::CompuInternalToPhys) {
-            let _ = compu_method.remove_sub_element(compu_internal_to_phys);
-        }
-        if let Some(compu_phys_to_internal) = compu_method.get_sub_element(ElementName::CompuPhysToInternal) {
-            let _ = compu_method.remove_sub_element(compu_phys_to_internal);
-        }
+        // remove existing content
+        let _ = compu_method.remove_sub_element_kind(ElementName::CompuInternalToPhys);
+        let _ = compu_method.remove_sub_element_kind(ElementName::CompuPhysToInternal);
 
         match content {
             CompuMethodContent::Identical => {
@@ -379,13 +376,9 @@ impl CompuMethod {
             CompuMethodCategory::ScaleLinearAndTextTable => {
                 let mut scale_linear_content = Vec::new();
                 let mut text_table_content = Vec::new();
-                let iter_int_to_phys = self
+                let iter = self
                     .int_to_phys_compu_scales()
                     .map(|cs| (cs, CompuScaleDirection::IntToPhys));
-                let iter_phys_to_int = self
-                    .phys_to_int_compu_scales()
-                    .map(|cs| (cs, CompuScaleDirection::PhysToInt));
-                let iter = iter_int_to_phys.chain(iter_phys_to_int);
 
                 for (compu_scale, direction) in iter {
                     let lower_limit = compu_scale.lower_limit()?;
@@ -577,7 +570,6 @@ impl CompuMethod {
     }
 
     /// Create an iterator over the internal-to-physical `CompuScales`
-    #[must_use]
     pub fn int_to_phys_compu_scales(&self) -> impl Iterator<Item = CompuScale> {
         self.element()
             .get_sub_element(ElementName::CompuInternalToPhys)
@@ -588,7 +580,6 @@ impl CompuMethod {
     }
 
     /// Create an iterator over the physical-to-internal `CompuScales`
-    #[must_use]
     pub fn phys_to_int_compu_scales(&self) -> impl Iterator<Item = CompuScale> {
         self.element()
             .get_sub_element(ElementName::CompuPhysToInternal)
@@ -776,7 +767,7 @@ impl CompuScale {
             } else if let Some(value) = compu_const
                 .get_sub_element(ElementName::V)
                 .and_then(|v| v.character_data())
-                .and_then(|cdata| cdata.float_value())
+                .and_then(|cdata| cdata.parse_float())
             {
                 return Some(CompuScaleContent::NumericConstant(value));
             }
@@ -948,11 +939,12 @@ mod test {
         let model = AutosarModel::new();
         let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/Package").unwrap();
-        let compu_method = CompuMethod::new("compu_method", &package, CompuMethodContent::Identical).unwrap();
-        assert_eq!(compu_method.category(), Some(CompuMethodCategory::Identical));
-        assert_eq!(compu_method.content(), Some(CompuMethodContent::Identical));
 
-        let content1 = CompuMethodContent::Linear(CompuMethodLinearContent {
+        let compu_method1 = CompuMethod::new("compu_method1", &package, CompuMethodContent::Identical).unwrap();
+        assert_eq!(compu_method1.category(), Some(CompuMethodCategory::Identical));
+        assert_eq!(compu_method1.content(), Some(CompuMethodContent::Identical));
+
+        let content2 = CompuMethodContent::Linear(CompuMethodLinearContent {
             direction: CompuScaleDirection::IntToPhys,
             offset: 0.01,
             factor: 1.01,
@@ -960,11 +952,27 @@ mod test {
             lower_limit: Some(0.0),
             upper_limit: Some(100.0),
         });
-        let compu_method1 = CompuMethod::new("compu_method1", &package, content1.clone()).unwrap();
-        assert_eq!(compu_method1.category(), Some(CompuMethodCategory::Linear));
-        assert_eq!(compu_method1.content().unwrap(), content1);
+        let compu_method2 = CompuMethod::new("compu_method2", &package, content2.clone()).unwrap();
+        assert_eq!(compu_method2.category(), Some(CompuMethodCategory::Linear));
+        assert_eq!(compu_method2.content().unwrap(), content2);
+        assert_eq!(compu_method2.int_to_phys_compu_scales().count(), 1);
+        assert_eq!(compu_method2.phys_to_int_compu_scales().count(), 0);
 
-        let content2 = CompuMethodContent::ScaleLinear(vec![
+        let content3 = CompuMethodContent::Linear(CompuMethodLinearContent {
+            direction: CompuScaleDirection::PhysToInt,
+            offset: 0.01,
+            factor: 1.01,
+            divisor: 1.02,
+            lower_limit: Some(0.0),
+            upper_limit: Some(100.0),
+        });
+        let compu_method3 = CompuMethod::new("compu_method3", &package, content3.clone()).unwrap();
+        assert_eq!(compu_method3.category(), Some(CompuMethodCategory::Linear));
+        assert_eq!(compu_method3.content().unwrap(), content3);
+        assert_eq!(compu_method3.int_to_phys_compu_scales().count(), 0);
+        assert_eq!(compu_method3.phys_to_int_compu_scales().count(), 1);
+
+        let content4 = CompuMethodContent::ScaleLinear(vec![
             CompuMethodScaleLinearContent {
                 direction: CompuScaleDirection::IntToPhys,
                 offset: 0.0,
@@ -982,22 +990,47 @@ mod test {
                 upper_limit: 400.0,
             },
         ]);
-        let compu_method2 = CompuMethod::new("compu_method2", &package, content2.clone()).unwrap();
-        assert_eq!(compu_method2.category(), Some(CompuMethodCategory::ScaleLinear));
-        assert_eq!(compu_method2.content().unwrap(), content2);
+        let compu_method4 = CompuMethod::new("compu_method4", &package, content4.clone()).unwrap();
+        assert_eq!(compu_method4.category(), Some(CompuMethodCategory::ScaleLinear));
+        assert_eq!(compu_method4.content().unwrap(), content4);
+        assert_eq!(compu_method4.int_to_phys_compu_scales().count(), 2);
+        assert_eq!(compu_method4.phys_to_int_compu_scales().count(), 0);
 
-        let content3 = CompuMethodContent::Rational(CompuMethodRationalContent {
+        let content5 = CompuMethodContent::ScaleLinear(vec![CompuMethodScaleLinearContent {
+            direction: CompuScaleDirection::PhysToInt,
+            offset: 0.0,
+            factor: 2.0,
+            divisor: 1.5,
+            lower_limit: 0.0,
+            upper_limit: 100.0,
+        }]);
+        let compu_method5 = CompuMethod::new("compu_method5", &package, content5.clone()).unwrap();
+        assert_eq!(compu_method5.category(), Some(CompuMethodCategory::ScaleLinear));
+        assert_eq!(compu_method5.content().unwrap(), content5);
+
+        let content6 = CompuMethodContent::Rational(CompuMethodRationalContent {
             direction: CompuScaleDirection::IntToPhys,
             numerator: vec![1.1, 2.2, 3.3, 4.4],
             denominator: vec![0.1, 0.2, 0.3],
             lower_limit: 0.0,
             upper_limit: 100.0,
         });
-        let compu_method3 = CompuMethod::new("compu_method3", &package, content3.clone()).unwrap();
-        assert_eq!(compu_method3.category(), Some(CompuMethodCategory::Rational));
-        assert_eq!(compu_method3.content().unwrap(), content3);
+        let compu_method6 = CompuMethod::new("compu_method6", &package, content6.clone()).unwrap();
+        assert_eq!(compu_method6.category(), Some(CompuMethodCategory::Rational));
+        assert_eq!(compu_method6.content().unwrap(), content6);
 
-        let content4 = CompuMethodContent::ScaleRational(vec![
+        let content7 = CompuMethodContent::Rational(CompuMethodRationalContent {
+            direction: CompuScaleDirection::PhysToInt,
+            numerator: vec![1.1, 2.2, 3.3, 4.4],
+            denominator: vec![0.1, 0.2, 0.3],
+            lower_limit: 0.0,
+            upper_limit: 100.0,
+        });
+        let compu_method7 = CompuMethod::new("compu_method7", &package, content7.clone()).unwrap();
+        assert_eq!(compu_method7.category(), Some(CompuMethodCategory::Rational));
+        assert_eq!(compu_method7.content().unwrap(), content7);
+
+        let content8 = CompuMethodContent::ScaleRational(vec![
             CompuMethodRationalContent {
                 direction: CompuScaleDirection::IntToPhys,
                 numerator: vec![1.1, 2.2, 3.3, 4.4],
@@ -1013,11 +1046,22 @@ mod test {
                 upper_limit: 400.0,
             },
         ]);
-        let compu_method4 = CompuMethod::new("compu_method4", &package, content4.clone()).unwrap();
-        assert_eq!(compu_method4.category(), Some(CompuMethodCategory::ScaleRational));
-        assert_eq!(compu_method4.content().unwrap(), content4);
+        let compu_method8 = CompuMethod::new("compu_method8", &package, content8.clone()).unwrap();
+        assert_eq!(compu_method8.category(), Some(CompuMethodCategory::ScaleRational));
+        assert_eq!(compu_method8.content().unwrap(), content8);
 
-        let content5 = CompuMethodContent::TextTable(vec![
+        let content9 = CompuMethodContent::ScaleRational(vec![CompuMethodRationalContent {
+            direction: CompuScaleDirection::PhysToInt,
+            numerator: vec![1.1, 2.2, 3.3, 4.4],
+            denominator: vec![0.1, 0.2, 0.3],
+            lower_limit: 0.0,
+            upper_limit: 100.0,
+        }]);
+        let compu_method9 = CompuMethod::new("compu_method9", &package, content9.clone()).unwrap();
+        assert_eq!(compu_method9.category(), Some(CompuMethodCategory::ScaleRational));
+        assert_eq!(compu_method9.content().unwrap(), content9);
+
+        let content10 = CompuMethodContent::TextTable(vec![
             CompuMethodTextTableContent {
                 text: "text1".to_string(),
                 value: 1.0,
@@ -1027,11 +1071,11 @@ mod test {
                 value: 2.0,
             },
         ]);
-        let compu_method5 = CompuMethod::new("compu_method5", &package, content5.clone()).unwrap();
-        assert_eq!(compu_method5.category(), Some(CompuMethodCategory::TextTable));
-        assert_eq!(compu_method5.content().unwrap(), content5);
+        let compu_method10 = CompuMethod::new("compu_method10", &package, content10.clone()).unwrap();
+        assert_eq!(compu_method10.category(), Some(CompuMethodCategory::TextTable));
+        assert_eq!(compu_method10.content().unwrap(), content10);
 
-        let content6 = CompuMethodContent::BitfieldTextTable(vec![
+        let content11 = CompuMethodContent::BitfieldTextTable(vec![
             CompuMethodBitfieldTextTableContent {
                 text: "text1".to_string(),
                 value: 1.0,
@@ -1043,11 +1087,11 @@ mod test {
                 mask: 0b0000_0010,
             },
         ]);
-        let compu_method6 = CompuMethod::new("compu_method6", &package, content6.clone()).unwrap();
-        assert_eq!(compu_method6.category(), Some(CompuMethodCategory::BitfieldTextTable));
-        assert_eq!(compu_method6.content().unwrap(), content6);
+        let compu_method11 = CompuMethod::new("compu_method11", &package, content11.clone()).unwrap();
+        assert_eq!(compu_method11.category(), Some(CompuMethodCategory::BitfieldTextTable));
+        assert_eq!(compu_method11.content().unwrap(), content11);
 
-        let content7 = CompuMethodContent::ScaleLinearAndTextTable(
+        let content12 = CompuMethodContent::ScaleLinearAndTextTable(
             vec![
                 CompuMethodScaleLinearContent {
                     direction: CompuScaleDirection::IntToPhys,
@@ -1077,14 +1121,14 @@ mod test {
                 },
             ],
         );
-        let compu_method7 = CompuMethod::new("compu_method7", &package, content7.clone()).unwrap();
+        let compu_method12 = CompuMethod::new("compu_method12", &package, content12.clone()).unwrap();
         assert_eq!(
-            compu_method7.category(),
+            compu_method12.category(),
             Some(CompuMethodCategory::ScaleLinearAndTextTable)
         );
-        assert_eq!(compu_method7.content().unwrap(), content7);
+        assert_eq!(compu_method12.content().unwrap(), content12);
 
-        let content8 = CompuMethodContent::ScaleRationalAndTextTable(
+        let content13 = CompuMethodContent::ScaleRationalAndTextTable(
             vec![
                 CompuMethodRationalContent {
                     direction: CompuScaleDirection::IntToPhys,
@@ -1112,13 +1156,114 @@ mod test {
                 },
             ],
         );
-        let compu_method8 = CompuMethod::new("compu_method8", &package, content8.clone()).unwrap();
+        let compu_method13 = CompuMethod::new("compu_method13", &package, content13.clone()).unwrap();
         assert_eq!(
-            compu_method8.category(),
+            compu_method13.category(),
             Some(CompuMethodCategory::ScaleRationalAndTextTable)
         );
-        assert_eq!(compu_method8.content().unwrap(), content8);
-        assert_eq!(compu_method8.int_to_phys_compu_scales().count(), 4);
-        assert_eq!(compu_method8.phys_to_int_compu_scales().count(), 0);
+        assert_eq!(compu_method13.content().unwrap(), content13);
+        assert_eq!(compu_method13.int_to_phys_compu_scales().count(), 4);
+        assert_eq!(compu_method13.phys_to_int_compu_scales().count(), 0);
+
+        let content14 = CompuMethodContent::ScaleRationalAndTextTable(
+            vec![CompuMethodRationalContent {
+                direction: CompuScaleDirection::PhysToInt,
+                numerator: vec![1.1, 2.2, 3.3, 4.4],
+                denominator: vec![0.1, 0.2, 0.3],
+                lower_limit: 0.0,
+                upper_limit: 100.0,
+            }],
+            vec![CompuMethodTextTableContent {
+                text: "text1".to_string(),
+                value: 1.0,
+            }],
+        );
+        let compu_method14 = CompuMethod::new("compu_method14", &package, content14.clone()).unwrap();
+        assert_eq!(
+            compu_method14.category(),
+            Some(CompuMethodCategory::ScaleRationalAndTextTable)
+        );
+        assert_eq!(compu_method14.content().unwrap(), content14);
+        assert_eq!(compu_method14.int_to_phys_compu_scales().count(), 1);
+        assert_eq!(compu_method14.phys_to_int_compu_scales().count(), 1);
+
+        let content15 = CompuMethodContent::TabNoInterpretation(vec![
+            CompuMethodTabNoIntpContent {
+                value_in: 1.0,
+                value_out: 2.0,
+            },
+            CompuMethodTabNoIntpContent {
+                value_in: 3.0,
+                value_out: 4.0,
+            },
+        ]);
+        let compu_method15 = CompuMethod::new("compu_method15", &package, content15.clone()).unwrap();
+        assert_eq!(
+            compu_method15.category(),
+            Some(CompuMethodCategory::TabNoInterpretation)
+        );
+        assert_eq!(compu_method15.content().unwrap(), content15);
+    }
+
+    #[test]
+    fn compu_method_category() {
+        assert_eq!(
+            CompuMethodCategory::try_from("IDENTICAL").unwrap(),
+            CompuMethodCategory::Identical
+        );
+        assert_eq!(
+            CompuMethodCategory::try_from("LINEAR").unwrap(),
+            CompuMethodCategory::Linear
+        );
+        assert_eq!(
+            CompuMethodCategory::try_from("SCALE_LINEAR").unwrap(),
+            CompuMethodCategory::ScaleLinear
+        );
+        assert_eq!(
+            CompuMethodCategory::try_from("RAT_FUNC").unwrap(),
+            CompuMethodCategory::Rational
+        );
+        assert_eq!(
+            CompuMethodCategory::try_from("SCALE_RAT_FUNC").unwrap(),
+            CompuMethodCategory::ScaleRational
+        );
+        assert_eq!(
+            CompuMethodCategory::try_from("TEXTTABLE").unwrap(),
+            CompuMethodCategory::TextTable
+        );
+        assert_eq!(
+            CompuMethodCategory::try_from("BITFIELD_TEXTTABLE").unwrap(),
+            CompuMethodCategory::BitfieldTextTable
+        );
+        assert_eq!(
+            CompuMethodCategory::try_from("SCALE_LINEAR_AND_TEXTTABLE").unwrap(),
+            CompuMethodCategory::ScaleLinearAndTextTable
+        );
+        assert_eq!(
+            CompuMethodCategory::try_from("SCALE_RATIONAL_AND_TEXTTABLE").unwrap(),
+            CompuMethodCategory::ScaleRationalAndTextTable
+        );
+        assert_eq!(
+            CompuMethodCategory::try_from("TAB_NOINTP").unwrap(),
+            CompuMethodCategory::TabNoInterpretation
+        );
+        assert!(CompuMethodCategory::try_from("INVALID").is_err());
+
+        assert_eq!(CompuMethodCategory::Identical.to_string(), "IDENTICAL");
+        assert_eq!(CompuMethodCategory::Linear.to_string(), "LINEAR");
+        assert_eq!(CompuMethodCategory::ScaleLinear.to_string(), "SCALE_LINEAR");
+        assert_eq!(CompuMethodCategory::Rational.to_string(), "RAT_FUNC");
+        assert_eq!(CompuMethodCategory::ScaleRational.to_string(), "SCALE_RAT_FUNC");
+        assert_eq!(CompuMethodCategory::TextTable.to_string(), "TEXTTABLE");
+        assert_eq!(CompuMethodCategory::BitfieldTextTable.to_string(), "BITFIELD_TEXTTABLE");
+        assert_eq!(
+            CompuMethodCategory::ScaleLinearAndTextTable.to_string(),
+            "SCALE_LINEAR_AND_TEXTTABLE"
+        );
+        assert_eq!(
+            CompuMethodCategory::ScaleRationalAndTextTable.to_string(),
+            "SCALE_RATIONAL_AND_TEXTTABLE"
+        );
+        assert_eq!(CompuMethodCategory::TabNoInterpretation.to_string(), "TAB_NOINTP");
     }
 }

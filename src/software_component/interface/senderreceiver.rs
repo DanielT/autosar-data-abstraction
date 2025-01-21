@@ -1,6 +1,8 @@
-use crate::{abstraction_element, datatype, AbstractionElement, ArPackage, AutosarAbstractionError, Element};
+use crate::{
+    abstraction_element, datatype::AbstractAutosarDataType, software_component::AbstractPortInterface,
+    AbstractionElement, ArPackage, AutosarAbstractionError, Element,
+};
 use autosar_data::ElementName;
-use datatype::AutosarDataType;
 
 //##################################################################
 
@@ -10,6 +12,8 @@ use datatype::AutosarDataType;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SenderReceiverInterface(pub(crate) Element);
 abstraction_element!(SenderReceiverInterface, SenderReceiverInterface);
+
+impl AbstractPortInterface for SenderReceiverInterface {}
 
 impl SenderReceiverInterface {
     /// Create a new `SenderReceiverInterface`
@@ -22,7 +26,7 @@ impl SenderReceiverInterface {
     }
 
     /// Add a new data element to the sender receiver interface
-    pub fn create_data_element<T: Into<AutosarDataType> + AbstractionElement>(
+    pub fn create_data_element<T: AbstractAutosarDataType>(
         &self,
         name: &str,
         data_type: &T,
@@ -62,5 +66,40 @@ impl VariableDataPrototype {
     pub fn interface(&self) -> Result<SenderReceiverInterface, AutosarAbstractionError> {
         let named_parent = self.element().named_parent()?.unwrap();
         SenderReceiverInterface::try_from(named_parent)
+    }
+}
+
+//##################################################################
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::datatype::{BaseTypeEncoding, ImplementationDataTypeSettings};
+    use autosar_data::{AutosarModel, AutosarVersion};
+
+    #[test]
+    fn sender_receiver_interface() {
+        let model = AutosarModel::new();
+        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
+        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+
+        let sr_interface = package
+            .create_sender_receiver_interface("SenderReceiverInterface")
+            .unwrap();
+
+        let base_type = package
+            .create_sw_base_type("base", 32, BaseTypeEncoding::None, None, None, None)
+            .unwrap();
+        let impl_settings = ImplementationDataTypeSettings::Value {
+            name: "ImplementationValue".to_string(),
+            base_type,
+            compu_method: None,
+            data_constraint: None,
+        };
+        let datatype = package.create_implementation_data_type(impl_settings).unwrap();
+
+        let data_element = sr_interface.create_data_element("data_element", &datatype).unwrap();
+        assert_eq!(sr_interface.data_elements().count(), 1);
+        assert_eq!(data_element.interface().unwrap(), sr_interface);
     }
 }

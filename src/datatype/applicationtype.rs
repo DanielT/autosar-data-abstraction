@@ -1,6 +1,6 @@
 use crate::{abstraction_element, datatype, AbstractionElement, ArPackage, AutosarAbstractionError, Element};
 use autosar_data::ElementName;
-use datatype::{CompuMethod, DataConstr, Unit};
+use datatype::{AbstractAutosarDataType, CompuMethod, DataConstr, Unit};
 
 //#########################################################
 
@@ -10,6 +10,8 @@ use datatype::{CompuMethod, DataConstr, Unit};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ApplicationArrayDataType(Element);
 abstraction_element!(ApplicationArrayDataType, ApplicationArrayDataType);
+
+impl AbstractAutosarDataType for ApplicationArrayDataType {}
 
 impl ApplicationArrayDataType {
     /// create a new application array data type in the given package
@@ -44,7 +46,15 @@ impl ApplicationArrayDataType {
     }
 
     /// set the array element type of the array data type
-    pub fn set_array_element(
+    pub fn set_array_element<T: Into<ApplicationDataType> + AbstractionElement>(
+        &self,
+        element_type: &T,
+    ) -> Result<ApplicationArrayElement, AutosarAbstractionError> {
+        let element_type = element_type.clone().into();
+        self.set_array_element_internal(&element_type)
+    }
+
+    fn set_array_element_internal(
         &self,
         element_type: &ApplicationDataType,
     ) -> Result<ApplicationArrayElement, AutosarAbstractionError> {
@@ -133,6 +143,8 @@ impl ApplicationArrayElement {
 pub struct ApplicationRecordDataType(Element);
 abstraction_element!(ApplicationRecordDataType, ApplicationRecordDataType);
 
+impl AbstractAutosarDataType for ApplicationRecordDataType {}
+
 impl ApplicationRecordDataType {
     /// create a new application record data type in the given package
     pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
@@ -218,6 +230,8 @@ impl ApplicationRecordElement {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ApplicationPrimitiveDataType(Element);
 abstraction_element!(ApplicationPrimitiveDataType, ApplicationPrimitiveDataType);
+
+impl AbstractAutosarDataType for ApplicationPrimitiveDataType {}
 
 impl ApplicationPrimitiveDataType {
     /// create a new application primitive data type in the given package
@@ -475,6 +489,22 @@ mod tests {
             ApplicationDataType::Primitive(element_type)
         );
         assert_eq!(array_data_type.max_number_of_elements().unwrap(), 10);
+
+        // reassign the array element type
+        let element_type_2 = ApplicationPrimitiveDataType::new(
+            "Element2",
+            &package,
+            ApplicationPrimitiveCategory::Value,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let array_element = array_data_type.set_array_element(&element_type_2).unwrap();
+        assert_eq!(
+            array_element.data_type().unwrap(),
+            ApplicationDataType::Primitive(element_type_2)
+        );
     }
 
     #[test]
@@ -534,5 +564,47 @@ mod tests {
         assert_eq!(primitive_data_type.compu_method().unwrap(), compu_method);
         assert_eq!(primitive_data_type.unit().unwrap(), unit);
         assert_eq!(primitive_data_type.data_constraint().unwrap(), data_constraint);
+    }
+
+    #[test]
+    fn test_application_data_type() {
+        let model = AutosarModel::new();
+        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
+        let package = ArPackage::get_or_create(&model, "/DataTypes").unwrap();
+        let element_type = ApplicationPrimitiveDataType::new(
+            "Element",
+            &package,
+            ApplicationPrimitiveCategory::Value,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let array_data_type = ApplicationArrayDataType::new("Array", &package, &element_type, 10).unwrap();
+        let record_data_type = ApplicationRecordDataType::new("Record", &package).unwrap();
+        let primitive_data_type = ApplicationPrimitiveDataType::new(
+            "Primitive",
+            &package,
+            ApplicationPrimitiveCategory::Value,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let data_type: ApplicationDataType = array_data_type.clone().into();
+        assert_eq!(data_type, ApplicationDataType::Array(array_data_type.clone()));
+        assert_eq!(data_type.category().unwrap(), "ARRAY");
+
+        let data_type: ApplicationDataType = record_data_type.clone().into();
+        assert_eq!(data_type, ApplicationDataType::Record(record_data_type.clone()));
+        assert_eq!(data_type.category().unwrap(), "STRUCTURE");
+
+        let data_type: ApplicationDataType = primitive_data_type.clone().into();
+        assert_eq!(data_type, ApplicationDataType::Primitive(primitive_data_type.clone()));
+        assert_eq!(data_type.category().unwrap(), "VALUE");
+
+        let result = ApplicationDataType::try_from(package.element().clone());
+        assert!(result.is_err());
     }
 }

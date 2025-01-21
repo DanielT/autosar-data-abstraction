@@ -356,7 +356,7 @@ impl FlexrayArTpConnection {
     }
 
     /// get the targets
-    pub fn target(&self) -> impl Iterator<Item = FlexrayArTpNode> {
+    pub fn targets(&self) -> impl Iterator<Item = FlexrayArTpNode> {
         self.element()
             .get_sub_element(ElementName::TargetRefs)
             .into_iter()
@@ -373,7 +373,10 @@ impl FlexrayArTpConnection {
     ///
     /// If the connection supports both directions, then the reversed TP SDU is required.
     /// if Some(value) is passed, the reversed TP SDU is set to the given value, otherwise it is removed.
-    pub fn set_reversed_tp_sdu(&self, reversed_tp_sdu: &Option<Pdu>) -> Result<(), AutosarAbstractionError> {
+    pub fn set_reversed_tp_sdu<T: AbstractIpdu>(
+        &self,
+        reversed_tp_sdu: Option<&T>,
+    ) -> Result<(), AutosarAbstractionError> {
         if let Some(reversed_tp_sdu) = reversed_tp_sdu {
             self.element()
                 .get_or_create_sub_element(ElementName::ReversedTpSduRef)?
@@ -515,6 +518,7 @@ mod test {
                 false,
             )
             .unwrap();
+        assert_eq!(fr_ar_tp_config.channels().count(), 1);
         assert_eq!(fr_ar_tp_channel.ack_type(), Some(FrArTpAckType::AckWithRt));
         assert_eq!(fr_ar_tp_channel.extended_addressing(), Some(true));
         assert_eq!(
@@ -542,11 +546,27 @@ mod test {
         fr_ar_tp_node_target.set_tp_address(Some(&tp_address_target)).unwrap();
         assert_eq!(fr_ar_tp_node_target.tp_address(), Some(tp_address_target));
 
+        assert_eq!(fr_ar_tp_config.tp_addresses().count(), 2);
+        assert_eq!(fr_ar_tp_config.nodes().count(), 2);
+
         let flexray_ar_tp_connection = fr_ar_tp_channel
             .create_flexray_ar_tp_connection(Some("conn"), &tp_sdu, &fr_ar_tp_node_source, &fr_ar_tp_node_target)
             .unwrap();
         assert_eq!(flexray_ar_tp_connection.direct_tp_sdu(), Some(tp_sdu.into()));
         assert_eq!(flexray_ar_tp_connection.source(), Some(fr_ar_tp_node_source));
-        assert_eq!(flexray_ar_tp_connection.target().count(), 1);
+        assert_eq!(flexray_ar_tp_connection.targets().count(), 1);
+
+        let reversed_tp_sdu = system.create_dcm_ipdu("reversed_tp_sdu", &package, 1024).unwrap();
+        flexray_ar_tp_connection
+            .set_reversed_tp_sdu(Some(&reversed_tp_sdu))
+            .unwrap();
+        assert_eq!(
+            flexray_ar_tp_connection.reversed_tp_sdu(),
+            Some(reversed_tp_sdu.clone().into())
+        );
+
+        let fr_ar_tp_node_extra = fr_ar_tp_config.create_flexray_ar_tp_node("node_extra").unwrap();
+        flexray_ar_tp_connection.add_target(&fr_ar_tp_node_extra).unwrap();
+        assert_eq!(flexray_ar_tp_connection.targets().count(), 2);
     }
 }

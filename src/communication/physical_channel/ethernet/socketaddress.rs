@@ -89,10 +89,9 @@ impl SocketAddress {
                         .create_sub_element(ElementName::PortNumber)?
                         .set_character_data(portnum.to_string())?;
                 } else if let Some(dyn_assign) = port_dynamically_assigned {
-                    let boolstr = if *dyn_assign { "true" } else { "false" };
                     tcptp_port
                         .create_sub_element(ElementName::DynamicallyAssigned)?
-                        .set_character_data(boolstr)?;
+                        .set_character_data(*dyn_assign)?;
                 }
             }
             TpConfig::UdpTp {
@@ -161,16 +160,26 @@ impl SocketAddress {
             Some(SocketAddressType::Multicast(multicast_ecus)) => {
                 // extend the list of multicast EcuInstances if needed
                 if !multicast_ecus.contains(ecu) {
+                    let Some(connector) = self.physical_channel()?.ecu_connector(ecu) else {
+                        return Err(AutosarAbstractionError::InvalidParameter(
+                            "EcuInstance is not connected to the EthernetPhysicalChannel".to_string(),
+                        ));
+                    };
                     let mcr = self.0.get_or_create_sub_element(ElementName::MulticastConnectorRefs)?;
                     let mc_ref = mcr.create_sub_element(ElementName::MulticastConnectorRef)?;
-                    mc_ref.set_reference_target(ecu.element())?;
+                    mc_ref.set_reference_target(&connector)?;
                 }
             }
             None => {
                 // add the first EcuInstance to this multicast SocketAddress
+                let Some(connector) = self.physical_channel()?.ecu_connector(ecu) else {
+                    return Err(AutosarAbstractionError::InvalidParameter(
+                        "EcuInstance is not connected to the EthernetPhysicalChannel".to_string(),
+                    ));
+                };
                 let mcr = self.0.get_or_create_sub_element(ElementName::MulticastConnectorRefs)?;
                 let mc_ref = mcr.create_sub_element(ElementName::MulticastConnectorRef)?;
-                mc_ref.set_reference_target(ecu.element())?;
+                mc_ref.set_reference_target(&connector)?;
             }
             Some(SocketAddressType::Unicast(_)) => {
                 return Err(AutosarAbstractionError::InvalidParameter(
@@ -187,9 +196,15 @@ impl SocketAddress {
         let socket_type = self.socket_address_type();
         match socket_type {
             None | Some(SocketAddressType::Unicast(_)) => {
+                let channel = self.physical_channel()?;
+                let Some(connector) = channel.ecu_connector(ecu) else {
+                    return Err(AutosarAbstractionError::InvalidParameter(
+                        "EcuInstance is not connected to the EthernetPhysicalChannel".to_string(),
+                    ));
+                };
                 self.0
                     .get_or_create_sub_element(ElementName::ConnectorRef)?
-                    .set_reference_target(ecu.element())?;
+                    .set_reference_target(&connector)?;
             }
             Some(SocketAddressType::Multicast(_)) => {
                 return Err(AutosarAbstractionError::InvalidParameter(
@@ -392,13 +407,27 @@ mod test {
         model.create_file("filename", AutosarVersion::Autosar_4_3_0).unwrap();
         let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
+        let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
+        let channel = cluster.create_physical_channel("Channel", None).unwrap();
+
         let ecu_instance = system.create_ecu_instance("Ecu", &package).unwrap();
         let controller = ecu_instance
             .create_ethernet_communication_controller("EthCtrl", None)
             .unwrap();
-        let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
-        let channel = cluster.create_physical_channel("Channel", None).unwrap();
         controller.connect_physical_channel("connection", &channel).unwrap();
+
+        let ecu_instance2 = system.create_ecu_instance("Ecu2", &package).unwrap();
+        let controller2 = ecu_instance2
+            .create_ethernet_communication_controller("EthCtrl", None)
+            .unwrap();
+        controller2.connect_physical_channel("connection", &channel).unwrap();
+
+        let ecu_instance3 = system.create_ecu_instance("Ecu3", &package).unwrap();
+        let controller3 = ecu_instance3
+            .create_ethernet_communication_controller("EthCtrl", None)
+            .unwrap();
+        controller3.connect_physical_channel("connection", &channel).unwrap();
+
         let endpoint_address = NetworkEndpointAddress::IPv4 {
             address: Some("192.168.0.1".to_string()),
             address_source: Some(IPv4AddressSource::Fixed),
@@ -408,14 +437,100 @@ mod test {
         let network_endpoint = channel
             .create_network_endpoint("Address", endpoint_address, Some(&ecu_instance))
             .unwrap();
+        let tcp_port = TpConfig::UdpTp {
+            port_number: Some(1234),
+            port_dynamically_assigned: None,
+        };
+
+        // create a unicast socket with an EcuInstance
+        let socket_type: SocketAddressType = SocketAddressType::Unicast(Some(ecu_instance.clone()));
+        let unicast_socket_address = channel
+            .create_socket_address("Socket", &network_endpoint, &tcp_port, socket_type.clone())
+            .unwrap();
+        assert_eq!(channel.socket_addresses().count(), 1);
+        assert_eq!(unicast_socket_address.network_endpoint().unwrap(), network_endpoint);
+        assert_eq!(unicast_socket_address.socket_address_type().unwrap(), socket_type);
+        // replace the EcuInstance in the socket
+        unicast_socket_address.set_unicast_ecu(&ecu_instance2).unwrap();
+        assert_eq!(
+            unicast_socket_address.socket_address_type().unwrap(),
+            SocketAddressType::Unicast(Some(ecu_instance2.clone()))
+        );
+
+        // create a unicast socket without an EcuInstance
+        let socket_type: SocketAddressType = SocketAddressType::Unicast(None);
+        let unicast_socket_address2 = channel
+            .create_socket_address("Socket2", &network_endpoint, &tcp_port, socket_type.clone())
+            .unwrap();
+        // set the EcuInstance and verify that it is set
+        unicast_socket_address2.set_unicast_ecu(&ecu_instance).unwrap();
+        assert_eq!(
+            unicast_socket_address2.socket_address_type().unwrap(),
+            SocketAddressType::Unicast(Some(ecu_instance.clone()))
+        );
+
+        // create a multicast socket with multiple EcuInstances
+        let socket_type: SocketAddressType =
+            SocketAddressType::Multicast(vec![ecu_instance.clone(), ecu_instance2.clone()]);
+        let multicast_socket_address = channel
+            .create_socket_address("Socket3", &network_endpoint, &tcp_port, socket_type.clone())
+            .unwrap();
+        assert_eq!(multicast_socket_address.socket_address_type().unwrap(), socket_type);
+        // add an EcuInstance to the multicast socket
+        multicast_socket_address.add_multicast_ecu(&ecu_instance3).unwrap();
+        assert_eq!(
+            multicast_socket_address.socket_address_type().unwrap(),
+            SocketAddressType::Multicast(vec![ecu_instance.clone(), ecu_instance2.clone(), ecu_instance3.clone()])
+        );
+    }
+
+    #[test]
+    fn socket_sd_config() {
+        let model = AutosarModel::new();
+        model.create_file("filename", AutosarVersion::Autosar_4_3_0).unwrap();
+        let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
+        let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
+        let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
+        let channel = cluster.create_physical_channel("Channel", None).unwrap();
+
+        // let ecu_instance = system.create_ecu_instance("Ecu", &package).unwrap();
+        // let controller = ecu_instance
+        //     .create_ethernet_communication_controller("EthCtrl", None)
+        //     .unwrap();
+        // controller.connect_physical_channel("connection", &channel).unwrap();
+
+        let endpoint_address = NetworkEndpointAddress::IPv4 {
+            address: Some("192.168.0.1".to_string()),
+            address_source: Some(IPv4AddressSource::Fixed),
+            default_gateway: None,
+            network_mask: None,
+        };
+        let network_endpoint = channel
+            .create_network_endpoint("Address", endpoint_address, None)
+            .unwrap();
         let tcp_port = TpConfig::TcpTp {
             port_number: Some(1234),
             port_dynamically_assigned: None,
         };
-        let socket_type = SocketAddressType::Unicast(Some(ecu_instance));
-        channel
-            .create_socket_address("SocketName", &network_endpoint, &tcp_port, socket_type)
+        let socket_type: SocketAddressType = SocketAddressType::Unicast(None);
+        let socket = channel
+            .create_socket_address("Socket", &network_endpoint, &tcp_port, socket_type.clone())
             .unwrap();
-        assert_eq!(channel.socket_addresses().count(), 1);
+
+        let provided_service_instance = socket.create_provided_service_instance("psi", 1, 2).unwrap();
+        let consumed_service_instance = socket
+            .create_consumed_service_instance("csi", &provided_service_instance)
+            .unwrap();
+
+        assert_eq!(socket.provided_service_instances().count(), 1);
+        assert_eq!(
+            socket.provided_service_instances().next().unwrap(),
+            provided_service_instance
+        );
+        assert_eq!(socket.consumed_service_instances().count(), 1);
+        assert_eq!(
+            socket.consumed_service_instances().next().unwrap(),
+            consumed_service_instance
+        );
     }
 }

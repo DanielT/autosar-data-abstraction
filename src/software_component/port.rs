@@ -2,6 +2,8 @@ use crate::{abstraction_element, software_component, AbstractionElement, Autosar
 use autosar_data::{Element, ElementName};
 use software_component::{PortInterface, SwComponentType};
 
+use super::AbstractPortInterface;
+
 //#########################################################
 
 /// `RPortPrototype` represents a required port prototype
@@ -11,7 +13,7 @@ abstraction_element!(RPortPrototype, RPortPrototype);
 
 impl RPortPrototype {
     /// Create a new `RPortPrototype`
-    pub(crate) fn new<T: Into<PortInterface> + AbstractionElement>(
+    pub(crate) fn new<T: AbstractPortInterface>(
         name: &str,
         parent_element: &Element,
         interface: &T,
@@ -52,7 +54,7 @@ abstraction_element!(PPortPrototype, PPortPrototype);
 
 impl PPortPrototype {
     /// Create a new `PPortPrototype`
-    pub(crate) fn new<T: Into<PortInterface> + AbstractionElement>(
+    pub(crate) fn new<T: AbstractPortInterface>(
         name: &str,
         parent_element: &Element,
         interface: &T,
@@ -93,7 +95,7 @@ abstraction_element!(PRPortPrototype, PrPortPrototype);
 
 impl PRPortPrototype {
     /// Create a new `PRPortPrototype`
-    pub(crate) fn new<T: Into<PortInterface> + AbstractionElement>(
+    pub(crate) fn new<T: AbstractPortInterface>(
         name: &str,
         parent_element: &Element,
         interface: &T,
@@ -228,10 +230,7 @@ mod test {
     use super::*;
     use crate::ArPackage;
     use autosar_data::{AutosarModel, AutosarVersion};
-    use software_component::{
-        AbstractSwComponentType, ClientServerInterface, CompositionSwComponentType, ModeSwitchInterface,
-        NvDataInterface, ParameterInterface, SenderReceiverInterface, TriggerInterface,
-    };
+    use software_component::AbstractSwComponentType;
 
     #[test]
     fn ports() {
@@ -239,20 +238,24 @@ mod test {
         let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/package").unwrap();
 
-        let comp = CompositionSwComponentType::new("comp", &package).unwrap();
+        let comp = package.create_composition_sw_component_type("comp").unwrap();
 
-        let port_interface = SenderReceiverInterface::new("sr_interface", &package).unwrap();
+        let port_interface = package.create_sender_receiver_interface("sr_interface").unwrap();
         let r_port = comp.create_r_port("sr_r_port", &port_interface).unwrap();
         let p_port = comp.create_p_port("sr_p_port", &port_interface).unwrap();
         let pr_port = comp.create_pr_port("sr_pr_port", &port_interface).unwrap();
 
         assert_eq!(comp.ports().count(), 3);
         let ports: Vec<PortPrototype> = comp.ports().collect();
-        assert_eq!(ports[0], r_port.into());
-        assert_eq!(ports[1], p_port.into());
-        assert_eq!(ports[2], pr_port.into());
+        assert_eq!(ports[0], r_port.clone().into());
+        assert_eq!(ports[1], p_port.clone().into());
+        assert_eq!(ports[2], pr_port.clone().into());
+        assert_eq!(r_port.component_type().unwrap(), comp.clone().into());
+        assert_eq!(p_port.component_type().unwrap(), comp.clone().into());
+        assert_eq!(pr_port.component_type().unwrap(), comp.clone().into());
+        assert_eq!(ports[0].component_type().unwrap(), comp.clone().into());
 
-        let port_interface = ClientServerInterface::new("cs_interface", &package).unwrap();
+        let port_interface = package.create_client_server_interface("cs_interface").unwrap();
         let r_port = comp.create_r_port("cs_r_port", &port_interface).unwrap();
         let p_port = comp.create_p_port("cs_p_port", &port_interface).unwrap();
         let pr_port = comp.create_pr_port("cs_pr_port", &port_interface).unwrap();
@@ -263,7 +266,7 @@ mod test {
         assert_eq!(ports[4], p_port.into());
         assert_eq!(ports[5], pr_port.into());
 
-        let port_interface = ModeSwitchInterface::new("ms_interface", &package).unwrap();
+        let port_interface = package.create_mode_switch_interface("ms_interface").unwrap();
         let r_port = comp.create_r_port("ms_r_port", &port_interface).unwrap();
         let p_port = comp.create_p_port("ms_p_port", &port_interface).unwrap();
         let pr_port = comp.create_pr_port("ms_pr_port", &port_interface).unwrap();
@@ -274,7 +277,7 @@ mod test {
         assert_eq!(ports[7], p_port.into());
         assert_eq!(ports[8], pr_port.into());
 
-        let port_interface = NvDataInterface::new("nv_interface", &package).unwrap();
+        let port_interface = package.create_nv_data_interface("nv_interface").unwrap();
         let r_port = comp.create_r_port("nv_r_port", &port_interface).unwrap();
         let p_port = comp.create_p_port("nv_p_port", &port_interface).unwrap();
         let pr_port = comp.create_pr_port("nv_pr_port", &port_interface).unwrap();
@@ -285,7 +288,7 @@ mod test {
         assert_eq!(ports[10], p_port.into());
         assert_eq!(ports[11], pr_port.into());
 
-        let port_interface = ParameterInterface::new("param_interface", &package).unwrap();
+        let port_interface = package.create_parameter_interface("param_interface").unwrap();
         let r_port = comp.create_r_port("param_r_port", &port_interface).unwrap();
         let p_port = comp.create_p_port("param_p_port", &port_interface).unwrap();
         let pr_port_result = comp.create_pr_port("param_pr_port", &port_interface);
@@ -296,7 +299,7 @@ mod test {
         assert_eq!(ports[12], r_port.into());
         assert_eq!(ports[13], p_port.into());
 
-        let port_interface = TriggerInterface::new("trigger_interface", &package).unwrap();
+        let port_interface = package.create_trigger_interface("trigger_interface").unwrap();
         let r_port = comp.create_r_port("trigger_r_port", &port_interface).unwrap();
         let p_port = comp.create_p_port("trigger_p_port", &port_interface).unwrap();
         let pr_port = comp.create_pr_port("trigger_pr_port", &port_interface).unwrap();

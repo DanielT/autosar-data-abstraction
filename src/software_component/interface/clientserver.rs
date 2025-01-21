@@ -1,4 +1,9 @@
-use crate::{abstraction_element, datatype, AbstractionElement, ArPackage, AutosarAbstractionError, Element, EnumItem};
+use crate::{
+    abstraction_element,
+    datatype::{self, AbstractAutosarDataType},
+    software_component::AbstractPortInterface,
+    AbstractionElement, ArPackage, AutosarAbstractionError, Element, EnumItem,
+};
 use autosar_data::ElementName;
 use datatype::AutosarDataType;
 
@@ -10,6 +15,8 @@ use datatype::AutosarDataType;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ClientServerInterface(pub(crate) Element);
 abstraction_element!(ClientServerInterface, ClientServerInterface);
+
+impl AbstractPortInterface for ClientServerInterface {}
 
 impl ClientServerInterface {
     /// Create a new `ClientServerInterface`
@@ -71,6 +78,14 @@ impl ApplicationError {
             .set_character_data(error_code)?;
         Ok(Self(application_error))
     }
+
+    /// Get the error code of the application error
+    pub fn error_code(&self) -> Option<u64> {
+        self.element()
+            .get_sub_element(ElementName::ErrorCode)?
+            .character_data()?
+            .parse_integer()
+    }
 }
 
 //##################################################################
@@ -88,29 +103,14 @@ impl ClientServerOperation {
     }
 
     /// Add an argument to the operation
-    pub fn create_argument(
+    pub fn create_argument<T: AbstractAutosarDataType>(
         &self,
         name: &str,
-        data_type: &AutosarDataType,
+        data_type: &T,
         direction: ArgumentDirection,
     ) -> Result<ArgumentDataPrototype, AutosarAbstractionError> {
         let arguments = self.element().get_or_create_sub_element(ElementName::Arguments)?;
         ArgumentDataPrototype::new(name, &arguments, data_type.element(), direction)
-    }
-
-    /// add a reference to possible error to the operation
-    pub fn add_possible_error_reference(&self, error: &ApplicationError) -> Result<(), AutosarAbstractionError> {
-        if self.element().named_parent()? != error.element().named_parent()? {
-            return Err(AutosarAbstractionError::InvalidParameter(
-                "Error and operation must be in the same ClientServerInterface".to_string(),
-            ));
-        }
-
-        let possible_errors = self.element().get_or_create_sub_element(ElementName::PossibleErrors)?;
-        possible_errors
-            .create_sub_element(ElementName::PossibleErrorRef)?
-            .set_reference_target(error.element())?;
-        Ok(())
     }
 
     /// iterate over all arguments
@@ -120,6 +120,37 @@ impl ClientServerOperation {
             .into_iter()
             .flat_map(|arguments| arguments.sub_elements())
             .filter_map(|elem| ArgumentDataPrototype::try_from(elem).ok())
+    }
+
+    /// add a reference to possible error to the operation
+    pub fn add_possible_error(&self, error: &ApplicationError) -> Result<(), AutosarAbstractionError> {
+        if self.element().named_parent()? != error.element().named_parent()? {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "Error and operation must be in the same ClientServerInterface".to_string(),
+            ));
+        }
+
+        let possible_errors = self
+            .element()
+            .get_or_create_sub_element(ElementName::PossibleErrorRefs)?;
+        possible_errors
+            .create_sub_element(ElementName::PossibleErrorRef)?
+            .set_reference_target(error.element())?;
+        Ok(())
+    }
+
+    /// Get the possible errors of the operation
+    pub fn possible_errors(&self) -> impl Iterator<Item = ApplicationError> {
+        self.element()
+            .get_sub_element(ElementName::PossibleErrorRefs)
+            .into_iter()
+            .flat_map(|errors| errors.sub_elements())
+            .filter_map(|refelem| {
+                refelem
+                    .get_reference_target()
+                    .ok()
+                    .and_then(|elem| ApplicationError::try_from(elem).ok())
+            })
     }
 }
 
@@ -189,5 +220,78 @@ impl ArgumentDataPrototype {
             .create_sub_element(ElementName::Direction)?
             .set_character_data::<EnumItem>(direction.into())?;
         Ok(Self(argument))
+    }
+
+    /// Get the data type of the argument
+    pub fn data_type(&self) -> Option<AutosarDataType> {
+        let data_type_elem = self
+            .element()
+            .get_sub_element(ElementName::TypeTref)?
+            .get_reference_target()
+            .ok()?;
+        AutosarDataType::try_from(data_type_elem).ok()
+    }
+
+    /// Get the direction of the argument
+    pub fn direction(&self) -> Option<ArgumentDirection> {
+        let value = self
+            .element()
+            .get_sub_element(ElementName::Direction)?
+            .character_data()?
+            .enum_value()?;
+
+        ArgumentDirection::try_from(value).ok()
+    }
+}
+
+//##################################################################
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use autosar_data::{AutosarModel, AutosarVersion};
+    use datatype::{BaseTypeEncoding, ImplementationDataTypeSettings};
+
+    #[test]
+    fn test_client_server_interface() {
+        let model = AutosarModel::new();
+        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
+        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let client_server_interface = ClientServerInterface::new("TestInterface", &package).unwrap();
+
+        assert_eq!(client_server_interface.name().unwrap(), "TestInterface");
+        assert_eq!(client_server_interface.operations().count(), 0);
+        assert_eq!(client_server_interface.possible_errors().count(), 0);
+
+        let error = client_server_interface.create_possible_error("TestError", 42).unwrap();
+        assert_eq!(client_server_interface.possible_errors().count(), 1);
+        assert_eq!(error.name().unwrap(), "TestError");
+        assert_eq!(error.error_code().unwrap(), 42);
+
+        let operation = client_server_interface.create_operation("TestOperation").unwrap();
+        assert_eq!(client_server_interface.operations().count(), 1);
+        assert_eq!(operation.name().unwrap(), "TestOperation");
+        assert_eq!(operation.arguments().count(), 0);
+
+        operation.add_possible_error(&error).unwrap();
+        assert_eq!(operation.possible_errors().count(), 1);
+
+        let base_type = package
+            .create_sw_base_type("base", 32, BaseTypeEncoding::None, None, None, None)
+            .unwrap();
+        let impl_settings = ImplementationDataTypeSettings::Value {
+            name: "ImplementationValue".to_string(),
+            base_type,
+            compu_method: None,
+            data_constraint: None,
+        };
+        let datatype = package.create_implementation_data_type(impl_settings).unwrap();
+        let argument = operation
+            .create_argument("TestArgument", &datatype, ArgumentDirection::In)
+            .unwrap();
+        assert_eq!(argument.name().unwrap(), "TestArgument");
+        assert_eq!(argument.data_type().unwrap().name().unwrap(), "ImplementationValue");
+        assert_eq!(argument.direction().unwrap(), ArgumentDirection::In);
+        assert_eq!(operation.arguments().count(), 1);
     }
 }

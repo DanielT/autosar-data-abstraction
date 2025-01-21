@@ -57,7 +57,7 @@ pub trait AbstractSwComponentType: AbstractionElement {
     }
 
     /// create a new required port with the given name and port interface
-    fn create_r_port<T: Into<PortInterface> + AbstractionElement>(
+    fn create_r_port<T: AbstractPortInterface>(
         &self,
         name: &str,
         port_interface: &T,
@@ -67,7 +67,7 @@ pub trait AbstractSwComponentType: AbstractionElement {
     }
 
     /// create a new provided port with the given name and port interface
-    fn create_p_port<T: Into<PortInterface> + AbstractionElement>(
+    fn create_p_port<T: AbstractPortInterface>(
         &self,
         name: &str,
         port_interface: &T,
@@ -77,7 +77,7 @@ pub trait AbstractSwComponentType: AbstractionElement {
     }
 
     /// create a new provided required port with the given name and port interface
-    fn create_pr_port<T: Into<PortInterface> + AbstractionElement>(
+    fn create_pr_port<T: AbstractPortInterface>(
         &self,
         name: &str,
         port_interface: &T,
@@ -160,12 +160,12 @@ impl CompositionSwComponentType {
     }
 
     /// get an iterator over the components of the composition
-    pub fn components(&self) -> impl Iterator<Item = SwComponentType> {
+    pub fn components(&self) -> impl Iterator<Item = SwComponentPrototype> {
         self.element()
             .get_sub_element(ElementName::Components)
             .into_iter()
             .flat_map(|components| components.sub_elements())
-            .filter_map(|elem| SwComponentType::try_from(elem).ok())
+            .filter_map(|elem| SwComponentPrototype::try_from(elem).ok())
     }
 
     /// create a new delegation connector between an inner port and an outer port
@@ -358,6 +358,15 @@ impl CompositionSwComponentType {
 
         let connectors = self.element().get_or_create_sub_element(ElementName::Connectors)?;
         PassThroughSwConnector::new(name, &connectors, port_1, port_2)
+    }
+
+    /// iterate over all connectors
+    pub fn connectors(&self) -> impl Iterator<Item = SwConnector> {
+        self.element()
+            .get_sub_element(ElementName::Connectors)
+            .into_iter()
+            .flat_map(|connectors| connectors.sub_elements())
+            .filter_map(|elem| SwConnector::try_from(elem).ok())
     }
 }
 
@@ -811,6 +820,9 @@ mod test {
 
         let ecu_abstraction = EcuAbstractionSwComponentType::new("ecu_abstraction", &package).unwrap();
         ecu_abstraction.add_data_type_mapping(&mapping_set).unwrap();
+
+        let sw_component_type = SwComponentType::Composition(composition);
+        sw_component_type.add_data_type_mapping(&mapping_set).unwrap();
     }
 
     #[test]
@@ -827,7 +839,7 @@ mod test {
         let ecu_abstraction = EcuAbstractionSwComponentType::new("ecu_abstraction", &package).unwrap();
 
         let container_comp = CompositionSwComponentType::new("container_comp", &package).unwrap();
-        let _comp_prototype = container_comp.create_component("comp", &comp.clone()).unwrap();
+        let comp_prototype = container_comp.create_component("comp", &comp.clone()).unwrap();
         let _app_prototype = container_comp.create_component("app", &app.clone()).unwrap();
         let _cdd_prototype = container_comp.create_component("cdd", &cdd.clone()).unwrap();
         let _service_prototype = container_comp.create_component("service", &service.clone()).unwrap();
@@ -837,5 +849,124 @@ mod test {
         let _ecu_abstraction_prototype = container_comp
             .create_component("ecu_abstraction", &ecu_abstraction.clone())
             .unwrap();
+
+        assert_eq!(container_comp.components().count(), 6);
+        let mut comp_prototype_iter = container_comp.components();
+        assert_eq!(
+            comp_prototype_iter.next().unwrap().component_type().unwrap(),
+            comp.clone().into()
+        );
+        assert_eq!(
+            comp_prototype_iter.next().unwrap().component_type().unwrap(),
+            app.into()
+        );
+        assert_eq!(
+            comp_prototype_iter.next().unwrap().component_type().unwrap(),
+            cdd.into()
+        );
+        assert_eq!(
+            comp_prototype_iter.next().unwrap().component_type().unwrap(),
+            service.into()
+        );
+        assert_eq!(
+            comp_prototype_iter.next().unwrap().component_type().unwrap(),
+            sensor_actuator.into()
+        );
+        assert_eq!(
+            comp_prototype_iter.next().unwrap().component_type().unwrap(),
+            ecu_abstraction.into()
+        );
+        assert!(comp_prototype_iter.next().is_none());
+
+        let component_prototype = ComponentPrototype::SwComponent(comp_prototype);
+        assert_eq!(component_prototype.component_type().unwrap(), comp.into());
+    }
+
+    #[test]
+    fn ports_and_connectors() {
+        let model = AutosarModel::new();
+        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
+        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+
+        // create some components:
+        // comp_parent contains comp_child, swc1, swc2
+        let comp_parent_type = package.create_composition_sw_component_type("comp_parent").unwrap();
+        let comp_child_type = package.create_composition_sw_component_type("comp_child").unwrap();
+        let swc_type = package.create_application_sw_component_type("swc_type1").unwrap();
+
+        let comp_child_proto = comp_parent_type.create_component("comp2", &comp_child_type).unwrap();
+        let swc_proto = comp_parent_type.create_component("swc1", &swc_type).unwrap();
+
+        // create port interfaces: S/R and C/S
+        let port_interface_sr = package.create_sender_receiver_interface("sr").unwrap();
+        let port_interface_cs = package.create_client_server_interface("cs").unwrap();
+
+        // connect S/R ports:
+        // - comp_parent R port to swc R port (delegation)
+        // - swc P port to comp_child R port (assembly)
+        // - comp_child R port to comp_child p port (passthrough)
+        let comp_parent_r_port = comp_parent_type.create_r_port("port_r", &port_interface_sr).unwrap();
+        let swc_r_port = swc_type.create_r_port("port_r", &port_interface_sr).unwrap();
+        let swc_p_port = swc_type.create_p_port("port_p", &port_interface_sr).unwrap();
+        let comp_child_r_port = comp_child_type.create_r_port("port_r", &port_interface_sr).unwrap();
+        let comp_child_p_port = comp_child_type.create_p_port("port_p", &port_interface_sr).unwrap();
+
+        comp_parent_type
+            .create_delegation_connector("sr_delegation", &swc_r_port, &swc_proto, &comp_parent_r_port)
+            .unwrap();
+        comp_parent_type
+            .create_assembly_connector(
+                "sr_assembly",
+                &swc_p_port,
+                &swc_proto,
+                &comp_child_r_port,
+                &comp_child_proto,
+            )
+            .unwrap();
+        comp_child_type
+            .create_pass_through_connector("sr_passthrough", &comp_child_r_port, &comp_child_p_port)
+            .unwrap();
+
+        // connect C/S ports:
+        // - comp_parent S port to swc S port (delegation)
+        // - swc C port to comp_child S port (assembly)
+        // - comp_child S port to comp_child C port (passthrough)
+        let comp_parent_s_port = comp_parent_type.create_p_port("port_s", &port_interface_cs).unwrap();
+        let swc_s_port = swc_type.create_p_port("port_s", &port_interface_cs).unwrap();
+        let swc_c_port = swc_type.create_r_port("port_c", &port_interface_cs).unwrap();
+        let comp_child_s_port = comp_child_type.create_p_port("port_s", &port_interface_cs).unwrap();
+        let comp_child_c_port = comp_child_type.create_r_port("port_c", &port_interface_cs).unwrap();
+
+        comp_parent_type
+            .create_delegation_connector("cs_delegation", &swc_s_port, &swc_proto, &comp_parent_s_port)
+            .unwrap();
+        comp_parent_type
+            .create_assembly_connector(
+                "cs_assembly",
+                &swc_c_port,
+                &swc_proto,
+                &comp_child_s_port,
+                &comp_child_proto,
+            )
+            .unwrap();
+        comp_child_type
+            .create_pass_through_connector("cs_passthrough", &comp_child_s_port, &comp_child_c_port)
+            .unwrap();
+
+        // check the connectors
+        let mut parent_connectors = comp_parent_type.connectors();
+        assert_eq!(parent_connectors.next().unwrap().name().unwrap(), "sr_delegation");
+        assert_eq!(parent_connectors.next().unwrap().name().unwrap(), "sr_assembly");
+        assert_eq!(parent_connectors.next().unwrap().name().unwrap(), "cs_delegation");
+        assert_eq!(parent_connectors.next().unwrap().name().unwrap(), "cs_assembly");
+        assert!(parent_connectors.next().is_none());
+
+        let mut child_connectors = comp_child_type.connectors();
+        assert_eq!(child_connectors.next().unwrap().name().unwrap(), "sr_passthrough");
+        assert_eq!(child_connectors.next().unwrap().name().unwrap(), "cs_passthrough");
+        assert!(child_connectors.next().is_none());
+
+        // create a port group
+        comp_parent_type.create_port_group("group").unwrap();
     }
 }

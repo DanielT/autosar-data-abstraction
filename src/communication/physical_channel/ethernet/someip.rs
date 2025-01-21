@@ -596,7 +596,7 @@ impl ConsumedEventGroup {
             .and_then(|cdata| cdata.parse_integer())
     }
 
-    /// create a new `PduActivationRoutingGroup` in this `EventHandler`
+    /// create a new `PduActivationRoutingGroup` in this `ConsumedEventGroup`
     pub fn create_pdu_activation_routing_group(
         &self,
         name: &str,
@@ -679,7 +679,7 @@ pub enum LocalUnicastAddress {
     Tcp(SocketAddress),
 }
 
-/// helper function for both `ConsummedServiceInstance` and `ProvidedServiceInstance`
+/// helper function for both `ConsumedServiceInstance` and `ProvidedServiceInstance`
 fn set_local_unicast_address(parent: &Element, target_socket: &SocketAddress) -> Result<(), AutosarAbstractionError> {
     let Some(target_appendpoint) = target_socket
         .element()
@@ -689,9 +689,11 @@ fn set_local_unicast_address(parent: &Element, target_socket: &SocketAddress) ->
             "Can't set the local address: The target SocketAddress does not have an ApplicationEndpoint, so it can't be used".to_string(),
         ));
     };
-    let tp_config = target_socket.tp_config().ok_or_else(|| AutosarAbstractionError::InvalidParameter(
-        "Can't set the local address: The target SocketAddress does not have a TP configuration, so it can't be used".to_string(),
-    ))?;
+    let Some(tp_config) = target_socket.tp_config() else {
+        return Err(AutosarAbstractionError::InvalidParameter(
+            "Can't set the local address: The target SocketAddress does not have a TP configuration, so it can't be used".to_string(),
+        ));
+    };
 
     let addresses_container = match parent.get_sub_element(ElementName::LocalUnicastAddresss) {
         Some(addresses_container) => {
@@ -1488,8 +1490,11 @@ mod test {
         let model = AutosarModel::new();
         let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
-        let si_set = ServiceInstanceCollectionSet::new("service_instance_collection_set", &package).unwrap();
+        let si_set = system
+            .create_service_instance_collection_set("service_instance_collection_set", &package)
+            .unwrap();
         assert_eq!(si_set.name().unwrap(), "service_instance_collection_set");
 
         let psi = si_set
@@ -1512,10 +1517,13 @@ mod test {
         let model = AutosarModel::new();
         let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         let socket = helper_create_test_objects(&model);
 
-        let si_set = ServiceInstanceCollectionSet::new("service_instance_collection_set", &package).unwrap();
+        let si_set = system
+            .create_service_instance_collection_set("service_instance_collection_set", &package)
+            .unwrap();
         let psi = si_set
             .create_provided_service_instance("ProvidedInstance", 1, 1, 1, 0)
             .unwrap();
@@ -1547,8 +1555,11 @@ mod test {
         let model = AutosarModel::new();
         let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
-        let si_set = ServiceInstanceCollectionSet::new("service_instance_collection_set", &package).unwrap();
+        let si_set = system
+            .create_service_instance_collection_set("service_instance_collection_set", &package)
+            .unwrap();
         let psi = si_set
             .create_provided_service_instance("ProvidedInstance", 1, 1, 1, 0)
             .unwrap();
@@ -1586,8 +1597,11 @@ mod test {
         let model = AutosarModel::new();
         let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
-        let si_set = ServiceInstanceCollectionSet::new("service_instance_collection_set", &package).unwrap();
+        let si_set = system
+            .create_service_instance_collection_set("service_instance_collection_set", &package)
+            .unwrap();
         let psi = si_set
             .create_provided_service_instance("ProvidedInstance", 1, 1, 1, 0)
             .unwrap();
@@ -1656,10 +1670,13 @@ mod test {
         let model = AutosarModel::new();
         let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         let socket = helper_create_test_objects(&model);
 
-        let si_set = ServiceInstanceCollectionSet::new("service_instance_collection_set", &package).unwrap();
+        let si_set = system
+            .create_service_instance_collection_set("service_instance_collection_set", &package)
+            .unwrap();
         let csi = si_set
             .create_consumed_service_instance("ConsumedInstance", 1, 1, 1, "1")
             .unwrap();
@@ -1691,10 +1708,13 @@ mod test {
         let model = AutosarModel::new();
         let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         let socket = helper_create_test_objects(&model);
 
-        let si_set = ServiceInstanceCollectionSet::new("service_instance_collection_set", &package).unwrap();
+        let si_set = system
+            .create_service_instance_collection_set("service_instance_collection_set", &package)
+            .unwrap();
         let csi = si_set
             .create_consumed_service_instance("ConsumedInstance", 1, 1, 1, "1")
             .unwrap();
@@ -1719,8 +1739,11 @@ mod test {
         let model = AutosarModel::new();
         let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
-        let si_set = ServiceInstanceCollectionSet::new("service_instance_collection_set", &package).unwrap();
+        let si_set = system
+            .create_service_instance_collection_set("service_instance_collection_set", &package)
+            .unwrap();
         let csi = si_set
             .create_consumed_service_instance("ConsumedInstance", 1, 1, 1, "1")
             .unwrap();
@@ -1766,6 +1789,24 @@ mod test {
             sd_client_event_group_timing_config.request_response_delay().unwrap(),
             rrd
         );
+        sd_client_event_group_timing_config
+            .set_subscribe_eventgroup_retry_delay(1.0)
+            .unwrap();
+        assert_eq!(
+            sd_client_event_group_timing_config
+                .subscribe_eventgroup_retry_delay()
+                .unwrap(),
+            1.0
+        );
+        sd_client_event_group_timing_config
+            .set_subscribe_eventgroup_retry_max(5)
+            .unwrap();
+        assert_eq!(
+            sd_client_event_group_timing_config
+                .subscribe_eventgroup_retry_max()
+                .unwrap(),
+            5
+        );
 
         ceg.set_sd_client_timer_config(&sd_client_event_group_timing_config)
             .unwrap();
@@ -1780,6 +1821,7 @@ mod test {
         let model = AutosarModel::new();
         let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         let udp_socket = helper_create_test_objects(&model);
         let network_endpoint = udp_socket.network_endpoint().unwrap();
@@ -1807,7 +1849,9 @@ mod test {
             )
             .unwrap();
 
-        let si_set = ServiceInstanceCollectionSet::new("service_instance_collection_set", &package).unwrap();
+        let si_set = system
+            .create_service_instance_collection_set("service_instance_collection_set", &package)
+            .unwrap();
         let psi = si_set
             .create_provided_service_instance("ProvidedInstance", 1, 1, 1, 0)
             .unwrap();
@@ -1846,15 +1890,25 @@ mod test {
             .unwrap();
         let ipdu = system.create_isignal_ipdu("pdu", &package, 222).unwrap();
 
-        let si_set = ServiceInstanceCollectionSet::new("service_instance_collection_set", &package).unwrap();
+        let si_set = system
+            .create_service_instance_collection_set("service_instance_collection_set", &package)
+            .unwrap();
         let psi = si_set
             .create_provided_service_instance("ProvidedInstance", 1, 1, 1, 0)
             .unwrap();
         let eh = psi.create_event_handler("EventHandler", 1).unwrap();
+        let csi = si_set
+            .create_consumed_service_instance("ConsumedInstance", 1, 1, 1, "1")
+            .unwrap();
+        let ceg = csi.create_consumed_event_group("EventGroup", 1).unwrap();
 
-        let prg = eh
+        let psi_prg = eh
             .create_pdu_activation_routing_group("PduActivationRoutingGroup", EventGroupControlType::ActivationUnicast)
             .unwrap();
+        let _csi_pgr = ceg
+            .create_pdu_activation_routing_group("PduActivationRoutingGroup", EventGroupControlType::ActivationUnicast)
+            .unwrap();
+
         let ipdu_identifier_set = system
             .create_socket_connection_ipdu_identifier_set("socon_ipdu_id", &package)
             .unwrap();
@@ -1869,10 +1923,10 @@ mod test {
             )
             .unwrap();
         assert_eq!(ipdu_identifier_set.socon_ipdu_identifiers().count(), 1);
-        prg.add_ipdu_identifier_udp(&ipdu_identifier).unwrap();
-        assert_eq!(prg.ipdu_identifiers_udp().count(), 1);
-        prg.add_ipdu_identifier_tcp(&ipdu_identifier).unwrap();
-        assert_eq!(prg.ipdu_identifiers_tcp().count(), 1);
+        psi_prg.add_ipdu_identifier_udp(&ipdu_identifier).unwrap();
+        assert_eq!(psi_prg.ipdu_identifiers_udp().count(), 1);
+        psi_prg.add_ipdu_identifier_tcp(&ipdu_identifier).unwrap();
+        assert_eq!(psi_prg.ipdu_identifiers_tcp().count(), 1);
     }
 
     #[test]
@@ -1880,8 +1934,11 @@ mod test {
         let model = AutosarModel::new();
         let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
-        let si_set = ServiceInstanceCollectionSet::new("service_instance_collection_set", &package).unwrap();
+        let si_set = system
+            .create_service_instance_collection_set("service_instance_collection_set", &package)
+            .unwrap();
         let psi = si_set
             .create_provided_service_instance("ProvidedInstance", 1, 1, 1, 0)
             .unwrap();
@@ -1996,13 +2053,20 @@ mod test {
         let tp_config = system
             .create_somip_tp_config("someip_tp_config", &package, &cluster)
             .unwrap();
+
+        let tp_channel = tp_config.create_someip_tp_channel("someip_tp_channel").unwrap();
+        // TODO: assert_eq!(tp_config.tp_channels().count(), 1);
+
         tp_config
             .create_someip_tp_connection(SomeipTpConnection {
-                tp_sdu: isignal_ipdu,
+                tp_sdu: isignal_ipdu.clone(),
                 transport_pdu_triggering,
-                tp_channel: None,
+                tp_channel: Some(tp_channel.clone()),
             })
             .unwrap();
         assert_eq!(tp_config.someip_tp_connections().count(), 1);
+        let conn = tp_config.someip_tp_connections().next().unwrap();
+        assert_eq!(conn.tp_sdu, isignal_ipdu);
+        assert_eq!(conn.tp_channel, Some(tp_channel));
     }
 }

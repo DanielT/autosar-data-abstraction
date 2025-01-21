@@ -37,7 +37,6 @@ impl AbstractionElement for Frame {
 
 impl Frame {
     /// returns an iterator over all PDUs in the frame
-    #[must_use]
     pub fn mapped_pdus(&self) -> impl Iterator<Item = PduToFrameMapping> {
         self.element()
             .get_sub_element(ElementName::PduToFrameMappings)
@@ -255,7 +254,6 @@ impl FrameTriggering {
     }
 
     /// iterate over all frame ports referenced by this frame triggering
-    #[must_use]
     pub fn frame_ports(&self) -> impl Iterator<Item = FramePort> {
         self.element()
             .get_sub_element(ElementName::FramePortRefs)
@@ -270,7 +268,6 @@ impl FrameTriggering {
     }
 
     /// iterate over all PDU triggerings used by this frame triggering
-    #[must_use]
     pub fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> {
         self.element()
             .get_sub_element(ElementName::PduTriggerings)
@@ -306,8 +303,8 @@ impl PduToFrameMapping {
                 "Byte order: opaque is not allowed for PDUs".to_string(),
             ));
         }
-        if (byte_order == ByteOrder::MostSignificantByteFirst && (start_position - 7) % 8 != 0)
-            || (byte_order == ByteOrder::MostSignificantByteLast && start_position % 8 != 0)
+        if (byte_order == ByteOrder::MostSignificantByteFirst && (start_position % 8 != 7))
+            || (byte_order == ByteOrder::MostSignificantByteLast && (start_position % 8 != 0))
         {
             return Err(AutosarAbstractionError::InvalidParameter(
                 "PDUs must be byte-alinged".to_string(),

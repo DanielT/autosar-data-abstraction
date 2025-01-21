@@ -171,7 +171,7 @@ impl ProvidedServiceInstanceV1 {
             .get_sub_element(ElementName::InitialRepetitionsBaseDelay)
             .and_then(|elem| elem.character_data())
             .and_then(|cdata| cdata.parse_float());
-        let offer_cyclic_delay = initial_offer_elem
+        let offer_cyclic_delay = config_elem
             .get_sub_element(ElementName::OfferCyclicDelay)
             .and_then(|elem| elem.character_data())
             .and_then(|cdata| cdata.parse_float());
@@ -390,7 +390,7 @@ impl ConsumedServiceInstanceV1 {
         Ok(Self(elem))
     }
 
-    /// get the `ProvidedServiceInstance` referenced by this `ConsumedServiceInstance`
+    /// get the `ProvidedServiceInstance` referenced by this `ConsumedServiceInstanceV1`
     #[must_use]
     pub fn provided_service_instance(&self) -> Option<ProvidedServiceInstanceV1> {
         self.element()
@@ -399,7 +399,7 @@ impl ConsumedServiceInstanceV1 {
             .and_then(|psielem| ProvidedServiceInstanceV1::try_from(psielem).ok())
     }
 
-    /// create a new `ConsumedEventGrup` in this `ConsumedServiceInstance`
+    /// create a new `ConsumedEventGrup` in this `ConsumedServiceInstanceV1`
     pub fn create_consumed_event_group(
         &self,
         name: &str,
@@ -412,7 +412,7 @@ impl ConsumedServiceInstanceV1 {
         ConsumedEventGroupV1::new(name, &cegs, event_group_identifier, event_handler)
     }
 
-    /// get the `ConsumedEventGroup`s in this `ConsumedServiceInstance`
+    /// get the `ConsumedEventGroup`s in this `ConsumedServiceInstanceV1`
     pub fn consumed_event_groups(&self) -> impl Iterator<Item = ConsumedEventGroupV1> {
         self.element()
             .get_sub_element(ElementName::ConsumedEventGroups)
@@ -421,7 +421,7 @@ impl ConsumedServiceInstanceV1 {
             .filter_map(|ceg| ConsumedEventGroupV1::try_from(ceg).ok())
     }
 
-    /// set the SD client configuration for this `ProvidedServiceInstance`
+    /// set the SD client configuration for this `ConsumedServiceInstanceV1`
     pub fn set_sd_client_config(&self, sd_client_config: &SdConfig) -> Result<(), AutosarAbstractionError> {
         // remove any existing SdClientConfig, so that we can start fresh
         if let Some(config_elem) = self.element().get_sub_element(ElementName::SdClientConfig) {
@@ -455,11 +455,12 @@ impl ConsumedServiceInstanceV1 {
                 .create_sub_element(ElementName::InitialRepetitionsBaseDelay)?
                 .set_character_data(initial_repetitions_base_delay)?;
         }
+        // offer_cyclic_delay is not used in client configuration, so it is not set
 
         Ok(())
     }
 
-    /// get the SD client configuration for this `ProvidedServiceInstance`
+    /// get the SD client configuration for this `ConsumedServiceInstanceV1`
     #[must_use]
     pub fn sd_client_config(&self) -> Option<SdConfig> {
         let config_elem = self.element().get_sub_element(ElementName::SdClientConfig)?;
@@ -494,6 +495,7 @@ impl ConsumedServiceInstanceV1 {
             .and_then(|elem| elem.character_data())
             .and_then(|cdata| cdata.parse_float());
 
+        // note: offer_cyclic_delay is not used in client configuration, so it is always returned as None
         Some(SdConfig {
             service_major_version,
             service_minor_version,
@@ -800,9 +802,9 @@ mod test {
             service_minor_version: 2,
             initial_delay_max_value: 0.0,
             initial_delay_min_value: 0.0,
-            initial_repetitions_base_delay: None,
+            initial_repetitions_base_delay: Some(11.1),
             initial_repetitions_max: 0,
-            offer_cyclic_delay: None,
+            offer_cyclic_delay: Some(0.999),
             request_response_delay_max_value: 0.0,
             request_response_delay_min_value: 0.0,
             ttl: 22,
@@ -811,6 +813,17 @@ mod test {
         assert_eq!(psi.sd_server_config().unwrap().ttl, 22);
         assert_eq!(psi.sd_server_config().unwrap().service_major_version, 1);
         assert_eq!(psi.sd_server_config().unwrap().service_minor_version, 2);
+        assert_eq!(psi.sd_server_config().unwrap().initial_delay_max_value, 0.0);
+        assert_eq!(psi.sd_server_config().unwrap().initial_delay_min_value, 0.0);
+        assert_eq!(
+            psi.sd_server_config().unwrap().initial_repetitions_base_delay,
+            Some(11.1)
+        );
+        assert_eq!(psi.sd_server_config().unwrap().initial_repetitions_max, 0);
+        assert_eq!(psi.sd_server_config().unwrap().offer_cyclic_delay, Some(0.999));
+        assert_eq!(psi.sd_server_config().unwrap().request_response_delay_max_value, 0.0);
+        assert_eq!(psi.sd_server_config().unwrap().request_response_delay_min_value, 0.0);
+        assert_eq!(psi.sd_server_config().unwrap().ttl, 22);
 
         assert_eq!(psi.event_handlers().count(), 0);
         let eh = psi.create_event_handler("event").unwrap();
@@ -841,7 +854,7 @@ mod test {
             service_minor_version: 2,
             initial_delay_max_value: 0.0,
             initial_delay_min_value: 0.0,
-            initial_repetitions_base_delay: None,
+            initial_repetitions_base_delay: Some(0.42),
             initial_repetitions_max: 0,
             offer_cyclic_delay: None,
             request_response_delay_max_value: 0.0,
@@ -852,6 +865,16 @@ mod test {
         assert_eq!(csi.sd_client_config().unwrap().ttl, 22);
         assert_eq!(csi.sd_client_config().unwrap().service_major_version, 1);
         assert_eq!(csi.sd_client_config().unwrap().service_minor_version, 2);
+        assert_eq!(csi.sd_client_config().unwrap().initial_delay_max_value, 0.0);
+        assert_eq!(csi.sd_client_config().unwrap().initial_delay_min_value, 0.0);
+        assert_eq!(
+            csi.sd_client_config().unwrap().initial_repetitions_base_delay,
+            Some(0.42)
+        );
+        assert_eq!(csi.sd_client_config().unwrap().initial_repetitions_max, 0);
+        assert_eq!(csi.sd_client_config().unwrap().request_response_delay_max_value, 0.0);
+        assert_eq!(csi.sd_client_config().unwrap().request_response_delay_min_value, 0.0);
+        assert_eq!(csi.sd_client_config().unwrap().ttl, 22);
 
         assert_eq!(csi.consumed_event_groups().count(), 0);
         let ceg = csi.create_consumed_event_group("consumed_event", 0x1234, &eh).unwrap();

@@ -75,33 +75,6 @@ impl EthernetCommunicationController {
         }
     }
 
-    /// get the `EcuInstance` that contains this `EthernetCommunicationController`
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use autosar_data::*;
-    /// # use autosar_data_abstraction::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
-    /// let ethernet_controller = ecu_instance.create_ethernet_communication_controller("EthCtrl", None).unwrap();
-    /// assert_eq!(ecu_instance, ethernet_controller.ecu_instance().unwrap());
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model while trying to create the ECU-INSTANCE
-    pub fn ecu_instance(&self) -> Result<EcuInstance, AutosarAbstractionError> {
-        // unwrapping is safe here - self.0.named_parent() cannot return Ok(None).
-        // the EthernetCommunicationController is always a child of an EcuInstance,
-        // or else it is deleted and named_parent() return Err(...), which is handled by the ?
-        let ecu: Element = self.0.named_parent()?.unwrap();
-        EcuInstance::try_from(ecu)
-    }
-
     /// Connect this [`EthernetCommunicationController`] inside an [`EcuInstance`] to an [`EthernetPhysicalChannel`] in the [`crate::System`]
     ///
     /// Creates an `EthernetCommunicationConnector` in the [`EcuInstance`] that contains this [`EthernetCommunicationController`].
@@ -332,14 +305,23 @@ mod test {
         let channel2 = cluster.create_physical_channel("C2", Some(vlan_info)).unwrap();
 
         // connect the controller to channel1
-        let result = controller.connect_physical_channel("connection_name1", &channel1);
-        assert!(result.is_ok());
+        let connector = controller
+            .connect_physical_channel("connection_name1", &channel1)
+            .unwrap();
+        assert_eq!(connector.controller().unwrap(), controller);
         // can't connect to the same channel again
         let result = controller.connect_physical_channel("connection_name2", &channel1);
         assert!(result.is_err());
         // connect the controller to channel2
         let result = controller.connect_physical_channel("connection_name2", &channel2);
         assert!(result.is_ok());
+
+        // create a different cluster and channel, then try to connect the controller to it
+        let cluster2 = system.create_ethernet_cluster("EthCluster2", &pkg).unwrap();
+        let channel3 = cluster2.create_physical_channel("C3", None).unwrap();
+        let result = controller.connect_physical_channel("connection_name3", &channel3);
+        // can't connect one ethernet controller to channels from different clusters
+        assert!(result.is_err());
 
         let count = controller.connected_channels().count();
         assert_eq!(count, 2);
@@ -349,5 +331,35 @@ mod test {
         ctrl_parent.remove_sub_element(controller.element().clone()).unwrap();
         let count = controller.connected_channels().count();
         assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn connector() {
+        let model = AutosarModel::new();
+        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
+        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
+        let ecu = system.create_ecu_instance("ECU", &pkg).unwrap();
+
+        let controller = ecu
+            .create_ethernet_communication_controller("Controller", None)
+            .unwrap();
+        assert_eq!(controller.ecu_instance().unwrap(), ecu);
+
+        let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
+        let channel = cluster.create_physical_channel("C1", None).unwrap();
+
+        // create a connector
+        let connector = controller
+            .connect_physical_channel("connection_name", &channel)
+            .unwrap();
+        assert_eq!(connector.controller().unwrap(), controller);
+        assert_eq!(connector.ecu_instance().unwrap(), ecu);
+
+        // remove the connector and try to get the controller from it
+        let conn_parent = connector.element().parent().unwrap().unwrap();
+        conn_parent.remove_sub_element(connector.element().clone()).unwrap();
+        let result = connector.controller();
+        assert!(result.is_err());
     }
 }

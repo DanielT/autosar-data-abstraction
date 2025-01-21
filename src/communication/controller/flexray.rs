@@ -58,34 +58,6 @@ impl FlexrayCommunicationController {
         }
     }
 
-    /// get the `EcuInstance` that contains this `FlexrayCommunicationController`
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use autosar_data::*;
-    /// # use autosar_data_abstraction::*;
-    /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
-    /// let flexray_controller = ecu_instance.create_flexray_communication_controller("FRCtrl").unwrap();
-    /// assert_eq!(ecu_instance, flexray_controller.ecu_instance().unwrap());
-    /// ```
-    ///
-    /// # Errors
-    ///
-    /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model while trying to create the ECU-INSTANCE
-    pub fn ecu_instance(&self) -> Result<EcuInstance, AutosarAbstractionError> {
-        // unwrapping is safe here - self.0.named_parent() cannot return Ok(None).
-        // the FlexrayCommunicationController is always a child of an EcuInstance,
-        // or else it is deleted and named_parent() return Err(...), which is handled by the ?
-        let ecu: Element = self.0.named_parent()?.unwrap();
-        EcuInstance::try_from(ecu)
-    }
-
     /// Connect this [`FlexrayCommunicationController`] inside an [`EcuInstance`] to a [`FlexrayPhysicalChannel`] in the [`crate::System`]
     ///
     /// Creates a `FlexrayCommunicationConnector` in the [`EcuInstance`] that contains this [`FlexrayCommunicationController`].
@@ -270,8 +242,10 @@ mod test {
         let channel1 = cluster.create_physical_channel("C1", FlexrayChannelName::A).unwrap();
 
         // connect the controller to channel1
-        let result = controller.connect_physical_channel("connection_name1", &channel1);
-        assert!(result.is_ok());
+        let connector = controller
+            .connect_physical_channel("connection_name1", &channel1)
+            .unwrap();
+        assert_eq!(connector.controller().unwrap(), controller);
         // can't connect to the same channel again
         let result = controller.connect_physical_channel("connection_name2", &channel1);
         assert!(result.is_err());
@@ -284,5 +258,36 @@ mod test {
         ctrl_parent.remove_sub_element(controller.0.clone()).unwrap();
         let count = controller.connected_channels().count();
         assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn connector() {
+        let model = AutosarModel::new();
+        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
+        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
+        let ecu = system.create_ecu_instance("ECU", &pkg).unwrap();
+
+        // create a controller
+        let controller = ecu.create_flexray_communication_controller("Controller").unwrap();
+        assert_eq!(controller.ecu_instance().unwrap(), ecu);
+
+        // create some physical channels
+        let settings = FlexrayClusterSettings::default();
+        let cluster = system.create_flexray_cluster("FlxCluster", &pkg, &settings).unwrap();
+        let channel1 = cluster.create_physical_channel("C1", FlexrayChannelName::A).unwrap();
+
+        // connect the controller to channel1
+        let connector = controller
+            .connect_physical_channel("connection_name1", &channel1)
+            .unwrap();
+        assert_eq!(connector.controller().unwrap(), controller);
+        assert_eq!(connector.ecu_instance().unwrap(), ecu);
+
+        // remove the connector and try to get the controller again
+        let conn_parent = connector.0.parent().unwrap().unwrap();
+        conn_parent.remove_sub_element(connector.0.clone()).unwrap();
+        let result = connector.controller();
+        assert!(result.is_err());
     }
 }

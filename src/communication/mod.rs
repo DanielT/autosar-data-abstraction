@@ -171,3 +171,30 @@ impl From<CommunicationDirection> for EnumItem {
         }
     }
 }
+
+//#########################################################
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_communication_direction() {
+        // convert from CommunicationDirection to EnumItem
+        let in_dir = CommunicationDirection::In;
+        let out_dir = CommunicationDirection::Out;
+        let in_enum: EnumItem = in_dir.into();
+        let out_enum: EnumItem = out_dir.into();
+        assert_eq!(in_enum, EnumItem::In);
+        assert_eq!(out_enum, EnumItem::Out);
+
+        // convert from EnumItem to CommunicationDirection
+        let in_dir_converted: CommunicationDirection = in_enum.try_into().unwrap();
+        let out_dir_converted: CommunicationDirection = out_enum.try_into().unwrap();
+        assert_eq!(in_dir_converted, CommunicationDirection::In);
+        assert_eq!(out_dir_converted, CommunicationDirection::Out);
+        // conversion of an enumItem other than In or Out should fail
+        let bad = CommunicationDirection::try_from(EnumItem::Abstract);
+        assert!(bad.is_err());
+    }
+}

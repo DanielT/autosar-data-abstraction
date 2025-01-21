@@ -26,7 +26,6 @@ impl FlexrayFrame {
     }
 
     /// returns an iterator over all PDUs in the frame
-    #[must_use]
     pub fn mapped_pdus(&self) -> impl Iterator<Item = PduToFrameMapping> {
         self.element()
             .get_sub_element(ElementName::PduToFrameMappings)
@@ -48,6 +47,8 @@ impl FlexrayFrame {
     }
 
     /// map a PDU to this frame
+    ///
+    /// The `start_position` is given in bits.
     pub fn map_pdu<T: AbstractPdu>(
         &self,
         pdu: &T,
@@ -142,9 +143,7 @@ impl FlexrayFrameTriggering {
             .get_or_create_sub_element(ElementName::CommunicationCycle)?;
         match timing {
             FlexrayCommunicationCycle::Counter { cycle_counter } => {
-                if let Some(repetition) = timings_elem.get_sub_element(ElementName::CycleRepetition) {
-                    let _ = timings_elem.remove_sub_element(repetition);
-                }
+                let _ = timings_elem.remove_sub_element_kind(ElementName::CycleRepetition);
                 timings_elem
                     .get_or_create_sub_element(ElementName::CycleCounter)?
                     .get_or_create_sub_element(ElementName::CycleCounter)?
@@ -154,9 +153,7 @@ impl FlexrayFrameTriggering {
                 base_cycle,
                 cycle_repetition,
             } => {
-                if let Some(counter) = timings_elem.get_sub_element(ElementName::CycleCounter) {
-                    let _ = timings_elem.remove_sub_element(counter);
-                }
+                let _ = timings_elem.remove_sub_element_kind(ElementName::CycleCounter);
                 let repetition = timings_elem.get_or_create_sub_element(ElementName::CycleRepetition)?;
                 repetition
                     .get_or_create_sub_element(ElementName::BaseCycle)?
@@ -342,3 +339,143 @@ impl From<CycleRepetition> for EnumItem {
 //##################################################################
 
 reflist_iterator!(FlexrayFrameTriggeringsIterator, FlexrayFrameTriggering);
+
+//##################################################################
+
+#[cfg(test)]
+mod test {
+    use std::result;
+
+    use autosar_data::{AutosarModel, AutosarVersion};
+
+    use super::*;
+    use crate::{
+        communication::{FlexrayChannelName, FlexrayClusterSettings},
+        SystemCategory,
+    };
+
+    #[test]
+    fn fr_frame() {
+        let model = AutosarModel::new();
+        let _ = model.create_file("test", AutosarVersion::LATEST).unwrap();
+        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let system = package.create_system("System", SystemCategory::EcuExtract).unwrap();
+        let flexray_cluster = system
+            .create_flexray_cluster("Cluster", &package, &FlexrayClusterSettings::default())
+            .unwrap();
+        let channel = flexray_cluster
+            .create_physical_channel("Channel", FlexrayChannelName::A)
+            .unwrap();
+
+        let ecu_instance = system.create_ecu_instance("ECU", &package).unwrap();
+        let can_controller = ecu_instance
+            .create_flexray_communication_controller("Controller")
+            .unwrap();
+        can_controller.connect_physical_channel("connection", &channel).unwrap();
+
+        let pdu1 = system.create_isignal_ipdu("pdu1", &package, 8).unwrap();
+        let pdu2 = system.create_isignal_ipdu("pdu2", &package, 8).unwrap();
+
+        // create two frames
+        let frame1 = system.create_flexray_frame("frame1", 64, &package).unwrap();
+        let frame2 = system.create_flexray_frame("frame2", 64, &package).unwrap();
+
+        // map a PDU to frame1 before it has been connected to the channel
+        let mapping = frame1
+            .map_pdu(&pdu1, 7, ByteOrder::MostSignificantByteFirst, None)
+            .unwrap();
+        assert!(frame1.mapped_pdus().count() == 1);
+        assert_eq!(frame1.mapped_pdus().next().unwrap(), mapping);
+
+        // trigger both frames
+        let frame_triggering1 = channel
+            .trigger_frame(
+                &frame1,
+                1,
+                &FlexrayCommunicationCycle::Repetition {
+                    base_cycle: 1,
+                    cycle_repetition: CycleRepetition::C1,
+                },
+            )
+            .unwrap();
+        assert_eq!(frame1.frame_triggerings().count(), 1);
+        let frame_triggering2 = channel
+            .trigger_frame(&frame2, 2, &FlexrayCommunicationCycle::Counter { cycle_counter: 2 })
+            .unwrap();
+        assert_eq!(frame2.frame_triggerings().count(), 1);
+
+        // a pdu triggering for the mapped pdu should be created when the frame is connected to the channel
+        assert_eq!(frame_triggering1.pdu_triggerings().count(), 1);
+
+        // map another PDU to the frame after it has been connected to the channel
+        let _ = frame1
+            .map_pdu(&pdu2, 71, ByteOrder::MostSignificantByteFirst, None)
+            .unwrap();
+        assert!(frame1.mapped_pdus().count() == 2);
+
+        // mapping the PDU to the connected frame should create a PDU triggering
+        assert_eq!(frame_triggering1.pdu_triggerings().count(), 2);
+
+        // connect the frame triggering to an ECU
+        let frame_port = frame_triggering1
+            .connect_to_ecu(&ecu_instance, CommunicationDirection::Out)
+            .unwrap();
+        assert_eq!(frame_port.ecu().unwrap(), ecu_instance);
+        assert_eq!(
+            frame_port.communication_direction().unwrap(),
+            CommunicationDirection::Out
+        );
+
+        assert_eq!(frame_triggering1.frame().unwrap(), frame1);
+        assert_eq!(frame_triggering1.slot().unwrap(), 1);
+        assert_eq!(
+            frame_triggering1.timing().unwrap(),
+            FlexrayCommunicationCycle::Repetition {
+                base_cycle: 1,
+                cycle_repetition: CycleRepetition::C1
+            }
+        );
+        assert_eq!(frame_triggering2.frame().unwrap(), frame2);
+        assert_eq!(frame_triggering2.slot().unwrap(), 2);
+        assert_eq!(
+            frame_triggering2.timing().unwrap(),
+            FlexrayCommunicationCycle::Counter { cycle_counter: 2 }
+        );
+
+        assert_eq!(mapping.pdu().unwrap(), pdu1.into());
+        assert_eq!(mapping.byte_order().unwrap(), ByteOrder::MostSignificantByteFirst);
+        assert_eq!(mapping.start_position().unwrap(), 7);
+    }
+
+    #[test]
+    fn cycle_repetition() {
+        assert_eq!(EnumItem::CycleRepetition1, CycleRepetition::C1.into());
+        assert_eq!(EnumItem::CycleRepetition2, CycleRepetition::C2.into());
+        assert_eq!(EnumItem::CycleRepetition4, CycleRepetition::C4.into());
+        assert_eq!(EnumItem::CycleRepetition5, CycleRepetition::C5.into());
+        assert_eq!(EnumItem::CycleRepetition8, CycleRepetition::C8.into());
+        assert_eq!(EnumItem::CycleRepetition10, CycleRepetition::C10.into());
+        assert_eq!(EnumItem::CycleRepetition16, CycleRepetition::C16.into());
+        assert_eq!(EnumItem::CycleRepetition20, CycleRepetition::C20.into());
+        assert_eq!(EnumItem::CycleRepetition32, CycleRepetition::C32.into());
+        assert_eq!(EnumItem::CycleRepetition40, CycleRepetition::C40.into());
+        assert_eq!(EnumItem::CycleRepetition50, CycleRepetition::C50.into());
+        assert_eq!(EnumItem::CycleRepetition64, CycleRepetition::C64.into());
+
+        assert_eq!(CycleRepetition::C1, EnumItem::CycleRepetition1.try_into().unwrap());
+        assert_eq!(CycleRepetition::C2, EnumItem::CycleRepetition2.try_into().unwrap());
+        assert_eq!(CycleRepetition::C4, EnumItem::CycleRepetition4.try_into().unwrap());
+        assert_eq!(CycleRepetition::C5, EnumItem::CycleRepetition5.try_into().unwrap());
+        assert_eq!(CycleRepetition::C8, EnumItem::CycleRepetition8.try_into().unwrap());
+        assert_eq!(CycleRepetition::C10, EnumItem::CycleRepetition10.try_into().unwrap());
+        assert_eq!(CycleRepetition::C16, EnumItem::CycleRepetition16.try_into().unwrap());
+        assert_eq!(CycleRepetition::C20, EnumItem::CycleRepetition20.try_into().unwrap());
+        assert_eq!(CycleRepetition::C32, EnumItem::CycleRepetition32.try_into().unwrap());
+        assert_eq!(CycleRepetition::C40, EnumItem::CycleRepetition40.try_into().unwrap());
+        assert_eq!(CycleRepetition::C50, EnumItem::CycleRepetition50.try_into().unwrap());
+        assert_eq!(CycleRepetition::C64, EnumItem::CycleRepetition64.try_into().unwrap());
+
+        let result: result::Result<CycleRepetition, _> = EnumItem::Aa.try_into();
+        assert!(result.is_err());
+    }
+}

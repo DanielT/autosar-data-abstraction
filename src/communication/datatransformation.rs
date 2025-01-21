@@ -535,11 +535,10 @@ impl TransformationTechnology {
             };
 
             let buffer_props = self.element().get_sub_element(ElementName::BufferProperties)?;
-            let in_place_str = buffer_props
+            let in_place = buffer_props
                 .get_sub_element(ElementName::InPlace)?
                 .character_data()?
-                .string_value()?;
-            let in_place = in_place_str == "true" || in_place_str == "1";
+                .parse_bool()?;
             let buffer_header_length = buffer_props
                 .get_sub_element(ElementName::HeaderLength)?
                 .character_data()?
@@ -567,6 +566,10 @@ impl TransformationTechnology {
                 .or(opt_window_size_invalid)
                 .or(opt_window_size_valid);
 
+            println!(
+                "data_id_nibble_offset: {:?}",
+                e2e_desc.get_sub_element(ElementName::DataIdNibbleOffset)
+            );
             let config = E2ETransformationTechnologyConfig {
                 profile,
                 zero_header_length: buffer_header_length == 0,
@@ -680,11 +683,10 @@ impl TransformationTechnology {
         } else {
             // generic transformation
             let buffer_props = self.element().get_sub_element(ElementName::BufferProperties)?;
-            let in_place_str = buffer_props
+            let in_place = buffer_props
                 .get_sub_element(ElementName::InPlace)?
                 .character_data()?
-                .string_value()?;
-            let in_place = in_place_str == "true" || in_place_str == "1";
+                .parse_bool()?;
 
             let generic_config = GenericTransformationTechnologyConfig {
                 protocol_name: self
@@ -1330,7 +1332,7 @@ mod test {
                 window_size_valid: Some(13),
                 profile_behavior: Some(E2EProfileBehavior::R4_2),
                 sync_counter_init: Some(0),
-                data_id_mode: Some(DataIdMode::All16Bit),
+                data_id_mode: Some(DataIdMode::Lower12Bit),
                 data_id_nibble_offset: Some(1),
                 crc_offset: Some(2),
                 counter_offset: Some(3),
@@ -1358,6 +1360,10 @@ mod test {
             assert_eq!(e2e_config.min_ok_state_init, e2e_config2.min_ok_state_init);
             assert_eq!(e2e_config.min_ok_state_invalid, e2e_config2.min_ok_state_invalid);
             assert_eq!(e2e_config.min_ok_state_valid, e2e_config2.min_ok_state_valid);
+            if *profile == E2EProfile::P01 || *profile == E2EProfile::P11 {
+                assert_eq!(e2e_config.data_id_mode, e2e_config2.data_id_mode);
+                assert_eq!(e2e_config.data_id_nibble_offset, e2e_config2.data_id_nibble_offset);
+            }
         }
 
         // create a SOMEIP transformation technology
@@ -1369,6 +1375,11 @@ mod test {
         let ttech = dts.create_transformation_technology("someip", &config).unwrap();
         let config2 = ttech.config().unwrap();
         assert_eq!(config, config2);
+
+        // verify the transformation technologies in the data transformation set
+        let mut ttechs_iter = dts.transformation_technologies();
+        assert_eq!(ttechs_iter.next().unwrap().name().unwrap(), "generic");
+        assert_eq!(ttechs_iter.next().unwrap().name().unwrap(), "com");
     }
 
     #[test]
@@ -1474,12 +1485,25 @@ mod test {
         // Ok: generic + E2E
         let result = dts.create_data_transformation("test9", &[&generic_transformation, &e2e_transformation], true);
         assert!(result.is_ok());
+        let dt = result.unwrap();
+        assert_eq!(dt.data_transformation_set().unwrap(), dts);
 
-        let dts2 = DataTransformationSet::new("test_dts2", &package).unwrap();
+        let dts2 = package.create_data_transformation_set("test_dts2").unwrap();
 
         // not allowed: dts2 using transformation from dts
         let result = dts2.create_data_transformation("test10", &[&e2e_transformation], true);
         assert!(result.is_err());
+
+        // iterate over the data transformations
+        let mut dts_iter = dts.data_transformations();
+        assert_eq!(dts_iter.next().unwrap().name().unwrap(), "test3");
+        assert_eq!(dts_iter.next().unwrap().name().unwrap(), "test4");
+        assert_eq!(dts_iter.next().unwrap().name().unwrap(), "test5");
+        assert_eq!(dts_iter.next().unwrap().name().unwrap(), "test6");
+        assert_eq!(dts_iter.next().unwrap().name().unwrap(), "test7");
+        assert_eq!(dts_iter.next().unwrap().name().unwrap(), "test8");
+        assert_eq!(dts_iter.next().unwrap().name().unwrap(), "test9");
+        assert_eq!(dts_iter.next(), None);
     }
 
     #[test]
@@ -1535,7 +1559,7 @@ mod test {
                     window_size_valid: Some(13),
                     profile_behavior: Some(E2EProfileBehavior::R4_2),
                     sync_counter_init: Some(0),
-                    data_id_mode: Some(DataIdMode::All16Bit),
+                    data_id_mode: Some(DataIdMode::Lower12Bit),
                     data_id_nibble_offset: Some(1),
                     crc_offset: Some(2),
                     counter_offset: Some(3),

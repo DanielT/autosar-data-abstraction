@@ -227,24 +227,6 @@ impl AbstractionElement for SwConnector {
     }
 }
 
-impl From<AssemblySwConnector> for SwConnector {
-    fn from(connector: AssemblySwConnector) -> Self {
-        SwConnector::Assembly(connector)
-    }
-}
-
-impl From<DelegationSwConnector> for SwConnector {
-    fn from(connector: DelegationSwConnector) -> Self {
-        SwConnector::Delegation(connector)
-    }
-}
-
-impl From<PassThroughSwConnector> for SwConnector {
-    fn from(connector: PassThroughSwConnector) -> Self {
-        SwConnector::PassThrough(connector)
-    }
-}
-
 impl TryFrom<Element> for SwConnector {
     type Error = AutosarAbstractionError;
 
@@ -280,12 +262,12 @@ mod test {
         let package = ArPackage::get_or_create(&model, "/package").unwrap();
 
         // create interfaces for the ports
-        let sr_interface = SenderReceiverInterface::new("sr_interface", &package).unwrap();
-        let cs_interface = ClientServerInterface::new("cs_interface", &package).unwrap();
+        let sr_interface = package.create_sender_receiver_interface("sr_interface").unwrap();
+        let cs_interface = package.create_client_server_interface("cs_interface").unwrap();
 
         // create a composition and an application sw component type
-        let composition = CompositionSwComponentType::new("composition", &package).unwrap();
-        let swc_type = ApplicationSwComponentType::new("app_type", &package).unwrap();
+        let composition = package.create_composition_sw_component_type("composition").unwrap();
+        let swc_type = package.create_application_sw_component_type("app_type").unwrap();
 
         // create multiple ports with different interfaces and directions
         let outer_sr_p_port = composition.create_p_port("outer_sr_p_port", &sr_interface).unwrap();
