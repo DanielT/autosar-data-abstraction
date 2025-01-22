@@ -704,7 +704,10 @@ reflist_iterator!(PduTriggeringsIterator, PduTriggering);
 mod test {
     use super::*;
     use crate::{
-        communication::{CanAddressingMode, CanClusterSettings, CanFrameType, TransferProperty},
+        communication::{
+            AbstractFrame, AbstractFrameTriggering, CanAddressingMode, CanClusterSettings, CanFrameType,
+            TransferProperty,
+        },
         ByteOrder, SystemCategory,
     };
     use autosar_data::{AutosarModel, AutosarVersion};

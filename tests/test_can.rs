@@ -3,7 +3,8 @@ mod test {
     use autosar_data::{AutosarModel, AutosarVersion, ElementName};
     use autosar_data_abstraction::{
         communication::{
-            CanAddressingMode, CanClusterSettings, CanFrameType, CommunicationDirection, TransferProperty,
+            AbstractFrame, AbstractFrameTriggering, CanAddressingMode, CanClusterSettings, CanFrameType,
+            CommunicationDirection, TransferProperty,
         },
         datatype::BaseTypeEncoding,
         AbstractionElement, ArPackage, AutosarAbstractionError, SystemCategory,

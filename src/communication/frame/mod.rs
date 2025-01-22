@@ -16,6 +16,35 @@ use super::{AbstractPdu, PduTriggering, PhysicalChannel};
 
 //##################################################################
 
+/// A trait for all frame types
+pub trait AbstractFrame: AbstractionElement {
+    /// The bus-specific frame triggering type
+    type FrameTriggeringType: AbstractFrameTriggering;
+
+    /// returns an iterator over all PDUs in the frame
+    fn mapped_pdus(&self) -> impl Iterator<Item = PduToFrameMapping> {
+        self.element()
+            .get_sub_element(ElementName::PduToFrameMappings)
+            .into_iter()
+            .flat_map(|elem| elem.sub_elements())
+            .filter_map(|elem| PduToFrameMapping::try_from(elem).ok())
+    }
+
+    /// Iterator over all [`FrameTriggering`]s using this frame
+    fn frame_triggerings(&self) -> impl Iterator<Item = Self::FrameTriggeringType>;
+
+    /// map a PDU to the frame
+    fn map_pdu<T: AbstractPdu>(
+        &self,
+        gen_pdu: &T,
+        start_position: u32,
+        byte_order: ByteOrder,
+        update_bit: Option<u32>,
+    ) -> Result<PduToFrameMapping, AutosarAbstractionError>;
+}
+
+//##################################################################
+
 /// A wrapper for CAN and `FlexRay` frames (Ethernet does not use frames)
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
@@ -35,18 +64,10 @@ impl AbstractionElement for Frame {
     }
 }
 
-impl Frame {
-    /// returns an iterator over all PDUs in the frame
-    pub fn mapped_pdus(&self) -> impl Iterator<Item = PduToFrameMapping> {
-        self.element()
-            .get_sub_element(ElementName::PduToFrameMappings)
-            .into_iter()
-            .flat_map(|elem| elem.sub_elements())
-            .filter_map(|elem| PduToFrameMapping::try_from(elem).ok())
-    }
+impl AbstractFrame for Frame {
+    type FrameTriggeringType = FrameTriggering;
 
-    /// Iterator over all [`FrameTriggering`]s using this frame
-    pub fn frame_triggerings(&self) -> impl Iterator<Item = FrameTriggering> {
+    fn frame_triggerings(&self) -> impl Iterator<Item = FrameTriggering> {
         let model_result = self.element().model();
         let path_result = self.element().path();
         if let (Ok(model), Ok(path)) = (model_result, path_result) {
@@ -58,7 +79,7 @@ impl Frame {
     }
 
     /// map a PDU to the frame
-    pub fn map_pdu<T: AbstractPdu>(
+    fn map_pdu<T: AbstractPdu>(
         &self,
         gen_pdu: &T,
         start_position: u32,
@@ -66,10 +87,27 @@ impl Frame {
         update_bit: Option<u32>,
     ) -> Result<PduToFrameMapping, AutosarAbstractionError> {
         let pdu = gen_pdu.clone().into();
-        self.map_pdu_internal(&pdu, start_position, byte_order, update_bit)
+        Self::map_pdu_internal(self, &pdu, start_position, byte_order, update_bit)
     }
+}
 
-    pub(crate) fn map_pdu_internal(
+impl TryFrom<Element> for Frame {
+    type Error = AutosarAbstractionError;
+
+    fn try_from(element: Element) -> Result<Self, Self::Error> {
+        match element.element_name() {
+            ElementName::CanFrame => Ok(Self::Can(CanFrame::try_from(element)?)),
+            ElementName::FlexrayFrame => Ok(Self::Flexray(FlexrayFrame::try_from(element)?)),
+            _ => Err(AutosarAbstractionError::ConversionError {
+                element,
+                dest: "Frame".to_string(),
+            }),
+        }
+    }
+}
+
+impl Frame {
+    fn map_pdu_internal(
         &self,
         pdu: &Pdu,
         start_position: u32,
@@ -115,18 +153,83 @@ impl Frame {
     }
 }
 
-impl TryFrom<Element> for Frame {
-    type Error = AutosarAbstractionError;
+//##################################################################
 
-    fn try_from(element: Element) -> Result<Self, Self::Error> {
-        match element.element_name() {
-            ElementName::CanFrame => Ok(CanFrame::try_from(element)?.into()),
-            ElementName::FlexrayFrame => Ok(FlexrayFrame::try_from(element)?.into()),
-            _ => Err(AutosarAbstractionError::ConversionError {
-                element,
-                dest: "Frame".to_string(),
-            }),
-        }
+/// A trait for all frame triggerings
+pub trait AbstractFrameTriggering: AbstractionElement {
+    /// The frame type triggered by this `FrameTriggering`
+    type FrameType: AbstractFrame;
+
+    /// get the frame triggered by this `FrameTriggering`
+    #[must_use]
+    fn frame(&self) -> Option<Self::FrameType> {
+        Self::FrameType::try_from(
+            self.element()
+                .get_sub_element(ElementName::FrameRef)?
+                .get_reference_target()
+                .ok()?,
+        )
+        .ok()
+    }
+
+    /// iterate over all frame ports referenced by this frame triggering
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::{*, communication::*};
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModel::new();
+    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = ArPackage::get_or_create(&model, "/pkg")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let ecu = system.create_ecu_instance("ECU", &package)?;
+    /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
+    /// # let channel = cluster.create_physical_channel("Channel")?;
+    /// # let ecu_instance = system.create_ecu_instance("Ecu", &package)?;
+    /// # let canctrl = ecu_instance.create_can_communication_controller("CanCtrl")?;
+    /// # canctrl.connect_physical_channel("Connector", &channel)?;
+    /// let frame = system.create_can_frame("Frame", 8, &package)?;
+    /// let frame_triggering = channel.trigger_frame(&frame, 0x100, CanAddressingMode::Standard, CanFrameType::Can20)?;
+    /// let frame_port = frame_triggering.connect_to_ecu(&ecu_instance, CommunicationDirection::In)?;
+    /// for fp in frame_triggering.frame_ports() {
+    ///    // ...
+    /// }
+    /// assert_eq!(frame_triggering.frame_ports().count(), 1);
+    /// # Ok(())}
+    /// ```
+    fn frame_ports(&self) -> impl Iterator<Item = FramePort> {
+        self.element()
+            .get_sub_element(ElementName::FramePortRefs)
+            .into_iter()
+            .flat_map(|elem| elem.sub_elements())
+            .filter_map(|fpref| {
+                fpref
+                    .get_reference_target()
+                    .ok()
+                    .and_then(|fp| FramePort::try_from(fp).ok())
+            })
+    }
+
+    /// iterate over all PDU triggerings used by this frame triggering
+    fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> {
+        self.element()
+            .get_sub_element(ElementName::PduTriggerings)
+            .into_iter()
+            .flat_map(|elem| elem.sub_elements())
+            .filter_map(|element| {
+                element
+                    .get_sub_element(ElementName::PduTriggeringRef)
+                    .and_then(|ptr| ptr.get_reference_target().ok())
+                    .and_then(|ptelem| PduTriggering::try_from(ptelem).ok())
+            })
+    }
+
+    /// get the physical channel that contains this frame triggering
+    fn physical_channel(&self) -> Result<PhysicalChannel, AutosarAbstractionError> {
+        let channel_elem = self.element().named_parent()?.ok_or(AutosarDataError::ItemDeleted)?;
+        PhysicalChannel::try_from(channel_elem)
     }
 }
 
@@ -151,6 +254,10 @@ impl AbstractionElement for FrameTriggering {
     }
 }
 
+impl AbstractFrameTriggering for FrameTriggering {
+    type FrameType = Frame;
+}
+
 impl TryFrom<Element> for FrameTriggering {
     type Error = AutosarAbstractionError;
 
@@ -167,42 +274,6 @@ impl TryFrom<Element> for FrameTriggering {
 }
 
 impl FrameTriggering {
-    /// get the frame triggered by this `FrameTriggering`
-    #[must_use]
-    pub fn frame(&self) -> Option<Frame> {
-        Frame::try_from(
-            self.element()
-                .get_sub_element(ElementName::FrameRef)?
-                .get_reference_target()
-                .ok()?,
-        )
-        .ok()
-    }
-
-    pub(crate) fn add_pdu_triggering(&self, pdu: &Pdu) -> Result<PduTriggering, AutosarAbstractionError> {
-        let channel = self.physical_channel()?;
-        let pt = PduTriggering::new(pdu, &channel)?;
-        let triggerings = self.element().get_or_create_sub_element(ElementName::PduTriggerings)?;
-        triggerings
-            .create_sub_element(ElementName::PduTriggeringRefConditional)?
-            .create_sub_element(ElementName::PduTriggeringRef)?
-            .set_reference_target(pt.element())?;
-
-        for frame_port in self.frame_ports() {
-            if let (Some(ecu), Some(direction)) = (frame_port.ecu(), frame_port.communication_direction()) {
-                pt.create_pdu_port(&ecu, direction)?;
-            }
-        }
-
-        Ok(pt)
-    }
-
-    /// get the physical channel that contains this frame triggering
-    pub fn physical_channel(&self) -> Result<PhysicalChannel, AutosarAbstractionError> {
-        let channel_elem = self.element().named_parent()?.ok_or(AutosarDataError::ItemDeleted)?;
-        PhysicalChannel::try_from(channel_elem)
-    }
-
     /// connect this `FrameTriggering` to an `EcuInstance`
     ///
     /// The `EcuInstance` must already be connected to the `PhysicalChannel` that contains the `FrameTriggering`.
@@ -253,32 +324,22 @@ impl FrameTriggering {
         Ok(FramePort(fp_elem))
     }
 
-    /// iterate over all frame ports referenced by this frame triggering
-    pub fn frame_ports(&self) -> impl Iterator<Item = FramePort> {
-        self.element()
-            .get_sub_element(ElementName::FramePortRefs)
-            .into_iter()
-            .flat_map(|elem| elem.sub_elements())
-            .filter_map(|fpref| {
-                fpref
-                    .get_reference_target()
-                    .ok()
-                    .and_then(|fp| FramePort::try_from(fp).ok())
-            })
-    }
+    fn add_pdu_triggering(&self, pdu: &Pdu) -> Result<PduTriggering, AutosarAbstractionError> {
+        let channel = self.physical_channel()?;
+        let pt = PduTriggering::new(pdu, &channel)?;
+        let triggerings = self.element().get_or_create_sub_element(ElementName::PduTriggerings)?;
+        triggerings
+            .create_sub_element(ElementName::PduTriggeringRefConditional)?
+            .create_sub_element(ElementName::PduTriggeringRef)?
+            .set_reference_target(pt.element())?;
 
-    /// iterate over all PDU triggerings used by this frame triggering
-    pub fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> {
-        self.element()
-            .get_sub_element(ElementName::PduTriggerings)
-            .into_iter()
-            .flat_map(|elem| elem.sub_elements())
-            .filter_map(|element| {
-                element
-                    .get_sub_element(ElementName::PduTriggeringRef)
-                    .and_then(|ptr| ptr.get_reference_target().ok())
-                    .and_then(|ptelem| PduTriggering::try_from(ptelem).ok())
-            })
+        for frame_port in self.frame_ports() {
+            if let (Some(ecu), Some(direction)) = (frame_port.ecu(), frame_port.communication_direction()) {
+                pt.create_pdu_port(&ecu, direction)?;
+            }
+        }
+
+        Ok(pt)
     }
 }
 
@@ -368,7 +429,7 @@ impl PduToFrameMapping {
     #[must_use]
     pub fn update_bit(&self) -> Option<u32> {
         self.element()
-            .get_sub_element(ElementName::StartPosition)
+            .get_sub_element(ElementName::UpdateIndicationBitPosition)
             .and_then(|pbo| pbo.character_data())
             .and_then(|cdata| cdata.parse_integer())
     }
@@ -405,3 +466,36 @@ impl FramePort {
 //##################################################################
 
 reflist_iterator!(FrameTriggeringsIterator, FrameTriggering);
+
+//##################################################################
+
+#[cfg(test)]
+mod test {
+    use crate::{ArPackage, SystemCategory};
+
+    use super::*;
+
+    #[test]
+    fn frame() {
+        let model = autosar_data::AutosarModel::new();
+        let _file = model
+            .create_file("test.arxml", autosar_data::AutosarVersion::LATEST)
+            .unwrap();
+        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
+
+        let can_frame = system.create_can_frame("CanFrame", 8, &package).unwrap();
+        let flexray_frame = system.create_flexray_frame("FlexrayFrame", 32, &package).unwrap();
+
+        let frame_1 = Frame::try_from(can_frame.element().clone()).unwrap();
+        assert_eq!(frame_1.element().element_name(), autosar_data::ElementName::CanFrame);
+        let frame_2 = Frame::try_from(flexray_frame.element().clone()).unwrap();
+        assert_eq!(
+            frame_2.element().element_name(),
+            autosar_data::ElementName::FlexrayFrame
+        );
+
+        let err = Frame::try_from(model.root_element().clone());
+        assert!(err.is_err());
+    }
+}

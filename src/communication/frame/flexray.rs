@@ -1,6 +1,6 @@
 use crate::communication::{
-    AbstractPdu, CommunicationDirection, FlexrayPhysicalChannel, Frame, FramePort, FrameTriggering, Pdu,
-    PduToFrameMapping, PduTriggering,
+    AbstractFrame, AbstractFrameTriggering, AbstractPdu, CommunicationDirection, FlexrayPhysicalChannel, Frame,
+    FramePort, FrameTriggering, Pdu, PduToFrameMapping, PduTriggering,
 };
 use crate::{
     abstraction_element, make_unique_name, reflist_iterator, AbstractionElement, ArPackage, AutosarAbstractionError,
@@ -24,18 +24,13 @@ impl FlexrayFrame {
 
         Ok(Self(fr_frame))
     }
+}
 
-    /// returns an iterator over all PDUs in the frame
-    pub fn mapped_pdus(&self) -> impl Iterator<Item = PduToFrameMapping> {
-        self.element()
-            .get_sub_element(ElementName::PduToFrameMappings)
-            .into_iter()
-            .flat_map(|elem| elem.sub_elements())
-            .filter_map(|elem| PduToFrameMapping::try_from(elem).ok())
-    }
+impl AbstractFrame for FlexrayFrame {
+    type FrameTriggeringType = FlexrayFrameTriggering;
 
     /// Iterator over all [`FlexrayFrameTriggering`]s using this frame
-    pub fn frame_triggerings(&self) -> impl Iterator<Item = FlexrayFrameTriggering> {
+    fn frame_triggerings(&self) -> impl Iterator<Item = FlexrayFrameTriggering> {
         let model_result = self.element().model();
         let path_result = self.element().path();
         if let (Ok(model), Ok(path)) = (model_result, path_result) {
@@ -46,23 +41,15 @@ impl FlexrayFrame {
         }
     }
 
-    /// map a PDU to this frame
-    ///
-    /// The `start_position` is given in bits.
-    pub fn map_pdu<T: AbstractPdu>(
+    /// map a PDU to the frame
+    fn map_pdu<T: AbstractPdu>(
         &self,
-        pdu: &T,
+        gen_pdu: &T,
         start_position: u32,
         byte_order: ByteOrder,
         update_bit: Option<u32>,
     ) -> Result<PduToFrameMapping, AutosarAbstractionError> {
-        Frame::from(self.clone()).map_pdu(pdu, start_position, byte_order, update_bit)
-    }
-}
-
-impl From<FlexrayFrame> for Frame {
-    fn from(frame: FlexrayFrame) -> Self {
-        Frame::Flexray(frame)
+        Frame::Flexray(self.clone()).map_pdu(gen_pdu, start_position, byte_order, update_bit)
     }
 }
 
@@ -204,18 +191,6 @@ impl FlexrayFrameTriggering {
         }
     }
 
-    /// get the frame triggered by this `FrameTriggering`
-    #[must_use]
-    pub fn frame(&self) -> Option<FlexrayFrame> {
-        FlexrayFrame::try_from(
-            self.element()
-                .get_sub_element(ElementName::FrameRef)?
-                .get_reference_target()
-                .ok()?,
-        )
-        .ok()
-    }
-
     pub(crate) fn add_pdu_triggering(&self, pdu: &Pdu) -> Result<PduTriggering, AutosarAbstractionError> {
         FrameTriggering::Flexray(self.clone()).add_pdu_triggering(pdu)
     }
@@ -230,11 +205,10 @@ impl FlexrayFrameTriggering {
     ) -> Result<FramePort, AutosarAbstractionError> {
         FrameTriggering::Flexray(self.clone()).connect_to_ecu(ecu, direction)
     }
+}
 
-    /// iterator over all `PduTriggerings` used by this `FrameTriggering`
-    pub fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> {
-        FrameTriggering::Flexray(self.clone()).pdu_triggerings()
-    }
+impl AbstractFrameTriggering for FlexrayFrameTriggering {
+    type FrameType = FlexrayFrame;
 }
 
 impl From<FlexrayFrameTriggering> for FrameTriggering {
@@ -351,7 +325,7 @@ mod test {
     use super::*;
     use crate::{
         communication::{FlexrayChannelName, FlexrayClusterSettings},
-        SystemCategory,
+        ByteOrder, SystemCategory,
     };
 
     #[test]
@@ -382,7 +356,7 @@ mod test {
 
         // map a PDU to frame1 before it has been connected to the channel
         let mapping = frame1
-            .map_pdu(&pdu1, 7, ByteOrder::MostSignificantByteFirst, None)
+            .map_pdu(&pdu1, 7, ByteOrder::MostSignificantByteFirst, Some(8))
             .unwrap();
         assert!(frame1.mapped_pdus().count() == 1);
         assert_eq!(frame1.mapped_pdus().next().unwrap(), mapping);
@@ -445,6 +419,7 @@ mod test {
         assert_eq!(mapping.pdu().unwrap(), pdu1.into());
         assert_eq!(mapping.byte_order().unwrap(), ByteOrder::MostSignificantByteFirst);
         assert_eq!(mapping.start_position().unwrap(), 7);
+        assert_eq!(mapping.update_bit(), Some(8));
     }
 
     #[test]

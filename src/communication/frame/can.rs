@@ -1,6 +1,6 @@
 use crate::communication::{
-    AbstractPdu, CanPhysicalChannel, CommunicationDirection, Frame, FramePort, FrameTriggering, Pdu, PduToFrameMapping,
-    PduTriggering,
+    AbstractFrame, AbstractFrameTriggering, AbstractPdu, CanPhysicalChannel, CommunicationDirection, Frame, FramePort,
+    FrameTriggering, Pdu, PduToFrameMapping, PduTriggering,
 };
 use crate::{
     abstraction_element, make_unique_name, reflist_iterator, AbstractionElement, ArPackage, AutosarAbstractionError,
@@ -24,18 +24,13 @@ impl CanFrame {
 
         Ok(Self(can_frame))
     }
+}
 
-    /// returns an iterator over all PDUs in the frame
-    pub fn mapped_pdus(&self) -> impl Iterator<Item = PduToFrameMapping> {
-        self.element()
-            .get_sub_element(ElementName::PduToFrameMappings)
-            .into_iter()
-            .flat_map(|elem| elem.sub_elements())
-            .filter_map(|elem| PduToFrameMapping::try_from(elem).ok())
-    }
+impl AbstractFrame for CanFrame {
+    type FrameTriggeringType = CanFrameTriggering;
 
     /// Iterator over all [`CanFrameTriggering`]s using this frame
-    pub fn frame_triggerings(&self) -> impl Iterator<Item = CanFrameTriggering> {
+    fn frame_triggerings(&self) -> impl Iterator<Item = CanFrameTriggering> {
         let model_result = self.element().model();
         let path_result = self.element().path();
         if let (Ok(model), Ok(path)) = (model_result, path_result) {
@@ -46,26 +41,15 @@ impl CanFrame {
         }
     }
 
-    /// map a PDU to this frame
-    pub fn map_pdu<T: AbstractPdu>(
+    /// map a PDU to the frame
+    fn map_pdu<T: AbstractPdu>(
         &self,
-        pdu: &T,
+        gen_pdu: &T,
         start_position: u32,
         byte_order: ByteOrder,
         update_bit: Option<u32>,
     ) -> Result<PduToFrameMapping, AutosarAbstractionError> {
-        if self.mapped_pdus().count() != 0 {
-            return Err(AutosarAbstractionError::InvalidParameter(
-                "CAN only allows one PDU per frame".to_string(),
-            ));
-        }
-        Frame::from(self.clone()).map_pdu(pdu, start_position, byte_order, update_bit)
-    }
-}
-
-impl From<CanFrame> for Frame {
-    fn from(frame: CanFrame) -> Self {
-        Frame::Can(frame)
+        Frame::Can(self.clone()).map_pdu(gen_pdu, start_position, byte_order, update_bit)
     }
 }
 
@@ -189,18 +173,6 @@ impl CanFrameTriggering {
             .ok()
     }
 
-    /// get the frame triggered by this `FrameTriggering`
-    #[must_use]
-    pub fn frame(&self) -> Option<CanFrame> {
-        CanFrame::try_from(
-            self.element()
-                .get_sub_element(ElementName::FrameRef)?
-                .get_reference_target()
-                .ok()?,
-        )
-        .ok()
-    }
-
     pub(crate) fn add_pdu_triggering(&self, pdu: &Pdu) -> Result<PduTriggering, AutosarAbstractionError> {
         FrameTriggering::Can(self.clone()).add_pdu_triggering(pdu)
     }
@@ -221,11 +193,10 @@ impl CanFrameTriggering {
     ) -> Result<FramePort, AutosarAbstractionError> {
         FrameTriggering::Can(self.clone()).connect_to_ecu(ecu, direction)
     }
+}
 
-    /// get the PDU triggerings associated with this frame triggering
-    pub fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> {
-        FrameTriggering::Can(self.clone()).pdu_triggerings()
-    }
+impl AbstractFrameTriggering for CanFrameTriggering {
+    type FrameType = CanFrame;
 }
 
 impl From<CanFrameTriggering> for FrameTriggering {
@@ -319,7 +290,7 @@ mod test {
     use autosar_data::{AutosarModel, AutosarVersion};
 
     use super::*;
-    use crate::{communication::CanClusterSettings, SystemCategory};
+    use crate::{communication::CanClusterSettings, ByteOrder, SystemCategory};
 
     #[test]
     fn can_frame() {
@@ -399,6 +370,7 @@ mod test {
         assert_eq!(mapping1.pdu().unwrap(), pdu1.into());
         assert_eq!(mapping1.byte_order().unwrap(), ByteOrder::MostSignificantByteFirst);
         assert_eq!(mapping1.start_position().unwrap(), 7);
+        assert_eq!(mapping1.update_bit(), None);
 
         assert_eq!(port1.ecu().unwrap(), ecu_instance);
         assert_eq!(port1.communication_direction().unwrap(), CommunicationDirection::Out);
