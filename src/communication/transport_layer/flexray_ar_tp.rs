@@ -1,8 +1,6 @@
-use crate::communication::{AbstractIpdu, FlexrayCluster, FlexrayCommunicationConnector, NPdu, Pdu};
+use crate::communication::{AbstractIpdu, FlexrayCluster, FlexrayCommunicationConnector, NPdu, Pdu, TpAddress};
 use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError};
 use autosar_data::{Element, ElementName, EnumItem};
-
-use super::TpAddress;
 
 //#########################################################
 
@@ -540,6 +538,7 @@ mod test {
             .add_flexray_communication_connector(&connector)
             .unwrap();
         assert_eq!(fr_ar_tp_node_source.connectors().count(), 1);
+        assert_eq!(fr_ar_tp_node_source.connectors().next(), Some(connector));
 
         let fr_ar_tp_node_target = fr_ar_tp_config.create_flexray_ar_tp_node("node_t").unwrap();
         let tp_address_target = fr_ar_tp_config.create_tp_address("tp_address_t", 2).unwrap();

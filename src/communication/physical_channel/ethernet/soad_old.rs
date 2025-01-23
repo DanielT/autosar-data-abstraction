@@ -1,10 +1,9 @@
 use crate::communication::{
-    AbstractPdu, EthernetPhysicalChannel, Pdu, PduCollectionTrigger, PduTriggering, SocketAddress, TpConfig,
+    AbstractPdu, EthernetPhysicalChannel, EventGroupControlType, Pdu, PduCollectionTrigger, PduTriggering,
+    SocketAddress, TpConfig,
 };
 use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError};
 use autosar_data::{Element, ElementName, EnumItem};
-
-use super::EventGroupControlType;
 
 //##################################################################
 
@@ -592,6 +591,8 @@ mod test {
         let bundle = channel
             .create_socket_connection_bundle("Bundle", &server_socket)
             .unwrap();
+        assert_eq!(channel.socket_connection_bundles().next(), Some(bundle.clone()));
+        assert_eq!(channel.socket_connection_bundles().count(), 1);
         assert_eq!(channel, bundle.physical_channel().unwrap());
         assert_eq!(Some(server_socket), bundle.server_port());
 

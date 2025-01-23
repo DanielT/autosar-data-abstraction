@@ -290,7 +290,10 @@ mod test {
     use autosar_data::{AutosarModel, AutosarVersion};
 
     use super::*;
-    use crate::{communication::CanClusterSettings, ByteOrder, SystemCategory};
+    use crate::{
+        communication::{AbstractPhysicalChannel, CanClusterSettings},
+        ByteOrder, SystemCategory,
+    };
 
     #[test]
     fn can_frame() {
@@ -306,6 +309,8 @@ mod test {
         let ecu_instance = system.create_ecu_instance("ECU", &package).unwrap();
         let can_controller = ecu_instance.create_can_communication_controller("Controller").unwrap();
         can_controller.connect_physical_channel("connection", &channel).unwrap();
+        assert_eq!(channel.connectors().count(), 1);
+        assert_eq!(channel.connectors().next().unwrap().name().unwrap(), "connection");
 
         let pdu1 = system.create_isignal_ipdu("pdu1", &package, 8).unwrap();
         let pdu2 = system.create_isignal_ipdu("pdu2", &package, 8).unwrap();
@@ -330,6 +335,7 @@ mod test {
             .trigger_frame(&frame2, 0x456, CanAddressingMode::Standard, CanFrameType::Can20)
             .unwrap();
         assert_eq!(frame2.frame_triggerings().count(), 1);
+        assert_eq!(channel.frame_triggerings().count(), 2);
 
         // try to set an invalid identifier
         let result = frame_triggering1.set_identifier(0xffff_ffff);

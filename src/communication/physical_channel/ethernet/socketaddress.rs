@@ -1,6 +1,6 @@
 use crate::communication::{
-    ConsumedServiceInstanceV1, EthernetPhysicalChannel, NetworkEndpoint, ProvidedServiceInstanceV1,
-    StaticSocketConnection, TcpRole,
+    AbstractPhysicalChannel, ConsumedServiceInstanceV1, EthernetPhysicalChannel, NetworkEndpoint,
+    ProvidedServiceInstanceV1, StaticSocketConnection, TcpRole,
 };
 use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError, EcuInstance};
 use autosar_data::{Element, ElementName};
@@ -41,7 +41,7 @@ impl SocketAddress {
         // get the connector for each ECU in advance, so that nothing needs to be cleaned up if there is a problem here
         let connectors = ecu_instances
             .iter()
-            .filter_map(|ecu_instance| channel.ecu_connector(ecu_instance))
+            .filter_map(|ecu_instance| channel.ecu_connector(ecu_instance).map(|conn| conn.element().clone()))
             .collect::<Vec<_>>();
         if connectors.len() != ecu_instances.len() {
             return Err(AutosarAbstractionError::InvalidParameter(
@@ -167,7 +167,7 @@ impl SocketAddress {
                     };
                     let mcr = self.0.get_or_create_sub_element(ElementName::MulticastConnectorRefs)?;
                     let mc_ref = mcr.create_sub_element(ElementName::MulticastConnectorRef)?;
-                    mc_ref.set_reference_target(&connector)?;
+                    mc_ref.set_reference_target(connector.element())?;
                 }
             }
             None => {
@@ -179,7 +179,7 @@ impl SocketAddress {
                 };
                 let mcr = self.0.get_or_create_sub_element(ElementName::MulticastConnectorRefs)?;
                 let mc_ref = mcr.create_sub_element(ElementName::MulticastConnectorRef)?;
-                mc_ref.set_reference_target(&connector)?;
+                mc_ref.set_reference_target(connector.element())?;
             }
             Some(SocketAddressType::Unicast(_)) => {
                 return Err(AutosarAbstractionError::InvalidParameter(
@@ -204,7 +204,7 @@ impl SocketAddress {
                 };
                 self.0
                     .get_or_create_sub_element(ElementName::ConnectorRef)?
-                    .set_reference_target(&connector)?;
+                    .set_reference_target(connector.element())?;
             }
             Some(SocketAddressType::Multicast(_)) => {
                 return Err(AutosarAbstractionError::InvalidParameter(

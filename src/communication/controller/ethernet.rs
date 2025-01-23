@@ -1,8 +1,8 @@
-use crate::communication::{CommunicationConnector, EthernetPhysicalChannel, EthernetVlanInfo};
+use crate::communication::{
+    AbstractCommunicationConnector, AbstractCommunicationController, EthernetPhysicalChannel, EthernetVlanInfo,
+};
 use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError, EcuInstance};
 use autosar_data::{AutosarDataError, AutosarModel, Element, ElementName, ElementsIterator, WeakElement};
-
-use super::AbstractCommunicationController;
 
 /// An `EcuInstance` needs an `EthernetCommunicationController` in order to connect to an ethernet cluster.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -198,10 +198,10 @@ impl EthernetCommunicationConnector {
     }
 }
 
-impl CommunicationConnector for EthernetCommunicationConnector {
-    type Controller = EthernetCommunicationController;
+impl AbstractCommunicationConnector for EthernetCommunicationConnector {
+    type CommunicationControllerType = EthernetCommunicationController;
 
-    fn controller(&self) -> Result<Self::Controller, AutosarAbstractionError> {
+    fn controller(&self) -> Result<Self::CommunicationControllerType, AutosarAbstractionError> {
         let controller = self
             .element()
             .get_sub_element(ElementName::CommControllerRef)

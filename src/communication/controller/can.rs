@@ -1,6 +1,6 @@
 use crate::{
     abstraction_element,
-    communication::{AbstractCommunicationController, CanPhysicalChannel, CommunicationConnector},
+    communication::{AbstractCommunicationConnector, AbstractCommunicationController, CanPhysicalChannel},
     AbstractionElement, AutosarAbstractionError, EcuInstance,
 };
 use autosar_data::{AutosarDataError, AutosarModel, Element, ElementName, ElementsIterator, WeakElement};
@@ -147,10 +147,10 @@ impl CanCommunicationConnector {
     }
 }
 
-impl CommunicationConnector for CanCommunicationConnector {
-    type Controller = CanCommunicationController;
+impl AbstractCommunicationConnector for CanCommunicationConnector {
+    type CommunicationControllerType = CanCommunicationController;
 
-    fn controller(&self) -> Result<Self::Controller, AutosarAbstractionError> {
+    fn controller(&self) -> Result<Self::CommunicationControllerType, AutosarAbstractionError> {
         let controller = self
             .element()
             .get_sub_element(ElementName::CommControllerRef)

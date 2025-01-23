@@ -1,6 +1,6 @@
 use crate::communication::{
-    CommunicationDirection, DataTransformation, PhysicalChannel, TransformationISignalPropsConfig,
-    TransformationTechnology,
+    AbstractPhysicalChannel, CommunicationDirection, DataTransformation, EndToEndTransformationISignalProps,
+    PhysicalChannel, SomeIpTransformationISignalProps, TransformationISignalPropsConfig, TransformationTechnology,
 };
 use crate::datatype::{CompuMethod, DataConstr, SwBaseType, Unit};
 use crate::{
@@ -8,8 +8,6 @@ use crate::{
     ArPackage, AutosarAbstractionError, EcuInstance,
 };
 use autosar_data::{AutosarDataError, Element, ElementName, EnumItem, WeakElement};
-
-use super::{EndToEndTransformationISignalProps, SomeIpTransformationISignalProps};
 
 /// Signal of the Interaction Layer
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -574,6 +572,7 @@ impl ISignalTriggering {
         };
         let port_name = format!("{name}_{suffix}",);
         let sp_elem = connector
+            .element()
             .get_or_create_sub_element(ElementName::EcuCommPortInstances)?
             .create_named_sub_element(ElementName::ISignalPort, &port_name)?;
         sp_elem

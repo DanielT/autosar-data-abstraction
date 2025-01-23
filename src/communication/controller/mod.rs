@@ -1,5 +1,5 @@
 use crate::{AbstractionElement, AutosarAbstractionError, EcuInstance};
-use autosar_data::{Element, ElementName};
+use autosar_data::{AutosarDataError, Element, ElementName};
 
 mod can;
 mod ethernet;
@@ -38,12 +38,12 @@ impl TryFrom<Element> for CommunicationController {
 
     fn try_from(element: Element) -> Result<Self, Self::Error> {
         match element.element_name() {
-            ElementName::CanCommunicationController => Ok(CanCommunicationController::try_from(element)?.into()),
+            ElementName::CanCommunicationController => Ok(Self::Can(CanCommunicationController::try_from(element)?)),
             ElementName::EthernetCommunicationController => {
-                Ok(EthernetCommunicationController::try_from(element)?.into())
+                Ok(Self::Ethernet(EthernetCommunicationController::try_from(element)?))
             }
             ElementName::FlexrayCommunicationController => {
-                Ok(FlexrayCommunicationController::try_from(element)?.into())
+                Ok(Self::Flexray(FlexrayCommunicationController::try_from(element)?))
             }
             _ => Err(AutosarAbstractionError::ConversionError {
                 element,
@@ -52,6 +52,8 @@ impl TryFrom<Element> for CommunicationController {
         }
     }
 }
+
+impl AbstractCommunicationController for CommunicationController {}
 
 impl From<CanCommunicationController> for CommunicationController {
     fn from(value: CanCommunicationController) -> Self {
@@ -105,9 +107,9 @@ pub trait AbstractCommunicationController: AbstractionElement {
 //##################################################################
 
 /// A trait for all communication connectors
-pub trait CommunicationConnector: AbstractionElement {
+pub trait AbstractCommunicationConnector: AbstractionElement {
     /// The controller type of the `CommunicationConnector`
-    type Controller;
+    type CommunicationControllerType: AbstractCommunicationController;
 
     /// Get the `EcuInstance` that contains this `CommunicationConnector`
     fn ecu_instance(&self) -> Result<EcuInstance, AutosarAbstractionError> {
@@ -118,7 +120,65 @@ pub trait CommunicationConnector: AbstractionElement {
     }
 
     /// Get the controller of the `CommunicationConnector`
-    fn controller(&self) -> Result<Self::Controller, AutosarAbstractionError>;
+    fn controller(&self) -> Result<Self::CommunicationControllerType, AutosarAbstractionError>;
+}
+
+//##################################################################
+
+/// wraps all different kinds of communication connector
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CommunicationConnector {
+    /// The `CommunicationConnector` is a [`CanCommunicationConnector`]
+    Can(CanCommunicationConnector),
+    /// The `CommunicationConnector` is an [`EthernetCommunicationConnector`]
+    Ethernet(EthernetCommunicationConnector),
+    /// The `CommunicationConnector` is a [`FlexrayCommunicationConnector`]
+    Flexray(FlexrayCommunicationConnector),
+}
+
+impl AbstractionElement for CommunicationConnector {
+    fn element(&self) -> &autosar_data::Element {
+        match self {
+            CommunicationConnector::Can(cc) => cc.element(),
+            CommunicationConnector::Ethernet(ec) => ec.element(),
+            CommunicationConnector::Flexray(fc) => fc.element(),
+        }
+    }
+}
+
+impl TryFrom<Element> for CommunicationConnector {
+    type Error = AutosarAbstractionError;
+
+    fn try_from(element: Element) -> Result<Self, Self::Error> {
+        match element.element_name() {
+            ElementName::CanCommunicationConnector => Ok(Self::Can(CanCommunicationConnector::try_from(element)?)),
+            ElementName::EthernetCommunicationConnector => {
+                Ok(Self::Ethernet(EthernetCommunicationConnector::try_from(element)?))
+            }
+            ElementName::FlexrayCommunicationConnector => {
+                Ok(Self::Flexray(FlexrayCommunicationConnector::try_from(element)?))
+            }
+            _ => Err(AutosarAbstractionError::ConversionError {
+                element,
+                dest: "CommunicationConnector".to_string(),
+            }),
+        }
+    }
+}
+
+impl AbstractCommunicationConnector for CommunicationConnector {
+    type CommunicationControllerType = CommunicationController;
+
+    fn controller(&self) -> Result<Self::CommunicationControllerType, AutosarAbstractionError> {
+        let Some(controller_ref) = self.element().get_sub_element(ElementName::CommControllerRef) else {
+            return Err(AutosarAbstractionError::ModelError(AutosarDataError::ElementNotFound {
+                target: ElementName::CommControllerRef,
+                parent: self.element().element_name(),
+            }));
+        };
+        let controller = controller_ref.get_reference_target()?;
+        Self::CommunicationControllerType::try_from(controller)
+    }
 }
 
 //##################################################################
@@ -126,7 +186,10 @@ pub trait CommunicationConnector: AbstractionElement {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{ArPackage, EcuInstance};
+    use crate::{
+        communication::{CanClusterSettings, FlexrayChannelName, FlexrayClusterSettings},
+        ArPackage, SystemCategory,
+    };
     use autosar_data::{AutosarModel, AutosarVersion};
 
     #[test]
@@ -134,14 +197,49 @@ mod tests {
         let model = AutosarModel::new();
         let _file = model.create_file("test.arxml", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/test").unwrap();
-        let ecu = EcuInstance::new("ecu", &package).unwrap();
-        let can = CanCommunicationController::new("can", &ecu).unwrap();
-        let ethernet = EthernetCommunicationController::new("ethernet", &ecu, None).unwrap();
-        let flexray = FlexrayCommunicationController::new("flexray", &ecu).unwrap();
+        let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
 
-        let can_cc: CommunicationController = can.into();
-        let ethernet_cc: CommunicationController = ethernet.into();
-        let flexray_cc: CommunicationController = flexray.into();
+        let ecu = system.create_ecu_instance("ecu", &package).unwrap();
+        let can_ctrl = ecu.create_can_communication_controller("can").unwrap();
+        let ethernet_ctrl = ecu.create_ethernet_communication_controller("ethernet", None).unwrap();
+        let flexray_ctrl = ecu.create_flexray_communication_controller("flexray").unwrap();
+
+        let can_cc: CommunicationController = can_ctrl.clone().into();
+        let ethernet_cc: CommunicationController = ethernet_ctrl.clone().into();
+        let flexray_cc: CommunicationController = flexray_ctrl.clone().into();
+
+        let can_cluster = system
+            .create_can_cluster("can_cluster", &package, &CanClusterSettings::default())
+            .unwrap();
+        let ethernet_cluster = system.create_ethernet_cluster("ethernet_cluster", &package).unwrap();
+        let flexray_cluster = system
+            .create_flexray_cluster("flexray_cluster", &package, &FlexrayClusterSettings::default())
+            .unwrap();
+
+        let can_channel = can_cluster.create_physical_channel("can_channel").unwrap();
+        let ethernet_channel = ethernet_cluster
+            .create_physical_channel("ethernet_channel", None)
+            .unwrap();
+        let flexray_channel = flexray_cluster
+            .create_physical_channel("flexray_channel", FlexrayChannelName::A)
+            .unwrap();
+
+        let can_connector = can_ctrl
+            .connect_physical_channel("can_connector", &can_channel)
+            .unwrap();
+        let ethernet_connector = ethernet_ctrl
+            .connect_physical_channel("ethernet_connector", &ethernet_channel)
+            .unwrap();
+        let flexray_connector = flexray_ctrl
+            .connect_physical_channel("flexray_connector", &flexray_channel)
+            .unwrap();
+
+        let connector: CommunicationConnector = CommunicationConnector::Can(can_connector.clone());
+        assert_eq!(connector.controller().unwrap(), can_cc);
+        let connector = CommunicationConnector::Ethernet(ethernet_connector.clone());
+        assert_eq!(connector.controller().unwrap(), ethernet_cc);
+        let connector = CommunicationConnector::Flexray(flexray_connector.clone());
+        assert_eq!(connector.controller().unwrap(), flexray_cc);
 
         assert_eq!(can_cc.element().item_name().unwrap(), "can");
         assert_eq!(ethernet_cc.element().item_name().unwrap(), "ethernet");

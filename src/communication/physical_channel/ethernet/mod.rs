@@ -1,6 +1,6 @@
 use crate::communication::{
-    AbstractPdu, CommunicationDirection, EthernetCluster, GeneralPurposePdu, Pdu, PduCollectionTrigger, PduTriggering,
-    PhysicalChannel,
+    AbstractPdu, AbstractPhysicalChannel, CommunicationDirection, EthernetCluster, EthernetCommunicationConnector,
+    GeneralPurposePdu, Pdu, PduCollectionTrigger, PduTriggering,
 };
 use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance};
 use autosar_data::{AutosarVersion, Element, ElementName, EnumItem};
@@ -141,7 +141,7 @@ impl EthernetPhysicalChannel {
                 let ne_element = network_endpoint.element();
 
                 // get a connector referenced by this physical channel which is contained in the ecu_instance
-                if let Some(connector) = self.ecu_connector(ecu_instance) {
+                if let Some(connector) = self.ecu_connector(ecu_instance).map(|conn| conn.element().clone()) {
                     let _ = connector
                         .get_or_create_sub_element(ElementName::NetworkEndpointRefs)
                         .and_then(|ner| ner.create_sub_element(ElementName::NetworkEndpointRef))
@@ -287,10 +287,6 @@ impl EthernetPhysicalChannel {
             .filter_map(|sa_elem| SocketAddress::try_from(sa_elem).ok())
     }
 
-    pub(crate) fn ecu_connector(&self, ecu_instance: &EcuInstance) -> Option<Element> {
-        PhysicalChannel::Ethernet(self.clone()).ecu_connector(ecu_instance)
-    }
-
     /// create a socket connection bundle
     ///
     /// The `SocketConnectionBundle` is the "old" way to establish a connection between two sockets.
@@ -329,6 +325,19 @@ impl EthernetPhysicalChannel {
         let connections = soadcfg.get_or_create_sub_element(ElementName::ConnectionBundles)?;
 
         SocketConnectionBundle::new(name, server_port, &connections)
+    }
+
+    /// iterate over all socket connection bundles in this channel
+    ///
+    /// The `SocketConnectionBundle` is the "old" way to establish a connection between two sockets.
+    /// It is deprecated in newer versions of the Autosar standard, but remains available for compatibility.
+    pub fn socket_connection_bundles(&self) -> impl Iterator<Item = SocketConnectionBundle> {
+        self.element()
+            .get_sub_element(ElementName::SoAdConfig)
+            .and_then(|sc| sc.get_sub_element(ElementName::ConnectionBundles))
+            .into_iter()
+            .flat_map(|cb| cb.sub_elements())
+            .filter_map(|cb_elem| SocketConnectionBundle::try_from(cb_elem).ok())
     }
 
     /// create a pair of static socket connections
@@ -629,17 +638,14 @@ impl EthernetPhysicalChannel {
             .get_or_create_sub_element(ElementName::ConnectionBundles)?;
 
         // check if the unicast connection already exists
-        let scb_unicast = connection_bundles
-            .sub_elements()
-            .filter_map(|elem| SocketConnectionBundle::try_from(elem).ok())
-            .find(|scb| {
-                scb.server_port().is_some_and(|sp| &sp == unicast_socket)
-                    && scb.bundled_connections().any(|sc| {
-                        sc.client_ip_addr_from_connection_request() == Some(true)
-                            && sc.client_port().is_some_and(|cp| &cp == common_config.remote_socket)
-                            && sc.pdu_triggerings().count() == 2
-                    })
-            });
+        let scb_unicast = self.socket_connection_bundles().find(|scb| {
+            scb.server_port().is_some_and(|sp| &sp == unicast_socket)
+                && scb.bundled_connections().any(|sc| {
+                    sc.client_ip_addr_from_connection_request() == Some(true)
+                        && sc.client_port().is_some_and(|cp| &cp == common_config.remote_socket)
+                        && sc.pdu_triggerings().count() == 2
+                })
+        });
 
         if scb_unicast.is_none() {
             // create a new SocketConnectionBundle for the unicast connection
@@ -665,18 +671,15 @@ impl EthernetPhysicalChannel {
         }
 
         // check if the multicast connection already exists
-        let scb_multicast_opt = connection_bundles
-            .sub_elements()
-            .filter_map(|elem| SocketConnectionBundle::try_from(elem).ok())
-            .find(|scb| {
-                scb.server_port()
-                    .is_some_and(|sp| &sp == common_config.multicast_rx_socket)
-                    && scb.bundled_connections().any(|sc| {
-                        sc.client_ip_addr_from_connection_request() == Some(true)
-                            && sc.client_port().is_some_and(|cp| &cp == common_config.remote_socket)
-                            && sc.pdu_triggerings().count() == 1
-                    })
-            });
+        let scb_multicast_opt = self.socket_connection_bundles().find(|scb| {
+            scb.server_port()
+                .is_some_and(|sp| &sp == common_config.multicast_rx_socket)
+                && scb.bundled_connections().any(|sc| {
+                    sc.client_ip_addr_from_connection_request() == Some(true)
+                        && sc.client_port().is_some_and(|cp| &cp == common_config.remote_socket)
+                        && sc.pdu_triggerings().count() == 1
+                })
+        });
 
         let scb_multicast_pt = if let Some(pt) = scb_multicast_opt
             .and_then(|scb| scb.bundled_connections().next())
@@ -824,6 +827,12 @@ impl EthernetPhysicalChannel {
         false
     }
 }
+
+impl AbstractPhysicalChannel for EthernetPhysicalChannel {
+    type CommunicationConnectorType = EthernetCommunicationConnector;
+}
+
+//##################################################################
 
 /// A `CommonServiceDiscoveryConfig` contains common configuration settings for `System::configure_service_discovery_for_ecu`.
 ///
@@ -1377,36 +1386,24 @@ mod test {
         );
         assert!(result.is_ok());
 
-        let connection_bundles = channel
-            .element()
-            .get_sub_element(ElementName::SoAdConfig)
-            .unwrap()
-            .get_sub_element(ElementName::ConnectionBundles)
-            .unwrap();
-        assert_eq!(connection_bundles.sub_elements().count(), 2);
-        assert!(connection_bundles
-            .sub_elements()
-            .filter_map(|elem| SocketConnectionBundle::try_from(elem).ok())
-            .any(|scb| {
-                scb.server_port().is_some_and(|sp| sp == unicast_socket)
-                    && scb.bundled_connections().any(|sc| {
-                        sc.client_ip_addr_from_connection_request() == Some(true)
-                            && sc.client_port().is_some_and(|cp| &cp == common_config.remote_socket)
-                            && sc.pdu_triggerings().count() == 2
-                    })
-            }));
-        assert!(connection_bundles
-            .sub_elements()
-            .filter_map(|elem| SocketConnectionBundle::try_from(elem).ok())
-            .any(|scb| {
-                scb.server_port()
-                    .is_some_and(|sp| &sp == common_config.multicast_rx_socket)
-                    && scb.bundled_connections().any(|sc| {
-                        sc.client_ip_addr_from_connection_request() == Some(true)
-                            && sc.client_port().is_some_and(|cp| &cp == common_config.remote_socket)
-                            && sc.pdu_triggerings().count() == 1
-                    })
-            }));
+        assert_eq!(channel.socket_connection_bundles().count(), 2);
+        assert!(channel.socket_connection_bundles().any(|scb| {
+            scb.server_port().is_some_and(|sp| sp == unicast_socket)
+                && scb.bundled_connections().any(|sc| {
+                    sc.client_ip_addr_from_connection_request() == Some(true)
+                        && sc.client_port().is_some_and(|cp| &cp == common_config.remote_socket)
+                        && sc.pdu_triggerings().count() == 2
+                })
+        }));
+        assert!(channel.socket_connection_bundles().any(|scb| {
+            scb.server_port()
+                .is_some_and(|sp| &sp == common_config.multicast_rx_socket)
+                && scb.bundled_connections().any(|sc| {
+                    sc.client_ip_addr_from_connection_request() == Some(true)
+                        && sc.client_port().is_some_and(|cp| &cp == common_config.remote_socket)
+                        && sc.pdu_triggerings().count() == 1
+                })
+        }));
 
         // run the function again. This should not create new elements
         let result = channel.configure_service_discovery_for_ecu(
@@ -1417,7 +1414,7 @@ mod test {
             &common_config,
         );
         assert!(result.is_ok());
-        assert_eq!(connection_bundles.sub_elements().count(), 2);
+        assert_eq!(channel.socket_connection_bundles().count(), 2);
     }
 
     #[test]

@@ -1,8 +1,6 @@
-use crate::communication::{CommunicationConnector, FlexrayPhysicalChannel};
+use crate::communication::{AbstractCommunicationConnector, AbstractCommunicationController, FlexrayPhysicalChannel};
 use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError, EcuInstance};
 use autosar_data::{AutosarDataError, AutosarModel, Element, ElementName, ElementsIterator, WeakElement};
-
-use super::AbstractCommunicationController;
 
 /// An `EcuInstance` needs a `FlexrayCommunicationController` in order to connect to a Flexray cluster.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -139,10 +137,10 @@ impl FlexrayCommunicationConnector {
     }
 }
 
-impl CommunicationConnector for FlexrayCommunicationConnector {
-    type Controller = FlexrayCommunicationController;
+impl AbstractCommunicationConnector for FlexrayCommunicationConnector {
+    type CommunicationControllerType = FlexrayCommunicationController;
 
-    fn controller(&self) -> Result<Self::Controller, AutosarAbstractionError> {
+    fn controller(&self) -> Result<Self::CommunicationControllerType, AutosarAbstractionError> {
         let controller = self
             .element()
             .get_sub_element(ElementName::CommControllerRef)

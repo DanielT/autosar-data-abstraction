@@ -1,6 +1,9 @@
 use crate::{
     abstraction_element,
-    communication::{FlexrayCluster, FlexrayCommunicationCycle, FlexrayFrame, FlexrayFrameTriggering},
+    communication::{
+        AbstractPhysicalChannel, FlexrayCluster, FlexrayCommunicationConnector, FlexrayCommunicationCycle,
+        FlexrayFrame, FlexrayFrameTriggering,
+    },
     AbstractionElement, AutosarAbstractionError,
 };
 use autosar_data::{Element, ElementName, EnumItem};
@@ -60,16 +63,18 @@ impl FlexrayPhysicalChannel {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
     /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let frame_package = ArPackage::get_or_create(&model, "/Frames").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let cluster = system.create_flexray_cluster("Cluster", &package, &FlexrayClusterSettings::default()).unwrap();
-    /// let channel = cluster.create_physical_channel("Channel", FlexrayChannelName::A).unwrap();
-    /// let frame = system.create_flexray_frame("Frame", 64, &frame_package).unwrap();
+    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let frame_package = ArPackage::get_or_create(&model, "/Frames")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let cluster = system.create_flexray_cluster("Cluster", &package, &FlexrayClusterSettings::default())?;
+    /// let channel = cluster.create_physical_channel("Channel", FlexrayChannelName::A)?;
+    /// let frame = system.create_flexray_frame("Frame", 64, &frame_package)?;
     /// let timing = FlexrayCommunicationCycle::Repetition {base_cycle: 1, cycle_repetition: CycleRepetition::C1};
-    /// channel.trigger_frame(&frame, 1, &timing).unwrap();
+    /// channel.trigger_frame(&frame, 1, &timing)?;
+    /// # Ok(())}
     /// ```
     pub fn trigger_frame(
         &self,
@@ -79,6 +84,40 @@ impl FlexrayPhysicalChannel {
     ) -> Result<FlexrayFrameTriggering, AutosarAbstractionError> {
         FlexrayFrameTriggering::new(self, frame, slot_id, timing)
     }
+
+    /// iterate over all frame triggerings of this physical channel
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::{*, communication::*};
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModel::new();
+    /// # model.create_file("filename", AutosarVersion::LATEST)?;
+    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let cluster = system.create_flexray_cluster("Cluster", &package, &FlexrayClusterSettings::default())?;
+    /// # let channel = cluster.create_physical_channel("Channel", FlexrayChannelName::A)?;
+    /// # let frame = system.create_flexray_frame("Frame", 64, &package)?;
+    /// # let timing = FlexrayCommunicationCycle::Repetition {base_cycle: 1, cycle_repetition: CycleRepetition::C1};
+    /// channel.trigger_frame(&frame, 1, &timing)?;
+    /// for ft in channel.frame_triggerings() {
+    ///     println!("Frame triggering: {:?}", ft);
+    /// }
+    /// # assert_eq!(channel.frame_triggerings().count(), 1);
+    /// # Ok(())}
+    pub fn frame_triggerings(&self) -> impl Iterator<Item = FlexrayFrameTriggering> {
+        self.0
+            .get_sub_element(ElementName::FrameTriggerings)
+            .into_iter()
+            .flat_map(|elem| elem.sub_elements())
+            .filter_map(|elem| FlexrayFrameTriggering::try_from(elem).ok())
+    }
+}
+
+impl AbstractPhysicalChannel for FlexrayPhysicalChannel {
+    type CommunicationConnectorType = FlexrayCommunicationConnector;
 }
 
 //##################################################################

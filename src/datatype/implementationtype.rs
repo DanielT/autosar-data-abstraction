@@ -1,9 +1,7 @@
 use crate::{abstraction_element, datatype, AbstractionElement, ArPackage, AutosarAbstractionError, Element, EnumItem};
 use autosar_data::ElementName;
-use datatype::{CompuMethod, DataConstr, SwBaseType};
+use datatype::{AbstractAutosarDataType, CompuMethod, DataConstr, SwBaseType};
 use std::fmt::Display;
-
-use super::AbstractAutosarDataType;
 
 /// Interface for implementation data types, which provides default implementations for common operations
 pub trait AbstractImplementationDataType: AbstractionElement {

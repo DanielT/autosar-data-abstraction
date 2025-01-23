@@ -1,4 +1,6 @@
-use crate::communication::{CommunicationDirection, Pdu};
+use crate::communication::{
+    AbstractPdu, AbstractPhysicalChannel, CommunicationDirection, Pdu, PduTriggering, PhysicalChannel,
+};
 use crate::{
     abstraction_element, make_unique_name, reflist_iterator, AbstractionElement, AutosarAbstractionError, ByteOrder,
     EcuInstance,
@@ -11,8 +13,6 @@ mod flexray;
 use autosar_data::{AutosarDataError, Element, ElementName, EnumItem};
 pub use can::*;
 pub use flexray::*;
-
-use super::{AbstractPdu, PduTriggering, PhysicalChannel};
 
 //##################################################################
 
@@ -306,6 +306,7 @@ impl FrameTriggering {
         };
         let port_name = format!("{name}_{suffix}",);
         let fp_elem = connector
+            .element()
             .get_or_create_sub_element(ElementName::EcuCommPortInstances)?
             .create_named_sub_element(ElementName::FramePort, &port_name)?;
         fp_elem

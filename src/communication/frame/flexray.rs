@@ -377,6 +377,7 @@ mod test {
             .trigger_frame(&frame2, 2, &FlexrayCommunicationCycle::Counter { cycle_counter: 2 })
             .unwrap();
         assert_eq!(frame2.frame_triggerings().count(), 1);
+        assert_eq!(channel.frame_triggerings().count(), 2);
 
         // a pdu triggering for the mapped pdu should be created when the frame is connected to the channel
         assert_eq!(frame_triggering1.pdu_triggerings().count(), 1);

@@ -1,4 +1,6 @@
-use crate::communication::{CommunicationDirection, ISignal, ISignalGroup, ISignalTriggering, PhysicalChannel};
+use crate::communication::{
+    AbstractPhysicalChannel, CommunicationDirection, ISignal, ISignalGroup, ISignalTriggering, PhysicalChannel,
+};
 use crate::{
     abstraction_element, make_unique_name, reflist_iterator, AbstractionElement, ArPackage, AutosarAbstractionError,
     EcuInstance,
@@ -539,6 +541,7 @@ impl PduTriggering {
         };
         let port_name = format!("{name}_{suffix}",);
         let pp_elem = connector
+            .element()
             .get_or_create_sub_element(ElementName::EcuCommPortInstances)?
             .create_named_sub_element(ElementName::IPduPort, &port_name)?;
         pp_elem

@@ -1,9 +1,12 @@
 use crate::{
     abstraction_element,
-    communication::{CanAddressingMode, CanCluster, CanFrame, CanFrameTriggering, CanFrameType},
+    communication::{
+        AbstractPhysicalChannel, CanAddressingMode, CanCluster, CanCommunicationConnector, CanFrame,
+        CanFrameTriggering, CanFrameType,
+    },
     AbstractionElement, AutosarAbstractionError,
 };
-use autosar_data::Element;
+use autosar_data::{Element, ElementName};
 
 /// The `CanPhysicalChannel contains all of the communication on a CAN network
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -60,6 +63,39 @@ impl CanPhysicalChannel {
     ) -> Result<CanFrameTriggering, AutosarAbstractionError> {
         CanFrameTriggering::new(self, frame, identifier, addressing_mode, frame_type)
     }
+
+    /// iterate over all frame triggerings of this physical channel
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::{*, communication::*};
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModel::new();
+    /// # model.create_file("filename", AutosarVersion::LATEST)?;
+    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
+    /// # let channel = cluster.create_physical_channel("Channel")?;
+    /// # let frame = system.create_can_frame("Frame", 8, &package)?;
+    /// channel.trigger_frame(&frame, 0x100, CanAddressingMode::Standard, CanFrameType::Can20)?;
+    /// for ft in channel.frame_triggerings() {
+    ///     println!("Frame triggering: {:?}", ft);
+    /// }
+    /// # assert_eq!(channel.frame_triggerings().count(), 1);
+    /// # Ok(())}
+    pub fn frame_triggerings(&self) -> impl Iterator<Item = CanFrameTriggering> {
+        self.0
+            .get_sub_element(ElementName::FrameTriggerings)
+            .into_iter()
+            .flat_map(|elem| elem.sub_elements())
+            .filter_map(|elem| CanFrameTriggering::try_from(elem).ok())
+    }
+}
+
+impl AbstractPhysicalChannel for CanPhysicalChannel {
+    type CommunicationConnectorType = CanCommunicationConnector;
 }
 
 //##################################################################
