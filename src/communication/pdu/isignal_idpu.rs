@@ -344,6 +344,14 @@ impl ISignalToIPduMapping {
             .and_then(|signal_elem| ISignal::try_from(signal_elem).ok())
     }
 
+    /// Set the byte order of the data in the mapped signal.
+    pub fn set_byte_order(&self, byte_order: ByteOrder) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::PackingByteOrder)?
+            .set_character_data::<EnumItem>(byte_order.into())?;
+        Ok(())
+    }
+
     /// Byte order of the data in the signal.
     #[must_use]
     pub fn byte_order(&self) -> Option<ByteOrder> {
@@ -372,6 +380,14 @@ impl ISignalToIPduMapping {
             .get_sub_element(ElementName::UpdateIndicationBitPosition)
             .and_then(|uibp| uibp.character_data())
             .and_then(|cdata| cdata.parse_integer())
+    }
+
+    /// Set the transfer property of the mapped signal
+    pub fn set_transfer_property(&self, transfer_property: TransferProperty) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::TransferProperty)?
+            .set_character_data::<EnumItem>(transfer_property.into())?;
+        Ok(())
     }
 
     /// Bit position of the update bit for the mapped signal. Not all signals use an update bit.
@@ -581,10 +597,14 @@ mod test {
             )
             .unwrap();
         assert_eq!(mapping.signal().unwrap(), isignal);
-        assert_eq!(mapping.byte_order().unwrap(), ByteOrder::MostSignificantByteFirst);
         assert_eq!(mapping.start_position().unwrap(), 0);
         assert_eq!(mapping.update_bit(), Some(5));
+        assert_eq!(mapping.byte_order().unwrap(), ByteOrder::MostSignificantByteFirst);
+        mapping.set_byte_order(ByteOrder::MostSignificantByteLast).unwrap();
+        assert_eq!(mapping.byte_order().unwrap(), ByteOrder::MostSignificantByteLast);
         assert_eq!(mapping.transfer_property().unwrap(), TransferProperty::Triggered);
+        mapping.set_transfer_property(TransferProperty::Pending).unwrap();
+        assert_eq!(mapping.transfer_property().unwrap(), TransferProperty::Pending);
 
         // create a signal group which contains a signal
         let syssignal_group = package.create_system_signal_group("syssignal_group").unwrap();
