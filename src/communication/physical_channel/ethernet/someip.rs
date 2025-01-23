@@ -1294,6 +1294,15 @@ impl SomeipTpConfig {
         SomeipTpChannel::new(name, &channels)
     }
 
+    /// iterate over all `SomeipTpChannel`s in this `SomeipTpConfig`
+    pub fn someip_tp_channels(&self) -> impl Iterator<Item = SomeipTpChannel> {
+        self.element()
+            .get_sub_element(ElementName::TpChannels)
+            .into_iter()
+            .flat_map(|channels| channels.sub_elements())
+            .filter_map(|channel| SomeipTpChannel::try_from(channel).ok())
+    }
+
     /// create a new `SomeIp` TP connection in this `SomeipTpConfig`
     ///
     /// returns the `PduTriggering` that is created for the `TpSdu`
@@ -1431,6 +1440,40 @@ impl SomeipTpChannel {
     pub(crate) fn new(name: &str, parent: &Element) -> Result<Self, AutosarAbstractionError> {
         let elem = parent.create_named_sub_element(ElementName::SomeipTpChannel, name)?;
         Ok(Self(elem))
+    }
+
+    /// set the rxTimeoutTime for the `SomeIpTpChannel`
+    pub fn set_rx_timeout_time(&self, rx_timeout_time: f64) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::RxTimeoutTime)?
+            .set_character_data(rx_timeout_time)?;
+        Ok(())
+    }
+
+    /// get the rxTimeoutTime for the `SomeIpTpChannel`
+    #[must_use]
+    pub fn rx_timeout_time(&self) -> Option<f64> {
+        self.element()
+            .get_sub_element(ElementName::RxTimeoutTime)
+            .and_then(|rtt| rtt.character_data())
+            .and_then(|cdata| cdata.parse_float())
+    }
+
+    /// set the separationTime for the `SomeIpTpChannel`
+    pub fn set_separation_time(&self, separation_time: f64) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::SeparationTime)?
+            .set_character_data(separation_time)?;
+        Ok(())
+    }
+
+    /// get the separationTime for the `SomeIpTpChannel`
+    #[must_use]
+    pub fn separation_time(&self) -> Option<f64> {
+        self.element()
+            .get_sub_element(ElementName::SeparationTime)
+            .and_then(|st| st.character_data())
+            .and_then(|cdata| cdata.parse_float())
     }
 }
 
@@ -2055,7 +2098,11 @@ mod test {
             .unwrap();
 
         let tp_channel = tp_config.create_someip_tp_channel("someip_tp_channel").unwrap();
-        // TODO: assert_eq!(tp_config.tp_channels().count(), 1);
+        assert_eq!(tp_config.someip_tp_channels().count(), 1);
+        tp_channel.set_rx_timeout_time(0.33).unwrap();
+        assert_eq!(tp_channel.rx_timeout_time().unwrap(), 0.33);
+        tp_channel.set_separation_time(0.44).unwrap();
+        assert_eq!(tp_channel.separation_time().unwrap(), 0.44);
 
         tp_config
             .create_someip_tp_connection(SomeipTpConnection {
