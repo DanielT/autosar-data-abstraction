@@ -12,6 +12,10 @@ use crate::{
         ApplicationRecordDataType, BaseTypeEncoding, CompuMethod, CompuMethodContent, DataConstr, DataTypeMappingSet,
         ImplementationDataType, ImplementationDataTypeSettings, SwBaseType, Unit,
     },
+    ecu_configuration::{
+        EcucDefinitionCollection, EcucDestinationUriDefSet, EcucModuleConfigurationValues, EcucModuleDef,
+        EcucValueCollection,
+    },
     software_component::{
         ApplicationSwComponentType, ClientServerInterface, ComplexDeviceDriverSwComponentType,
         CompositionSwComponentType, EcuAbstractionSwComponentType, ModeSwitchInterface, NvDataInterface,
@@ -375,6 +379,132 @@ impl ArPackage {
         name: &str,
     ) -> Result<EcuAbstractionSwComponentType, AutosarAbstractionError> {
         EcuAbstractionSwComponentType::new(name, self)
+    }
+
+    /// create a new `EcucDefinitionCollection` in the package
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::*;
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModel::new();
+    /// # model.create_file("filename", AutosarVersion::LATEST)?;
+    /// let package = ArPackage::get_or_create(&model, "/pkg")?;
+    /// let definition_collection = package.create_ecuc_definition_collection("DefinitionCollection")?;
+    /// assert!(model.get_element_by_path("/pkg/DefinitionCollection").is_some());
+    /// # Ok(())}
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model
+    pub fn create_ecuc_definition_collection(
+        &self,
+        name: &str,
+    ) -> Result<EcucDefinitionCollection, AutosarAbstractionError> {
+        EcucDefinitionCollection::new(name, self)
+    }
+
+    /// create a new `EcucDestinationUriDefSet` in the package
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::*;
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModel::new();
+    /// # model.create_file("filename", AutosarVersion::LATEST)?;
+    /// let package = ArPackage::get_or_create(&model, "/pkg")?;
+    /// let uri_def_set = package.create_ecuc_destination_uri_def_set("DestinationUriDefSet")?;
+    /// assert!(model.get_element_by_path("/pkg/DestinationUriDefSet").is_some());
+    /// # Ok(())}
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model
+    pub fn create_ecuc_destination_uri_def_set(
+        &self,
+        name: &str,
+    ) -> Result<EcucDestinationUriDefSet, AutosarAbstractionError> {
+        EcucDestinationUriDefSet::new(name, self)
+    }
+
+    /// create a new `EcucModuleConfigurationValues` in the package
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::*;
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModel::new();
+    /// # model.create_file("filename", AutosarVersion::LATEST)?;
+    /// let package = ArPackage::get_or_create(&model, "/pkg")?;
+    /// # let module_definition = package.create_ecuc_module_def("ModuleDef")?;
+    /// let module_config = package.create_ecuc_module_configuration_values("ModuleConfig", &module_definition)?;
+    /// assert!(model.get_element_by_path("/pkg/ModuleConfig").is_some());
+    /// # Ok(())}
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model
+    pub fn create_ecuc_module_configuration_values(
+        &self,
+        name: &str,
+        definition: &EcucModuleDef,
+    ) -> Result<EcucModuleConfigurationValues, AutosarAbstractionError> {
+        EcucModuleConfigurationValues::new(name, self, definition)
+    }
+
+    /// create a new `EcucModuleDef` in the package
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::*;
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModel::new();
+    /// # model.create_file("filename", AutosarVersion::LATEST)?;
+    /// let package = ArPackage::get_or_create(&model, "/pkg")?;
+    /// let bsw_module = package.create_ecuc_module_def("BswModule")?;
+    /// assert!(model.get_element_by_path("/pkg/BswModule").is_some());
+    /// # Ok(())}
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model
+    pub fn create_ecuc_module_def(&self, name: &str) -> Result<EcucModuleDef, AutosarAbstractionError> {
+        EcucModuleDef::new(name, self)
+    }
+
+    /// create a new `EcucValueCollection` in the package
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::*;
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModel::new();
+    /// # model.create_file("filename", AutosarVersion::LATEST)?;
+    /// let package = ArPackage::get_or_create(&model, "/pkg")?;
+    /// let value_collection = package.create_ecuc_value_collection("ValueCollection")?;
+    /// assert!(model.get_element_by_path("/pkg/ValueCollection").is_some());
+    /// # Ok(())}
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model
+    pub fn create_ecuc_value_collection(&self, name: &str) -> Result<EcucValueCollection, AutosarAbstractionError> {
+        EcucValueCollection::new(name, self)
     }
 
     /// create a new `ImplementationDataType` in the package
@@ -867,6 +997,11 @@ pub enum ArPackageElement {
     DataTransformationSet(DataTransformationSet),
     DataTypeMappingSet(DataTypeMappingSet),
     EcuAbstractionSwComponentType(EcuAbstractionSwComponentType),
+    EcucDefinitionCollection(EcucDefinitionCollection),
+    EcucDestinationUriDefSet(EcucDestinationUriDefSet),
+    EcucModuleConfigurationValues(EcucModuleConfigurationValues),
+    EcucModuleDef(EcucModuleDef),
+    EcucValueCollection(EcucValueCollection),
     ImplementationDataType(ImplementationDataType),
     ModeSwitchInterface(ModeSwitchInterface),
     NvDataInterface(NvDataInterface),
@@ -918,6 +1053,17 @@ impl TryFrom<Element> for ArPackageElement {
             ElementName::EcuAbstractionSwComponentType => {
                 EcuAbstractionSwComponentType::try_from(element).map(Self::EcuAbstractionSwComponentType)
             }
+            ElementName::EcucDefinitionCollection => {
+                EcucDefinitionCollection::try_from(element).map(Self::EcucDefinitionCollection)
+            }
+            ElementName::EcucDestinationUriDefSet => {
+                EcucDestinationUriDefSet::try_from(element).map(Self::EcucDestinationUriDefSet)
+            }
+            ElementName::EcucModuleConfigurationValues => {
+                EcucModuleConfigurationValues::try_from(element).map(Self::EcucModuleConfigurationValues)
+            }
+            ElementName::EcucModuleDef => EcucModuleDef::try_from(element).map(Self::EcucModuleDef),
+            ElementName::EcucValueCollection => EcucValueCollection::try_from(element).map(Self::EcucValueCollection),
             ElementName::ImplementationDataType => {
                 ImplementationDataType::try_from(element).map(Self::ImplementationDataType)
             }
@@ -969,6 +1115,11 @@ impl AbstractionElement for ArPackageElement {
             ArPackageElement::DataTransformationSet(item) => item.element(),
             ArPackageElement::DataTypeMappingSet(item) => item.element(),
             ArPackageElement::EcuAbstractionSwComponentType(item) => item.element(),
+            ArPackageElement::EcucDefinitionCollection(item) => item.element(),
+            ArPackageElement::EcucDestinationUriDefSet(item) => item.element(),
+            ArPackageElement::EcucModuleConfigurationValues(item) => item.element(),
+            ArPackageElement::EcucModuleDef(item) => item.element(),
+            ArPackageElement::EcucValueCollection(item) => item.element(),
             ArPackageElement::ImplementationDataType(item) => item.element(),
             ArPackageElement::ModeSwitchInterface(item) => item.element(),
             ArPackageElement::NvDataInterface(item) => item.element(),
@@ -1120,6 +1271,35 @@ mod test {
             .create_ecu_abstraction_sw_component_type("EcuAbstractionSwComponentType")
             .unwrap();
         assert_eq!(component.name().unwrap(), "EcuAbstractionSwComponentType");
+
+        // create a new ecuc definition collection
+        let ecuc_definition_collection = package
+            .create_ecuc_definition_collection("EcucDefinitionCollection")
+            .unwrap();
+        assert_eq!(ecuc_definition_collection.name().unwrap(), "EcucDefinitionCollection");
+
+        // create a new ecuc value collection
+        let ecuc_value_collection = package.create_ecuc_value_collection("EcucValueCollection").unwrap();
+        assert_eq!(ecuc_value_collection.name().unwrap(), "EcucValueCollection");
+
+        // create a new ecuc destination uri def set
+        let uri_def_set = package
+            .create_ecuc_destination_uri_def_set("EcucDestinationUriDefSet")
+            .unwrap();
+        assert_eq!(uri_def_set.name().unwrap(), "EcucDestinationUriDefSet");
+
+        // create a new ecuc module def
+        let ecuc_module_def = package.create_ecuc_module_def("EcucModuleDef").unwrap();
+        assert_eq!(ecuc_module_def.name().unwrap(), "EcucModuleDef");
+
+        // create a new ecuc module configuration values
+        let ecuc_module_configuration_values = package
+            .create_ecuc_module_configuration_values("EcucModuleConfigurationValues", &ecuc_module_def)
+            .unwrap();
+        assert_eq!(
+            ecuc_module_configuration_values.name().unwrap(),
+            "EcucModuleConfigurationValues"
+        );
 
         // create a new implementation data type
         let sw_base_type = package

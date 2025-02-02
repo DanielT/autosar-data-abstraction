@@ -59,6 +59,7 @@ use thiserror::Error;
 
 // modules that are visible in the API
 pub mod communication;
+pub mod ecu_configuration;
 pub mod datatype;
 pub mod software_component;
 
