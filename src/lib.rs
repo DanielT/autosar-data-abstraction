@@ -59,8 +59,8 @@ use thiserror::Error;
 
 // modules that are visible in the API
 pub mod communication;
-pub mod ecu_configuration;
 pub mod datatype;
+pub mod ecu_configuration;
 pub mod software_component;
 
 // internal modules that only serve to split up the code

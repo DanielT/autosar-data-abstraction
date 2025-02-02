@@ -320,7 +320,10 @@ impl AbstractionElement for EcucAnyReferenceValue {
 
 #[cfg(test)]
 mod test {
-    use crate::{ecu_configuration::EcucAnyReferenceValue, software_component::AbstractSwComponentType, AbstractionElement, ArPackage};
+    use crate::{
+        ecu_configuration::EcucAnyReferenceValue, software_component::AbstractSwComponentType, AbstractionElement,
+        ArPackage,
+    };
     use autosar_data::{AutosarModel, AutosarVersion};
 
     #[test]
@@ -376,10 +379,7 @@ mod test {
             .unwrap();
         // the definition is in a different model, so it can't be resolved
         assert!(instance_ref.definition().is_none());
-        assert_eq!(
-            instance_ref.definition_ref(),
-            instance_ref_def.element().path().ok()
-        );
+        assert_eq!(instance_ref.definition_ref(), instance_ref_def.element().path().ok());
         let (target_context, target) = instance_ref.target().unwrap();
         assert_eq!(&target, r_port_prototype.element());
         assert_eq!(target_context, &[r_port_prototype.element().clone()]);

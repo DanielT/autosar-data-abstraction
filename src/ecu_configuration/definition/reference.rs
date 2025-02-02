@@ -183,8 +183,7 @@ impl AbstractEcucReferenceDef for EcucReferenceDef {}
 
 impl EcucReferenceDef {
     pub(crate) fn new(name: &str, containers_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
-        let ecu_reference_def_elem =
-            containers_elem.create_named_sub_element(ElementName::EcucReferenceDef, name)?;
+        let ecu_reference_def_elem = containers_elem.create_named_sub_element(ElementName::EcucReferenceDef, name)?;
         let ecu_reference_def = Self(ecu_reference_def_elem);
         ecu_reference_def.set_origin(origin)?;
 

@@ -970,177 +970,15 @@ impl ArPackage {
     /// }
     /// # Ok(())}
     /// ```
-    pub fn elements(&self) -> impl Iterator<Item = ArPackageElement> + '_ {
+    pub fn elements(&self) -> impl Iterator<Item = Element> + '_ {
         self.0
             .get_sub_element(ElementName::Elements)
             .into_iter()
             .flat_map(|element| element.sub_elements())
-            .filter_map(|element| ArPackageElement::try_from(element).ok())
     }
 }
 
 //##################################################################
-
-/// Enumeration of all supported elements in an AUTOSAR package
-///
-/// Elements that do not have a corresponding Abstraction yet are represented as `Unknown`
-#[derive(Debug, Clone, PartialEq)]
-#[non_exhaustive]
-pub enum ArPackageElement {
-    ApplicationRecordDataType(ApplicationRecordDataType),
-    ApplicationSwComponentType(ApplicationSwComponentType),
-    ClientServerInterface(ClientServerInterface),
-    ComplexDeviceDriverSwComponentType(ComplexDeviceDriverSwComponentType),
-    CompositionSwComponentType(CompositionSwComponentType),
-    CompuMethod(CompuMethod),
-    DataConstr(DataConstr),
-    DataTransformationSet(DataTransformationSet),
-    DataTypeMappingSet(DataTypeMappingSet),
-    EcuAbstractionSwComponentType(EcuAbstractionSwComponentType),
-    EcucDefinitionCollection(EcucDefinitionCollection),
-    EcucDestinationUriDefSet(EcucDestinationUriDefSet),
-    EcucModuleConfigurationValues(EcucModuleConfigurationValues),
-    EcucModuleDef(EcucModuleDef),
-    EcucValueCollection(EcucValueCollection),
-    ImplementationDataType(ImplementationDataType),
-    ModeSwitchInterface(ModeSwitchInterface),
-    NvDataInterface(NvDataInterface),
-    ParameterInterface(ParameterInterface),
-    SenderReceiverInterface(SenderReceiverInterface),
-    SensorActuatorSwComponentType(SensorActuatorSwComponentType),
-    ServiceSwComponentType(ServiceSwComponentType),
-    SomeipSdClientEventGroupTimingConfig(SomeipSdClientEventGroupTimingConfig),
-    SomeipSdClientServiceInstanceConfig(SomeipSdClientServiceInstanceConfig),
-    SomeipSdServerEventGroupTimingConfig(SomeipSdServerEventGroupTimingConfig),
-    SomeipSdServerServiceInstanceConfig(SomeipSdServerServiceInstanceConfig),
-    SwBaseType(SwBaseType),
-    System(System),
-    SystemSignal(SystemSignal),
-    SystemSignalGroup(SystemSignalGroup),
-    TriggerInterface(TriggerInterface),
-    Unit(Unit),
-
-    /// Placeholder for unknown elements
-    Unknown(Element),
-}
-
-impl TryFrom<Element> for ArPackageElement {
-    type Error = AutosarAbstractionError;
-
-    fn try_from(element: Element) -> Result<Self, Self::Error> {
-        match element.element_name() {
-            ElementName::ApplicationRecordDataType => {
-                ApplicationRecordDataType::try_from(element).map(Self::ApplicationRecordDataType)
-            }
-            ElementName::ApplicationSwComponentType => {
-                ApplicationSwComponentType::try_from(element).map(Self::ApplicationSwComponentType)
-            }
-            ElementName::ClientServerInterface => {
-                ClientServerInterface::try_from(element).map(Self::ClientServerInterface)
-            }
-            ElementName::ComplexDeviceDriverSwComponentType => {
-                ComplexDeviceDriverSwComponentType::try_from(element).map(Self::ComplexDeviceDriverSwComponentType)
-            }
-            ElementName::CompositionSwComponentType => {
-                CompositionSwComponentType::try_from(element).map(Self::CompositionSwComponentType)
-            }
-            ElementName::CompuMethod => CompuMethod::try_from(element).map(Self::CompuMethod),
-            ElementName::DataConstr => DataConstr::try_from(element).map(Self::DataConstr),
-            ElementName::DataTransformationSet => {
-                DataTransformationSet::try_from(element).map(Self::DataTransformationSet)
-            }
-            ElementName::DataTypeMappingSet => DataTypeMappingSet::try_from(element).map(Self::DataTypeMappingSet),
-            ElementName::EcuAbstractionSwComponentType => {
-                EcuAbstractionSwComponentType::try_from(element).map(Self::EcuAbstractionSwComponentType)
-            }
-            ElementName::EcucDefinitionCollection => {
-                EcucDefinitionCollection::try_from(element).map(Self::EcucDefinitionCollection)
-            }
-            ElementName::EcucDestinationUriDefSet => {
-                EcucDestinationUriDefSet::try_from(element).map(Self::EcucDestinationUriDefSet)
-            }
-            ElementName::EcucModuleConfigurationValues => {
-                EcucModuleConfigurationValues::try_from(element).map(Self::EcucModuleConfigurationValues)
-            }
-            ElementName::EcucModuleDef => EcucModuleDef::try_from(element).map(Self::EcucModuleDef),
-            ElementName::EcucValueCollection => EcucValueCollection::try_from(element).map(Self::EcucValueCollection),
-            ElementName::ImplementationDataType => {
-                ImplementationDataType::try_from(element).map(Self::ImplementationDataType)
-            }
-            ElementName::ModeSwitchInterface => ModeSwitchInterface::try_from(element).map(Self::ModeSwitchInterface),
-            ElementName::NvDataInterface => NvDataInterface::try_from(element).map(Self::NvDataInterface),
-            ElementName::ParameterInterface => ParameterInterface::try_from(element).map(Self::ParameterInterface),
-            ElementName::SenderReceiverInterface => {
-                SenderReceiverInterface::try_from(element).map(Self::SenderReceiverInterface)
-            }
-            ElementName::SensorActuatorSwComponentType => {
-                SensorActuatorSwComponentType::try_from(element).map(Self::SensorActuatorSwComponentType)
-            }
-            ElementName::ServiceSwComponentType => {
-                ServiceSwComponentType::try_from(element).map(Self::ServiceSwComponentType)
-            }
-            ElementName::SomeipSdClientEventGroupTimingConfig => {
-                SomeipSdClientEventGroupTimingConfig::try_from(element).map(Self::SomeipSdClientEventGroupTimingConfig)
-            }
-            ElementName::SomeipSdClientServiceInstanceConfig => {
-                SomeipSdClientServiceInstanceConfig::try_from(element).map(Self::SomeipSdClientServiceInstanceConfig)
-            }
-            ElementName::SomeipSdServerEventGroupTimingConfig => {
-                SomeipSdServerEventGroupTimingConfig::try_from(element).map(Self::SomeipSdServerEventGroupTimingConfig)
-            }
-            ElementName::SomeipSdServerServiceInstanceConfig => {
-                SomeipSdServerServiceInstanceConfig::try_from(element).map(Self::SomeipSdServerServiceInstanceConfig)
-            }
-            ElementName::SwBaseType => SwBaseType::try_from(element).map(Self::SwBaseType),
-            ElementName::System => System::try_from(element).map(Self::System),
-            ElementName::SystemSignal => SystemSignal::try_from(element).map(Self::SystemSignal),
-            ElementName::SystemSignalGroup => SystemSignalGroup::try_from(element).map(Self::SystemSignalGroup),
-            ElementName::TriggerInterface => TriggerInterface::try_from(element).map(Self::TriggerInterface),
-            ElementName::Unit => Unit::try_from(element).map(Self::Unit),
-            _ => Ok(Self::Unknown(element)),
-        }
-    }
-}
-
-impl AbstractionElement for ArPackageElement {
-    fn element(&self) -> &autosar_data::Element {
-        match self {
-            ArPackageElement::ApplicationRecordDataType(item) => item.element(),
-            ArPackageElement::ApplicationSwComponentType(item) => item.element(),
-            ArPackageElement::ClientServerInterface(item) => item.element(),
-            ArPackageElement::ComplexDeviceDriverSwComponentType(item) => item.element(),
-            ArPackageElement::CompositionSwComponentType(item) => item.element(),
-            ArPackageElement::CompuMethod(item) => item.element(),
-            ArPackageElement::DataConstr(item) => item.element(),
-            ArPackageElement::DataTransformationSet(item) => item.element(),
-            ArPackageElement::DataTypeMappingSet(item) => item.element(),
-            ArPackageElement::EcuAbstractionSwComponentType(item) => item.element(),
-            ArPackageElement::EcucDefinitionCollection(item) => item.element(),
-            ArPackageElement::EcucDestinationUriDefSet(item) => item.element(),
-            ArPackageElement::EcucModuleConfigurationValues(item) => item.element(),
-            ArPackageElement::EcucModuleDef(item) => item.element(),
-            ArPackageElement::EcucValueCollection(item) => item.element(),
-            ArPackageElement::ImplementationDataType(item) => item.element(),
-            ArPackageElement::ModeSwitchInterface(item) => item.element(),
-            ArPackageElement::NvDataInterface(item) => item.element(),
-            ArPackageElement::ParameterInterface(item) => item.element(),
-            ArPackageElement::SenderReceiverInterface(item) => item.element(),
-            ArPackageElement::SensorActuatorSwComponentType(item) => item.element(),
-            ArPackageElement::ServiceSwComponentType(item) => item.element(),
-            ArPackageElement::SomeipSdClientEventGroupTimingConfig(item) => item.element(),
-            ArPackageElement::SomeipSdClientServiceInstanceConfig(item) => item.element(),
-            ArPackageElement::SomeipSdServerEventGroupTimingConfig(item) => item.element(),
-            ArPackageElement::SomeipSdServerServiceInstanceConfig(item) => item.element(),
-            ArPackageElement::SwBaseType(item) => item.element(),
-            ArPackageElement::System(item) => item.element(),
-            ArPackageElement::SystemSignal(item) => item.element(),
-            ArPackageElement::SystemSignalGroup(item) => item.element(),
-            ArPackageElement::TriggerInterface(item) => item.element(),
-            ArPackageElement::Unit(item) => item.element(),
-            ArPackageElement::Unknown(element) => element,
-        }
-    }
-}
 
 #[cfg(test)]
 mod test {
@@ -1492,138 +1330,84 @@ mod test {
 
         let mut elements = package.elements();
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::ApplicationRecordDataType(_)));
-        assert_eq!(item.element().element_name(), ElementName::ApplicationRecordDataType);
+        assert_eq!(item.element_name(), ElementName::ApplicationRecordDataType);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::ApplicationSwComponentType(_)));
-        assert_eq!(item.element().element_name(), ElementName::ApplicationSwComponentType);
+        assert_eq!(item.element_name(), ElementName::ApplicationSwComponentType);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::ClientServerInterface(_)));
-        assert_eq!(item.element().element_name(), ElementName::ClientServerInterface);
+        assert_eq!(item.element_name(), ElementName::ClientServerInterface);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::ComplexDeviceDriverSwComponentType(_)));
-        assert_eq!(
-            item.element().element_name(),
-            ElementName::ComplexDeviceDriverSwComponentType
-        );
+        assert_eq!(item.element_name(), ElementName::ComplexDeviceDriverSwComponentType);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::CompositionSwComponentType(_)));
-        assert_eq!(item.element().element_name(), ElementName::CompositionSwComponentType);
+        assert_eq!(item.element_name(), ElementName::CompositionSwComponentType);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::CompuMethod(_)));
-        assert_eq!(item.element().element_name(), ElementName::CompuMethod);
+        assert_eq!(item.element_name(), ElementName::CompuMethod);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::DataConstr(_)));
-        assert_eq!(item.element().element_name(), ElementName::DataConstr);
+        assert_eq!(item.element_name(), ElementName::DataConstr);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::DataTransformationSet(_)));
-        assert_eq!(item.element().element_name(), ElementName::DataTransformationSet);
+        assert_eq!(item.element_name(), ElementName::DataTransformationSet);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::DataTypeMappingSet(_)));
-        assert_eq!(item.element().element_name(), ElementName::DataTypeMappingSet);
+        assert_eq!(item.element_name(), ElementName::DataTypeMappingSet);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::EcuAbstractionSwComponentType(_)));
-        assert_eq!(
-            item.element().element_name(),
-            ElementName::EcuAbstractionSwComponentType
-        );
+        assert_eq!(item.element_name(), ElementName::EcuAbstractionSwComponentType);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::SwBaseType(_)));
-        assert_eq!(item.element().element_name(), ElementName::SwBaseType);
+        assert_eq!(item.element_name(), ElementName::SwBaseType);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::ImplementationDataType(_)));
-        assert_eq!(item.element().element_name(), ElementName::ImplementationDataType);
+        assert_eq!(item.element_name(), ElementName::ImplementationDataType);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::ModeSwitchInterface(_)));
-        assert_eq!(item.element().element_name(), ElementName::ModeSwitchInterface);
+        assert_eq!(item.element_name(), ElementName::ModeSwitchInterface);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::NvDataInterface(_)));
-        assert_eq!(item.element().element_name(), ElementName::NvDataInterface);
+        assert_eq!(item.element_name(), ElementName::NvDataInterface);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::ParameterInterface(_)));
-        assert_eq!(item.element().element_name(), ElementName::ParameterInterface);
+        assert_eq!(item.element_name(), ElementName::ParameterInterface);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::SenderReceiverInterface(_)));
-        assert_eq!(item.element().element_name(), ElementName::SenderReceiverInterface);
+        assert_eq!(item.element_name(), ElementName::SenderReceiverInterface);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::SensorActuatorSwComponentType(_)));
-        assert_eq!(
-            item.element().element_name(),
-            ElementName::SensorActuatorSwComponentType
-        );
+        assert_eq!(item.element_name(), ElementName::SensorActuatorSwComponentType);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::ServiceSwComponentType(_)));
-        assert_eq!(item.element().element_name(), ElementName::ServiceSwComponentType);
+        assert_eq!(item.element_name(), ElementName::ServiceSwComponentType);
 
         let item = elements.next().unwrap();
-        assert!(matches!(
-            item,
-            ArPackageElement::SomeipSdClientEventGroupTimingConfig(_)
-        ));
-        assert_eq!(
-            item.element().element_name(),
-            ElementName::SomeipSdClientEventGroupTimingConfig
-        );
+        assert_eq!(item.element_name(), ElementName::SomeipSdClientEventGroupTimingConfig);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::SomeipSdClientServiceInstanceConfig(_)));
-        assert_eq!(
-            item.element().element_name(),
-            ElementName::SomeipSdClientServiceInstanceConfig
-        );
+        assert_eq!(item.element_name(), ElementName::SomeipSdClientServiceInstanceConfig);
 
         let item = elements.next().unwrap();
-        assert!(matches!(
-            item,
-            ArPackageElement::SomeipSdServerEventGroupTimingConfig(_)
-        ));
-        assert_eq!(
-            item.element().element_name(),
-            ElementName::SomeipSdServerEventGroupTimingConfig
-        );
+        assert_eq!(item.element_name(), ElementName::SomeipSdServerEventGroupTimingConfig);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::SomeipSdServerServiceInstanceConfig(_)));
-        assert_eq!(
-            item.element().element_name(),
-            ElementName::SomeipSdServerServiceInstanceConfig
-        );
+        assert_eq!(item.element_name(), ElementName::SomeipSdServerServiceInstanceConfig);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::System(_)));
-        assert_eq!(item.element().element_name(), ElementName::System);
+        assert_eq!(item.element_name(), ElementName::System);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::SystemSignal(_)));
-        assert_eq!(item.element().element_name(), ElementName::SystemSignal);
+        assert_eq!(item.element_name(), ElementName::SystemSignal);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::SystemSignalGroup(_)));
-        assert_eq!(item.element().element_name(), ElementName::SystemSignalGroup);
+        assert_eq!(item.element_name(), ElementName::SystemSignalGroup);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::TriggerInterface(_)));
-        assert_eq!(item.element().element_name(), ElementName::TriggerInterface);
+        assert_eq!(item.element_name(), ElementName::TriggerInterface);
 
         let item = elements.next().unwrap();
-        assert!(matches!(item, ArPackageElement::Unit(_)));
-        assert_eq!(item.element().element_name(), ElementName::Unit);
+        assert_eq!(item.element_name(), ElementName::Unit);
     }
 }
