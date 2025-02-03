@@ -53,7 +53,7 @@ mod test {
             base_type_package.create_sw_base_type("uint8", 8, BaseTypeEncoding::None, None, None, Some("uint8"))?;
 
         // create Frame_1 which contains Pdu_1: Id 0x100, length 8
-        let frame1 = system.create_can_frame("Frame_1", 8, &frame_package)?;
+        let frame1 = system.create_can_frame("Frame_1", &frame_package, 8)?;
         let pdu1 = system.create_isignal_ipdu("Pdu_1", &pdu_package, 8)?;
         frame1.map_pdu(
             &pdu1,
@@ -66,12 +66,12 @@ mod test {
         assert_eq!(ft_1.pdu_triggerings().count(), 1);
 
         // create Frame_2 which contains Pdu_2: Id 0x101, length 8
-        let frame2 = system.create_can_frame("Frame_2", 8, &frame_package)?;
+        let frame2 = system.create_can_frame("Frame_2", &frame_package, 8)?;
         let pdu2 = system.create_isignal_ipdu("Pdu_2", &pdu_package, 8)?;
         let ss_pdu2signal1 = syssignal_package.create_system_signal("P2S1")?;
-        let pdu2signal1 = system.create_isignal("P2S1", 4, &ss_pdu2signal1, Some(&base_type_u8), &isignal_package)?;
+        let pdu2signal1 = system.create_isignal("P2S1", &isignal_package, 4, &ss_pdu2signal1, Some(&base_type_u8))?;
         let ss_pdu2signal2 = syssignal_package.create_system_signal("P2S2")?;
-        let pdu2signal2 = system.create_isignal("P2S2", 4, &ss_pdu2signal2, Some(&base_type_u8), &isignal_package)?;
+        let pdu2signal2 = system.create_isignal("P2S2", &isignal_package, 4, &ss_pdu2signal2, Some(&base_type_u8))?;
         pdu2.map_signal(
             &pdu2signal1,
             0,

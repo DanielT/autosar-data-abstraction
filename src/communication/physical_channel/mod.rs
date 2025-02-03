@@ -175,11 +175,11 @@ mod test {
         let can_controller = ecu.create_can_communication_controller("Controller").unwrap();
         let connector = can_controller.connect_physical_channel("Connector", &channel).unwrap();
 
-        let frame = system.create_can_frame("Frame", 8, &pkg).unwrap();
+        let frame = system.create_can_frame("Frame", &pkg, 8).unwrap();
         let isignal_ipdu = system.create_isignal_ipdu("ISignalIPdu", &pkg, 8).unwrap();
 
         let system_signal = pkg.create_system_signal("SystemSignal").unwrap();
-        let signal = system.create_isignal("Signal", 8, &system_signal, None, &pkg).unwrap();
+        let signal = system.create_isignal("Signal", &pkg, 8, &system_signal, None).unwrap();
         isignal_ipdu
             .map_signal(
                 &signal,

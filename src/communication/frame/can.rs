@@ -14,7 +14,7 @@ pub struct CanFrame(Element);
 abstraction_element!(CanFrame, CanFrame);
 
 impl CanFrame {
-    pub(crate) fn new(name: &str, byte_length: u64, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage, byte_length: u64) -> Result<Self, AutosarAbstractionError> {
         let pkg_elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let can_frame = pkg_elements.create_named_sub_element(ElementName::CanFrame, name)?;
 
@@ -316,8 +316,8 @@ mod test {
         let pdu2 = system.create_isignal_ipdu("pdu2", &package, 8).unwrap();
 
         // create frames
-        let frame1 = system.create_can_frame("frame1", 8, &package).unwrap();
-        let frame2 = system.create_can_frame("frame2", 8, &package).unwrap();
+        let frame1 = system.create_can_frame("frame1", &package, 8).unwrap();
+        let frame2 = system.create_can_frame("frame2", &package, 8).unwrap();
 
         // map a PDU to the frame before it has been connected to the channel
         let mapping1 = frame1

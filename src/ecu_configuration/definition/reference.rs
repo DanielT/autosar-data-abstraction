@@ -24,9 +24,9 @@ impl EcucDefinitionElement for EcucForeignReferenceDef {}
 impl AbstractEcucReferenceDef for EcucForeignReferenceDef {}
 
 impl EcucForeignReferenceDef {
-    pub(crate) fn new(name: &str, containers_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, references_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
         let ecuc_foreign_reference_def_elem =
-            containers_elem.create_named_sub_element(ElementName::EcucForeignReferenceDef, name)?;
+            references_elem.create_named_sub_element(ElementName::EcucForeignReferenceDef, name)?;
         let ecuc_foreign_reference_def = Self(ecuc_foreign_reference_def_elem);
         ecuc_foreign_reference_def.set_origin(origin)?;
 
@@ -67,9 +67,9 @@ impl EcucDefinitionElement for EcucInstanceReferenceDef {}
 impl AbstractEcucReferenceDef for EcucInstanceReferenceDef {}
 
 impl EcucInstanceReferenceDef {
-    pub(crate) fn new(name: &str, containers_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, references_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
         let ecuc_instance_reference_def_elem =
-            containers_elem.create_named_sub_element(ElementName::EcucInstanceReferenceDef, name)?;
+            references_elem.create_named_sub_element(ElementName::EcucInstanceReferenceDef, name)?;
         let ecuc_instance_reference_def = Self(ecuc_instance_reference_def_elem);
         ecuc_instance_reference_def.set_origin(origin)?;
 
@@ -137,9 +137,9 @@ impl EcucDefinitionElement for EcucChoiceReferenceDef {}
 impl AbstractEcucReferenceDef for EcucChoiceReferenceDef {}
 
 impl EcucChoiceReferenceDef {
-    pub(crate) fn new(name: &str, containers_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, references_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
         let ecu_choice_reference_def_elem =
-            containers_elem.create_named_sub_element(ElementName::EcucChoiceReferenceDef, name)?;
+            references_elem.create_named_sub_element(ElementName::EcucChoiceReferenceDef, name)?;
         let ecu_choice_reference_def = Self(ecu_choice_reference_def_elem);
         ecu_choice_reference_def.set_origin(origin)?;
 
@@ -182,8 +182,8 @@ impl EcucDefinitionElement for EcucReferenceDef {}
 impl AbstractEcucReferenceDef for EcucReferenceDef {}
 
 impl EcucReferenceDef {
-    pub(crate) fn new(name: &str, containers_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
-        let ecu_reference_def_elem = containers_elem.create_named_sub_element(ElementName::EcucReferenceDef, name)?;
+    pub(crate) fn new(name: &str, references_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
+        let ecu_reference_def_elem = references_elem.create_named_sub_element(ElementName::EcucReferenceDef, name)?;
         let ecu_reference_def = Self(ecu_reference_def_elem);
         ecu_reference_def.set_origin(origin)?;
 
@@ -226,9 +226,9 @@ impl EcucDefinitionElement for EcucUriReferenceDef {}
 impl AbstractEcucReferenceDef for EcucUriReferenceDef {}
 
 impl EcucUriReferenceDef {
-    pub(crate) fn new(name: &str, containers_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, references_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
         let ecu_uri_reference_def_elem =
-            containers_elem.create_named_sub_element(ElementName::EcucUriReferenceDef, name)?;
+            references_elem.create_named_sub_element(ElementName::EcucUriReferenceDef, name)?;
         let ecu_uri_reference_def = Self(ecu_uri_reference_def_elem);
         ecu_uri_reference_def.set_origin(origin)?;
 

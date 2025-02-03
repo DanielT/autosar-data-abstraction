@@ -51,7 +51,7 @@ impl CanPhysicalChannel {
     /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
     /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default()).unwrap();
     /// let channel = cluster.create_physical_channel("Channel").unwrap();
-    /// let frame = system.create_can_frame("Frame", 8, &frame_package).unwrap();
+    /// let frame = system.create_can_frame("Frame", &frame_package, 8).unwrap();
     /// channel.trigger_frame(&frame, 0x100, CanAddressingMode::Standard, CanFrameType::Can20).unwrap();
     /// ```
     pub fn trigger_frame(
@@ -78,7 +78,7 @@ impl CanPhysicalChannel {
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
     /// # let channel = cluster.create_physical_channel("Channel")?;
-    /// # let frame = system.create_can_frame("Frame", 8, &package)?;
+    /// # let frame = system.create_can_frame("Frame", &package, 8)?;
     /// channel.trigger_frame(&frame, 0x100, CanAddressingMode::Standard, CanFrameType::Can20)?;
     /// for ft in channel.frame_triggerings() {
     ///     println!("Frame triggering: {:?}", ft);

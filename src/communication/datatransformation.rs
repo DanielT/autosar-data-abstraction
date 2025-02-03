@@ -566,10 +566,6 @@ impl TransformationTechnology {
                 .or(opt_window_size_invalid)
                 .or(opt_window_size_valid);
 
-            println!(
-                "data_id_nibble_offset: {:?}",
-                e2e_desc.get_sub_element(ElementName::DataIdNibbleOffset)
-            );
             let config = E2ETransformationTechnologyConfig {
                 profile,
                 zero_header_length: buffer_header_length == 0,
@@ -1581,10 +1577,10 @@ mod test {
             SwBaseType::new("sw_base_type", &package, 8, BaseTypeEncoding::None, None, None, None).unwrap();
         let signal = ISignal::new(
             "signal",
+            &package,
             8,
             &SystemSignal::new("sys_signal", &package).unwrap(),
             Some(&sw_base_type),
-            &package,
         )
         .unwrap();
 

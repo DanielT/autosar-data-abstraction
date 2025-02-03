@@ -736,7 +736,7 @@ mod test {
         let secured_ipdu = system.create_secured_ipdu("secured_ipdu", &package, 1).unwrap();
         let multiplexed_ipdu = system.create_multiplexed_ipdu("multiplexed_ipdu", &package, 1).unwrap();
 
-        let frame = system.create_flexray_frame("frame1", 64, &package).unwrap();
+        let frame = system.create_flexray_frame("frame1", &package, 64).unwrap();
         frame
             .map_pdu(&isignal_ipdu, 0, ByteOrder::MostSignificantByteLast, None)
             .unwrap();
@@ -788,7 +788,7 @@ mod test {
         // create an ISignalIPdu with a signal
         let isignal_ipdu = system.create_isignal_ipdu("isignal_ipdu", &package, 1).unwrap();
         let syssignal = package.create_system_signal("syssignal").unwrap();
-        let isignal = system.create_isignal("isignal", 1, &syssignal, None, &package).unwrap();
+        let isignal = system.create_isignal("isignal", &package, 1, &syssignal, None).unwrap();
         isignal_ipdu
             .map_signal(
                 &isignal,
@@ -801,11 +801,11 @@ mod test {
         // create an ISignalGroup with a second signal
         let syssignal_group = package.create_system_signal_group("syssignal_group").unwrap();
         let isignal_group = system
-            .create_i_signal_group("isignal_group", &syssignal_group, &package)
+            .create_i_signal_group("isignal_group", &package, &syssignal_group)
             .unwrap();
         let syssignal2 = package.create_system_signal("syssignal2").unwrap();
         let isignal2 = system
-            .create_isignal("isignal2", 1, &syssignal2, None, &package)
+            .create_isignal("isignal2", &package, 1, &syssignal2, None)
             .unwrap();
         isignal_ipdu.map_signal_group(&isignal_group).unwrap();
         isignal_ipdu
@@ -823,7 +823,7 @@ mod test {
             .create_can_cluster("Cluster", &package, &CanClusterSettings::default())
             .unwrap();
         let channel = can_cluster.create_physical_channel("Channel").unwrap();
-        let frame = system.create_can_frame("frame", 8, &package).unwrap();
+        let frame = system.create_can_frame("frame", &package, 8).unwrap();
         let frame_triggering = channel
             .trigger_frame(&frame, 0x123, CanAddressingMode::Standard, CanFrameType::Can20)
             .unwrap();

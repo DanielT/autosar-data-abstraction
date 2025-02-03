@@ -17,10 +17,10 @@ abstraction_element!(ISignal, ISignal);
 impl ISignal {
     pub(crate) fn new(
         name: &str,
+        package: &ArPackage,
         bit_length: u64,
         syssignal: &SystemSignal,
         datatype: Option<&SwBaseType>,
-        package: &ArPackage,
     ) -> Result<Self, AutosarAbstractionError> {
         if bit_length > u64::from(u32::MAX) * 8 {
             // max bit_length is 2^32 bytes
@@ -310,8 +310,8 @@ abstraction_element!(ISignalGroup, ISignalGroup);
 impl ISignalGroup {
     pub(crate) fn new(
         name: &str,
-        system_signal_group: &SystemSignalGroup,
         package: &ArPackage,
+        system_signal_group: &SystemSignalGroup,
     ) -> Result<Self, AutosarAbstractionError> {
         let sig_pkg_elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let elem_isiggrp = sig_pkg_elements.create_named_sub_element(ElementName::ISignalGroup, name)?;
@@ -709,7 +709,7 @@ mod tests {
 
         let sys_signal = package.create_system_signal("sys_signal").unwrap();
         let signal = system
-            .create_isignal("signal", 8, &sys_signal, Some(&sw_base_type), &package)
+            .create_isignal("signal", &package, 8, &sys_signal, Some(&sw_base_type))
             .unwrap();
 
         sys_signal.set_unit(&unit).unwrap();
@@ -748,10 +748,10 @@ mod tests {
             SwBaseType::new("sw_base_type", &package, 8, BaseTypeEncoding::None, None, None, None).unwrap();
         let signal = ISignal::new(
             "signal",
+            &package,
             8,
             &SystemSignal::new("sys_signal", &package).unwrap(),
             Some(&sw_base_type),
-            &package,
         )
         .unwrap();
 
@@ -803,8 +803,8 @@ mod tests {
 
         let signal_group = ISignalGroup::new(
             "signal_group",
-            &SystemSignalGroup::new("sys_signal_group", &package).unwrap(),
             &package,
+            &SystemSignalGroup::new("sys_signal_group", &package).unwrap(),
         )
         .unwrap();
 
@@ -849,11 +849,11 @@ mod tests {
         let _file = model.create_file("test.arxml", AutosarVersion::LATEST).unwrap();
         let package = ArPackage::get_or_create(&model, "/test").unwrap();
         let sys_signal_group = SystemSignalGroup::new("sys_signal_group", &package).unwrap();
-        let signal_group = ISignalGroup::new("signal_group", &sys_signal_group, &package).unwrap();
+        let signal_group = ISignalGroup::new("signal_group", &package, &sys_signal_group).unwrap();
         assert_eq!(signal_group.system_signal_group(), Some(sys_signal_group.clone()));
 
         let sys_signal = SystemSignal::new("sys_signal", &package).unwrap();
-        let signal = ISignal::new("signal", 8, &sys_signal, None, &package).unwrap();
+        let signal = ISignal::new("signal", &package, 8, &sys_signal, None).unwrap();
         assert_eq!(signal.system_signal(), Some(sys_signal.clone()));
 
         sys_signal_group.add_signal(&sys_signal).unwrap();
@@ -875,7 +875,7 @@ mod tests {
 
         let sys_signal = package.create_system_signal("sys_signal").unwrap();
         let signal = system
-            .create_isignal("signal", 8, &sys_signal, Some(&sw_base_type), &package)
+            .create_isignal("signal", &package, 8, &sys_signal, Some(&sw_base_type))
             .unwrap();
 
         // signal triggering

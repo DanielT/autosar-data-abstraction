@@ -188,8 +188,8 @@ impl EcucCommonAttributes for EcucAddInfoParamDef {}
 impl EcucDefinitionElement for EcucAddInfoParamDef {}
 
 impl EcucAddInfoParamDef {
-    pub(crate) fn new(name: &str, containers_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
-        let addinfo_def_elem = containers_elem.create_named_sub_element(ElementName::EcucAddInfoParamDef, name)?;
+    pub(crate) fn new(name: &str, parameters_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
+        let addinfo_def_elem = parameters_elem.create_named_sub_element(ElementName::EcucAddInfoParamDef, name)?;
 
         let addinfo_def = Self(addinfo_def_elem);
         addinfo_def.set_origin(origin)?;
@@ -209,8 +209,8 @@ impl EcucDefinitionElement for EcucBooleanParamDef {}
 impl EcucNumericalParamDef for EcucBooleanParamDef {}
 
 impl EcucBooleanParamDef {
-    pub(crate) fn new(name: &str, containers_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
-        let boolean_def_elem = containers_elem.create_named_sub_element(ElementName::EcucBooleanParamDef, name)?;
+    pub(crate) fn new(name: &str, parameters_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
+        let boolean_def_elem = parameters_elem.create_named_sub_element(ElementName::EcucBooleanParamDef, name)?;
 
         let boolean_def = Self(boolean_def_elem);
         boolean_def.set_origin(origin)?;
@@ -251,9 +251,9 @@ impl EcucDefinitionElement for EcucEnumerationParamDef {}
 impl EcucTextualParamDef for EcucEnumerationParamDef {}
 
 impl EcucEnumerationParamDef {
-    pub(crate) fn new(name: &str, containers_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, parameters_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
         let enumeration_def_elem =
-            containers_elem.create_named_sub_element(ElementName::EcucEnumerationParamDef, name)?;
+            parameters_elem.create_named_sub_element(ElementName::EcucEnumerationParamDef, name)?;
 
         let enumeration_def = Self(enumeration_def_elem);
         enumeration_def.set_origin(origin)?;
@@ -336,8 +336,8 @@ impl EcucDefinitionElement for EcucFloatParamDef {}
 impl EcucNumericalParamDef for EcucFloatParamDef {}
 
 impl EcucFloatParamDef {
-    pub(crate) fn new(name: &str, containers_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
-        let float_def_elem = containers_elem.create_named_sub_element(ElementName::EcucFloatParamDef, name)?;
+    pub(crate) fn new(name: &str, parameters_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
+        let float_def_elem = parameters_elem.create_named_sub_element(ElementName::EcucFloatParamDef, name)?;
 
         let float_def = Self(float_def_elem);
         float_def.set_origin(origin)?;
@@ -420,8 +420,8 @@ impl EcucDefinitionElement for EcucIntegerParamDef {}
 impl EcucNumericalParamDef for EcucIntegerParamDef {}
 
 impl EcucIntegerParamDef {
-    pub(crate) fn new(name: &str, containers_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
-        let integer_def_elem = containers_elem.create_named_sub_element(ElementName::EcucIntegerParamDef, name)?;
+    pub(crate) fn new(name: &str, parameters_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
+        let integer_def_elem = parameters_elem.create_named_sub_element(ElementName::EcucIntegerParamDef, name)?;
 
         let integer_def = Self(integer_def_elem);
         integer_def.set_origin(origin)?;
@@ -509,9 +509,9 @@ string_param!(
 );
 
 impl EcucFunctionNameDef {
-    pub(crate) fn new(name: &str, containers_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, parameters_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
         let function_name_def_elem =
-            containers_elem.create_named_sub_element(ElementName::EcucFunctionNameDef, name)?;
+            parameters_elem.create_named_sub_element(ElementName::EcucFunctionNameDef, name)?;
 
         let function_name_def = Self(function_name_def_elem);
         function_name_def.set_origin(origin)?;
@@ -536,9 +536,9 @@ string_param!(
 );
 
 impl EcucLinkerSymbolDef {
-    pub(crate) fn new(name: &str, containers_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, parameters_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
         let linker_symbol_def_elem =
-            containers_elem.create_named_sub_element(ElementName::EcucLinkerSymbolDef, name)?;
+            parameters_elem.create_named_sub_element(ElementName::EcucLinkerSymbolDef, name)?;
 
         let linker_symbol_def = Self(linker_symbol_def_elem);
         linker_symbol_def.set_origin(origin)?;
@@ -563,9 +563,9 @@ string_param!(
 );
 
 impl EcucMultilineStringParamDef {
-    pub(crate) fn new(name: &str, containers_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, parameters_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
         let multiline_string_def_elem =
-            containers_elem.create_named_sub_element(ElementName::EcucMultilineStringParamDef, name)?;
+            parameters_elem.create_named_sub_element(ElementName::EcucMultilineStringParamDef, name)?;
 
         let multiline_string_def = Self(multiline_string_def_elem);
         multiline_string_def.set_origin(origin)?;
@@ -589,8 +589,8 @@ string_param!(
 );
 
 impl EcucStringParamDef {
-    pub(crate) fn new(name: &str, containers_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
-        let string_def_elem = containers_elem.create_named_sub_element(ElementName::EcucStringParamDef, name)?;
+    pub(crate) fn new(name: &str, parameters_elem: &Element, origin: &str) -> Result<Self, AutosarAbstractionError> {
+        let string_def_elem = parameters_elem.create_named_sub_element(ElementName::EcucStringParamDef, name)?;
 
         let string_def = Self(string_def_elem);
         string_def.set_origin(origin)?;

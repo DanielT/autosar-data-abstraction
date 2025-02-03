@@ -73,14 +73,14 @@
 //! )?;
 //!  
 //! // create a frame which contains one Pdu: Id 0x101, length 8
-//! let frame = system.create_can_frame("frame", 8, &frame_package)?;
+//! let frame = system.create_can_frame("frame", &frame_package, 8)?;
 //! let pdu = system.create_isignal_ipdu("pdu", &pdu_package, 8)?;
 //! let ss_pdusignal1 = syssignal_package.create_system_signal("ss_pdusignal1")?;
 //! let pdusignal1 = system
-//!     .create_isignal("pdusignal1", 4, &ss_pdusignal1, Some(&base_type_u8), &isignal_package)?;
+//!     .create_isignal("pdusignal1", &isignal_package, 4, &ss_pdusignal1, Some(&base_type_u8))?;
 //! let ss_pdusignal2 = syssignal_package.create_system_signal("ss_pdusignal2")?;
 //! let pdusignal2 = system
-//!     .create_isignal("pdusignal2", 4, &ss_pdusignal2, Some(&base_type_u8), &isignal_package)?;
+//!     .create_isignal("pdusignal2", &isignal_package, 4, &ss_pdusignal2, Some(&base_type_u8))?;
 //! // map signal 1 to the first 4 bytes of the Pdu
 //! pdu.map_signal(
 //!     &pdusignal1,

@@ -141,8 +141,6 @@ impl SystemMapping {
 
         // the data element must be part of the sender/receiver interface
         if data_element.interface()? != interface {
-            println!("{:?}", &data_element.interface()?);
-            println!("{:?}", &interface);
             return Err(AutosarAbstractionError::InvalidParameter(
                 "The data element must be part of the sender/receiver interface".to_string(),
             ));

@@ -257,10 +257,10 @@ impl System {
     pub fn create_can_frame(
         &self,
         name: &str,
-        byte_length: u64,
         package: &ArPackage,
+        byte_length: u64,
     ) -> Result<CanFrame, AutosarAbstractionError> {
-        let can_frame = CanFrame::new(name, byte_length, package)?;
+        let can_frame = CanFrame::new(name, package, byte_length)?;
         self.create_fibex_element_ref_unchecked(can_frame.element())?;
 
         Ok(can_frame)
@@ -272,10 +272,10 @@ impl System {
     pub fn create_flexray_frame(
         &self,
         name: &str,
-        byte_length: u64,
         package: &ArPackage,
+        byte_length: u64,
     ) -> Result<FlexrayFrame, AutosarAbstractionError> {
-        let flexray_frame = FlexrayFrame::new(name, byte_length, package)?;
+        let flexray_frame = FlexrayFrame::new(name, package, byte_length)?;
         self.create_fibex_element_ref_unchecked(flexray_frame.element())?;
 
         Ok(flexray_frame)
@@ -297,7 +297,7 @@ impl System {
     /// let sig_package = ArPackage::get_or_create(&model, "/ISignals")?;
     /// let sys_package = ArPackage::get_or_create(&model, "/SystemSignals")?;
     /// let system_signal = sys_package.create_system_signal("signal1")?;
-    /// system.create_isignal("signal1", 32, &system_signal, None, &sig_package)?;
+    /// system.create_isignal("signal1", &sig_package, 32, &system_signal, None)?;
     /// # Ok(())}
     /// ```
     ///
@@ -308,12 +308,12 @@ impl System {
     pub fn create_isignal(
         &self,
         name: &str,
+        package: &ArPackage,
         bit_length: u64,
         syssignal: &SystemSignal,
         datatype: Option<&SwBaseType>,
-        package: &ArPackage,
     ) -> Result<ISignal, AutosarAbstractionError> {
-        let i_signal = ISignal::new(name, bit_length, syssignal, datatype, package)?;
+        let i_signal = ISignal::new(name, package, bit_length, syssignal, datatype)?;
 
         self.create_fibex_element_ref_unchecked(i_signal.element())?;
 
@@ -339,7 +339,7 @@ impl System {
     /// let sig_package = ArPackage::get_or_create(&model, "/ISignals")?;
     /// let sys_package = ArPackage::get_or_create(&model, "/SystemSignals")?;
     /// let system_signal_group = sys_package.create_system_signal_group("signalgroup")?;
-    /// system.create_i_signal_group("signal_group", &system_signal_group, &sig_package)?;
+    /// system.create_i_signal_group("signal_group", &sig_package, &system_signal_group)?;
     /// # Ok(())}
     /// ```
     ///
@@ -350,10 +350,10 @@ impl System {
     pub fn create_i_signal_group(
         &self,
         name: &str,
-        system_signal_group: &SystemSignalGroup,
         package: &ArPackage,
+        system_signal_group: &SystemSignalGroup,
     ) -> Result<ISignalGroup, AutosarAbstractionError> {
-        let i_signal_group = ISignalGroup::new(name, system_signal_group, package)?;
+        let i_signal_group = ISignalGroup::new(name, package, system_signal_group)?;
 
         self.create_fibex_element_ref_unchecked(i_signal_group.element())?;
 

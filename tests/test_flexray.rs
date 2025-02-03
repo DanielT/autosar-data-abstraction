@@ -42,7 +42,7 @@ mod test {
         let pdu_package = ArPackage::get_or_create(&model, "/Network/Pdus")?;
 
         // create Frame_1 which contains Pdu_1: Id 0x100, length 8
-        let frame1 = system.create_flexray_frame("Frame_1", 32, &frame_package)?;
+        let frame1 = system.create_flexray_frame("Frame_1", &frame_package, 32)?;
         let pdu1 = system.create_isignal_ipdu("Pdu_1", &pdu_package, 8)?;
         frame1.map_pdu(
             &pdu1,
@@ -59,7 +59,7 @@ mod test {
         assert_eq!(ft_1.pdu_triggerings().count(), 1);
 
         // create Frame_2 which contains Pdu_2: Id 0x101, length 8
-        let frame2 = system.create_flexray_frame("Frame_2", 64, &frame_package)?;
+        let frame2 = system.create_flexray_frame("Frame_2", &frame_package, 64)?;
         let pdu2 = system.create_isignal_ipdu("Pdu_2", &pdu_package, 8)?;
         frame2.map_pdu(
             &pdu2,

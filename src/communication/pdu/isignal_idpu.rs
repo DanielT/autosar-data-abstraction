@@ -584,7 +584,7 @@ mod test {
 
         // create a signal and map it to the PDU
         let syssignal = package.create_system_signal("syssignal").unwrap();
-        let isignal = system.create_isignal("isignal", 4, &syssignal, None, &package).unwrap();
+        let isignal = system.create_isignal("isignal", &package, 4, &syssignal, None).unwrap();
         let mapping = pdu
             .map_signal(
                 &isignal,
@@ -607,12 +607,12 @@ mod test {
         // create a signal group which contains a signal
         let syssignal_group = package.create_system_signal_group("syssignal_group").unwrap();
         let signal_group = system
-            .create_i_signal_group("signal_group", &syssignal_group, &package)
+            .create_i_signal_group("signal_group", &package, &syssignal_group)
             .unwrap();
         let grouped_syssignal = package.create_system_signal("groups_syssignal").unwrap();
         syssignal_group.add_signal(&grouped_syssignal).unwrap();
         let grouped_isignal = system
-            .create_isignal("grouped_isignal", 4, &grouped_syssignal, None, &package)
+            .create_isignal("grouped_isignal", &package, 4, &grouped_syssignal, None)
             .unwrap();
         signal_group.add_signal(&grouped_isignal).unwrap();
         assert_eq!(grouped_isignal.signal_group().unwrap(), signal_group);

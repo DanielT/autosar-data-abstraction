@@ -71,7 +71,7 @@ impl FlexrayPhysicalChannel {
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let cluster = system.create_flexray_cluster("Cluster", &package, &FlexrayClusterSettings::default())?;
     /// let channel = cluster.create_physical_channel("Channel", FlexrayChannelName::A)?;
-    /// let frame = system.create_flexray_frame("Frame", 64, &frame_package)?;
+    /// let frame = system.create_flexray_frame("Frame", &frame_package, 64)?;
     /// let timing = FlexrayCommunicationCycle::Repetition {base_cycle: 1, cycle_repetition: CycleRepetition::C1};
     /// channel.trigger_frame(&frame, 1, &timing)?;
     /// # Ok(())}
@@ -99,7 +99,7 @@ impl FlexrayPhysicalChannel {
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let cluster = system.create_flexray_cluster("Cluster", &package, &FlexrayClusterSettings::default())?;
     /// # let channel = cluster.create_physical_channel("Channel", FlexrayChannelName::A)?;
-    /// # let frame = system.create_flexray_frame("Frame", 64, &package)?;
+    /// # let frame = system.create_flexray_frame("Frame", &package, 64)?;
     /// # let timing = FlexrayCommunicationCycle::Repetition {base_cycle: 1, cycle_repetition: CycleRepetition::C1};
     /// channel.trigger_frame(&frame, 1, &timing)?;
     /// for ft in channel.frame_triggerings() {

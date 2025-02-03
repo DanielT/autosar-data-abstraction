@@ -107,8 +107,8 @@ mod test {
         // create two signals for the PDU
         let system_signal_1 = syssignal_package.create_system_signal("Signal_1")?;
         let system_signal_2 = syssignal_package.create_system_signal("Signal_2")?;
-        let static_isignal_1 = system.create_isignal("Signal_1", 400, &system_signal_1, None, &isignal_package)?;
-        let static_isignal_2 = system.create_isignal("Signal_2", 400, &system_signal_2, None, &isignal_package)?;
+        let static_isignal_1 = system.create_isignal("Signal_1", &isignal_package, 400, &system_signal_1, None)?;
+        let static_isignal_2 = system.create_isignal("Signal_2", &isignal_package, 400, &system_signal_2, None)?;
         static_pdu.set_timing(&IpduTiming {
             minimum_delay: None,
             transmission_mode_false_timing: None,
@@ -383,7 +383,7 @@ mod test {
         // create a Signal for SomeIP communication
         let system_signal_3 = syssignal_package.create_system_signal("SomeIp_Signal_1")?;
         let someip_isignal_1 =
-            system.create_isignal("Someip_Signal_1", 400, &system_signal_3, None, &isignal_package)?;
+            system.create_isignal("Someip_Signal_1", &isignal_package, 400, &system_signal_3, None)?;
         someip_isignal_1.add_data_transformation(&data_transformation)?;
         someip_isignal_1.add_transformation_isignal_props(
             &someip_tranformation_technology,

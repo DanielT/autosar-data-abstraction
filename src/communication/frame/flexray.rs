@@ -14,7 +14,7 @@ pub struct FlexrayFrame(Element);
 abstraction_element!(FlexrayFrame, FlexrayFrame);
 
 impl FlexrayFrame {
-    pub(crate) fn new(name: &str, byte_length: u64, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(name: &str, package: &ArPackage, byte_length: u64) -> Result<Self, AutosarAbstractionError> {
         let pkg_elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let fr_frame = pkg_elements.create_named_sub_element(ElementName::FlexrayFrame, name)?;
 
@@ -351,8 +351,8 @@ mod test {
         let pdu2 = system.create_isignal_ipdu("pdu2", &package, 8).unwrap();
 
         // create two frames
-        let frame1 = system.create_flexray_frame("frame1", 64, &package).unwrap();
-        let frame2 = system.create_flexray_frame("frame2", 64, &package).unwrap();
+        let frame1 = system.create_flexray_frame("frame1", &package, 64).unwrap();
+        let frame2 = system.create_flexray_frame("frame2", &package, 64).unwrap();
 
         // map a PDU to frame1 before it has been connected to the channel
         let mapping = frame1

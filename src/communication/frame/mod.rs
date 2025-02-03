@@ -190,7 +190,7 @@ pub trait AbstractFrameTriggering: AbstractionElement {
     /// # let ecu_instance = system.create_ecu_instance("Ecu", &package)?;
     /// # let canctrl = ecu_instance.create_can_communication_controller("CanCtrl")?;
     /// # canctrl.connect_physical_channel("Connector", &channel)?;
-    /// let frame = system.create_can_frame("Frame", 8, &package)?;
+    /// let frame = system.create_can_frame("Frame", &package, 8)?;
     /// let frame_triggering = channel.trigger_frame(&frame, 0x100, CanAddressingMode::Standard, CanFrameType::Can20)?;
     /// let frame_port = frame_triggering.connect_to_ecu(&ecu_instance, CommunicationDirection::In)?;
     /// for fp in frame_triggering.frame_ports() {
@@ -485,8 +485,8 @@ mod test {
         let package = ArPackage::get_or_create(&model, "/package").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
 
-        let can_frame = system.create_can_frame("CanFrame", 8, &package).unwrap();
-        let flexray_frame = system.create_flexray_frame("FlexrayFrame", 32, &package).unwrap();
+        let can_frame = system.create_can_frame("CanFrame", &package, 8).unwrap();
+        let flexray_frame = system.create_flexray_frame("FlexrayFrame", &package, 32).unwrap();
 
         let frame_1 = Frame::try_from(can_frame.element().clone()).unwrap();
         assert_eq!(frame_1.element().element_name(), autosar_data::ElementName::CanFrame);
