@@ -2,8 +2,6 @@
 
 [![Github Actions](https://github.com/DanielT/autosar-data-abstraction/actions/workflows/CI.yml/badge.svg)](https://github.com/DanielT/autosar-data-abstraction/actions)
 
-***Warning: This is a prototype***
-
 This is an abstraction layer on top of the autosar-data model.
 
 Rather than transforming the element based model into a new form, it only presents a view into the existing model, and provides methods to retrieve and modify the data.
