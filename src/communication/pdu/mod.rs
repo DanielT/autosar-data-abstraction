@@ -8,9 +8,9 @@ use crate::{
 use autosar_data::{AutosarDataError, Element, ElementName, EnumItem};
 use std::str::FromStr;
 
-mod isignal_idpu;
+mod isignal_ipdu;
 
-pub use isignal_idpu::*;
+pub use isignal_ipdu::*;
 
 //##################################################################
 
