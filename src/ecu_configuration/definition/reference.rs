@@ -157,7 +157,7 @@ impl EcucChoiceReferenceDef {
     }
 
     /// get the references to the destination containers
-    pub fn destination_refs(&self) -> impl Iterator<Item = EcucContainerDef> {
+    pub fn destination_refs(&self) -> impl Iterator<Item = EcucContainerDef> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::DestinationRefs)
             .into_iter()

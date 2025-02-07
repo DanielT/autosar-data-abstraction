@@ -30,7 +30,7 @@ impl AbstractFrame for FlexrayFrame {
     type FrameTriggeringType = FlexrayFrameTriggering;
 
     /// Iterator over all [`FlexrayFrameTriggering`]s using this frame
-    fn frame_triggerings(&self) -> impl Iterator<Item = FlexrayFrameTriggering> {
+    fn frame_triggerings(&self) -> impl Iterator<Item = FlexrayFrameTriggering> + Send + 'static {
         let model_result = self.element().model();
         let path_result = self.element().path();
         if let (Ok(model), Ok(path)) = (model_result, path_result) {

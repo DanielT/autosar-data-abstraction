@@ -86,7 +86,7 @@ impl ISignal {
     ///
     /// Usually a signal should only be mapped to a single PDU,
     /// so this iterator is expected to return either zero or one item in ordinary cases.
-    pub fn mappings(&self) -> impl Iterator<Item = ISignalToIPduMapping> {
+    pub fn mappings(&self) -> impl Iterator<Item = ISignalToIPduMapping> + Send + 'static {
         let model_result = self.element().model();
         let path_result = self.element().path();
         if let (Ok(model), Ok(path)) = (model_result, path_result) {
@@ -130,7 +130,7 @@ impl ISignal {
     }
 
     /// get all data transformations that are applied to this signal
-    pub fn data_transformations(&self) -> impl Iterator<Item = DataTransformation> {
+    pub fn data_transformations(&self) -> impl Iterator<Item = DataTransformation> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::DataTransformations)
             .into_iter()
@@ -163,7 +163,9 @@ impl ISignal {
     }
 
     /// get all transformation properties that are applied to this signal
-    pub fn transformation_isignal_props(&self) -> impl Iterator<Item = TransformationISignalPropsConfig> {
+    pub fn transformation_isignal_props(
+        &self,
+    ) -> impl Iterator<Item = TransformationISignalPropsConfig> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TransformationISignalPropss)
             .into_iter()
@@ -359,7 +361,7 @@ impl ISignalGroup {
     /// Iterator over all [`ISignal`]s in this group
     ///
     /// # Example
-    pub fn signals(&self) -> impl Iterator<Item = ISignal> {
+    pub fn signals(&self) -> impl Iterator<Item = ISignal> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ISignalRefs)
             .into_iter()
@@ -386,7 +388,7 @@ impl ISignalGroup {
     }
 
     /// get all data transformations that are applied to this signal group
-    pub fn data_transformations(&self) -> impl Iterator<Item = DataTransformation> {
+    pub fn data_transformations(&self) -> impl Iterator<Item = DataTransformation> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ComBasedSignalGroupTransformations)
             .into_iter()
@@ -419,7 +421,9 @@ impl ISignalGroup {
     }
 
     /// get all transformation properties that are applied to this signal group
-    pub fn transformation_isignal_props(&self) -> impl Iterator<Item = TransformationISignalPropsConfig> {
+    pub fn transformation_isignal_props(
+        &self,
+    ) -> impl Iterator<Item = TransformationISignalPropsConfig> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TransformationISignalPropss)
             .into_iter()
@@ -588,7 +592,7 @@ impl ISignalTriggering {
     }
 
     /// create an iterator over all signal ports that are connected to this signal triggering
-    pub fn signal_ports(&self) -> impl Iterator<Item = ISignalPort> {
+    pub fn signal_ports(&self) -> impl Iterator<Item = ISignalPort> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ISignalPortRefs)
             .into_iter()

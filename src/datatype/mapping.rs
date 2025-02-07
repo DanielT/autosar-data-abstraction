@@ -30,7 +30,7 @@ impl DataTypeMappingSet {
     }
 
     /// Get an iterator over the `DataTypeMap`s in the `DataTypeMappingSet`
-    pub fn data_type_maps(&self) -> impl Iterator<Item = DataTypeMap> {
+    pub fn data_type_maps(&self) -> impl Iterator<Item = DataTypeMap> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::DataTypeMaps)
             .into_iter()

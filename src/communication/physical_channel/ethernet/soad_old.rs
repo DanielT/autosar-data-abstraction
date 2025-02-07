@@ -103,7 +103,7 @@ impl SocketConnectionBundle {
     }
 
     /// create an iterator over all bundled connections in this socket connection bundle
-    pub fn bundled_connections(&self) -> impl Iterator<Item = SocketConnection> {
+    pub fn bundled_connections(&self) -> impl Iterator<Item = SocketConnection> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::BundledConnections)
             .into_iter()
@@ -379,7 +379,7 @@ impl SocketConnection {
     }
 
     /// create an iterator over all PDU triggerings in this socket connection
-    pub fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> {
+    pub fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::Pdus)
             .into_iter()

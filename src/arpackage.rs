@@ -970,7 +970,7 @@ impl ArPackage {
     /// }
     /// # Ok(())}
     /// ```
-    pub fn elements(&self) -> impl Iterator<Item = Element> + '_ {
+    pub fn elements(&self) -> impl Iterator<Item = Element> + Send + 'static {
         self.0
             .get_sub_element(ElementName::Elements)
             .into_iter()

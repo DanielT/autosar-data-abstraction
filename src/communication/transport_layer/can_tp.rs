@@ -33,7 +33,7 @@ impl CanTpConfig {
     }
 
     /// get all of the ECUs in the configuration
-    pub fn ecus(&self) -> impl Iterator<Item = CanTpEcu> {
+    pub fn ecus(&self) -> impl Iterator<Item = CanTpEcu> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TpEcus)
             .into_iter()
@@ -51,7 +51,7 @@ impl CanTpConfig {
     }
 
     /// get all of the Can Tp addresses in the configuration
-    pub fn addresses(&self) -> impl Iterator<Item = CanTpAddress> {
+    pub fn addresses(&self) -> impl Iterator<Item = CanTpAddress> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TpAddresss)
             .into_iter()
@@ -96,7 +96,7 @@ impl CanTpConfig {
     }
 
     /// get all of the `CanTpConnections` in the configuration
-    pub fn connections(&self) -> impl Iterator<Item = CanTpConnection> {
+    pub fn connections(&self) -> impl Iterator<Item = CanTpConnection> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TpConnections)
             .into_iter()
@@ -114,7 +114,7 @@ impl CanTpConfig {
     }
 
     /// get all of the `CanTpNodes` in the configuration
-    pub fn nodes(&self) -> impl Iterator<Item = CanTpNode> {
+    pub fn nodes(&self) -> impl Iterator<Item = CanTpNode> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TpNodes)
             .into_iter()
@@ -453,7 +453,7 @@ impl CanTpConnection {
     }
 
     /// get all of the receivers of the connection
-    pub fn receivers(&self) -> impl Iterator<Item = CanTpNode> {
+    pub fn receivers(&self) -> impl Iterator<Item = CanTpNode> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ReceiverRefs)
             .into_iter()

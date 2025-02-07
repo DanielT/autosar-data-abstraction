@@ -37,7 +37,7 @@ impl DataTransformationSet {
     }
 
     /// Iterate over all `DataTransformation`s in the `DataTransformationSet`
-    pub fn data_transformations(&self) -> impl Iterator<Item = DataTransformation> {
+    pub fn data_transformations(&self) -> impl Iterator<Item = DataTransformation> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::DataTransformations)
             .into_iter()
@@ -58,7 +58,7 @@ impl DataTransformationSet {
     }
 
     /// Iterate over all `TransformationTechnology`s in the `DataTransformationSet`
-    pub fn transformation_technologies(&self) -> impl Iterator<Item = TransformationTechnology> {
+    pub fn transformation_technologies(&self) -> impl Iterator<Item = TransformationTechnology> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TransformationTechnologys)
             .into_iter()
@@ -166,7 +166,7 @@ impl DataTransformation {
     /// assert_eq!(ttech_iter.next(), Some(ttech));
     /// # Ok(())}
     /// ```
-    pub fn transformation_technologies(&self) -> impl Iterator<Item = TransformationTechnology> {
+    pub fn transformation_technologies(&self) -> impl Iterator<Item = TransformationTechnology> + Send + 'static {
         self.0
             .get_sub_element(ElementName::TransformerChainRefs)
             .into_iter()

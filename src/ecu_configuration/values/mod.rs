@@ -44,7 +44,7 @@ impl EcucValueCollection {
     }
 
     /// Get the module configurations in the collection
-    pub fn module_configurations(&self) -> impl Iterator<Item = EcucModuleConfigurationValues> {
+    pub fn module_configurations(&self) -> impl Iterator<Item = EcucModuleConfigurationValues> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::EcucValues)
             .into_iter()
@@ -143,7 +143,7 @@ impl EcucModuleConfigurationValues {
     }
 
     /// create an iterator over the container values in the module configuration
-    pub fn container_values(&self) -> impl Iterator<Item = EcucContainerValue> {
+    pub fn container_values(&self) -> impl Iterator<Item = EcucContainerValue> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::Containers)
             .into_iter()
@@ -217,7 +217,7 @@ impl EcucContainerValue {
     }
 
     /// iterate over the sub-containers in this container
-    pub fn sub_containers(&self) -> impl Iterator<Item = EcucContainerValue> {
+    pub fn sub_containers(&self) -> impl Iterator<Item = EcucContainerValue> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::SubContainers)
             .into_iter()
@@ -273,7 +273,7 @@ impl EcucContainerValue {
     }
 
     /// iterate over the parameter values in the container
-    pub fn parameter_values(&self) -> impl Iterator<Item = EcucParameterValue> {
+    pub fn parameter_values(&self) -> impl Iterator<Item = EcucParameterValue> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ParameterValues)
             .into_iter()
@@ -303,7 +303,7 @@ impl EcucContainerValue {
     }
 
     /// iterate over the reference values in the container
-    pub fn reference_values(&self) -> impl Iterator<Item = EcucAnyReferenceValue> {
+    pub fn reference_values(&self) -> impl Iterator<Item = EcucAnyReferenceValue> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ReferenceValues)
             .into_iter()

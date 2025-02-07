@@ -107,7 +107,7 @@ impl FlexrayPhysicalChannel {
     /// }
     /// # assert_eq!(channel.frame_triggerings().count(), 1);
     /// # Ok(())}
-    pub fn frame_triggerings(&self) -> impl Iterator<Item = FlexrayFrameTriggering> {
+    pub fn frame_triggerings(&self) -> impl Iterator<Item = FlexrayFrameTriggering> + Send + 'static {
         self.0
             .get_sub_element(ElementName::FrameTriggerings)
             .into_iter()

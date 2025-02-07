@@ -21,7 +21,7 @@ impl ISignalIPdu {
     }
 
     /// returns an iterator over all signals mapped to the PDU
-    pub fn mapped_signals(&self) -> impl Iterator<Item = ISignalToIPduMapping> {
+    pub fn mapped_signals(&self) -> impl Iterator<Item = ISignalToIPduMapping> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ISignalToPduMappings)
             .into_iter()

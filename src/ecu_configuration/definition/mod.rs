@@ -296,7 +296,7 @@ impl EcucDefinitionCollection {
     }
 
     /// iterate over all module definitions in the collection
-    pub fn module_defs(&self) -> impl Iterator<Item = EcucModuleDef> {
+    pub fn module_defs(&self) -> impl Iterator<Item = EcucModuleDef> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ModuleRefs)
             .into_iter()
@@ -338,7 +338,7 @@ impl EcucModuleDef {
     }
 
     /// iterate over all containers in the module
-    pub fn containers(&self) -> impl Iterator<Item = EcucContainerDef> {
+    pub fn containers(&self) -> impl Iterator<Item = EcucContainerDef> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::Containers)
             .into_iter()
@@ -709,7 +709,7 @@ impl EcucDestinationUriDefSet {
     }
 
     /// iterate over all destination uri definitions in the set
-    pub fn destination_uri_defs(&self) -> impl Iterator<Item = EcucDestinationUriDef> {
+    pub fn destination_uri_defs(&self) -> impl Iterator<Item = EcucDestinationUriDef> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::DestinationUriDefs)
             .into_iter()
@@ -786,7 +786,7 @@ impl EcucDestinationUriDef {
     }
 
     /// iterate over all containers in the destination uri policy
-    pub fn containers(&self) -> impl Iterator<Item = EcucContainerDef> {
+    pub fn containers(&self) -> impl Iterator<Item = EcucContainerDef> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::DestinationUriPolicy)
             .and_then(|dup_elem| dup_elem.get_sub_element(ElementName::Containers))

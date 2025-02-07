@@ -17,7 +17,7 @@ pub trait AbstractImplementationDataType: AbstractionElement {
     }
 
     /// create an iterator over the sub-elements of this implementation data type
-    fn sub_elements(&self) -> impl Iterator<Item = ImplementationDataTypeElement> {
+    fn sub_elements(&self) -> impl Iterator<Item = ImplementationDataTypeElement> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::SubElements)
             .into_iter()

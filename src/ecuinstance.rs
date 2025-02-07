@@ -129,7 +129,7 @@ impl EcuInstance {
     /// }
     /// # assert_eq!(ecu_instance.communication_controllers().count(), 2);
     /// ```
-    pub fn communication_controllers(&self) -> impl Iterator<Item = CommunicationController> {
+    pub fn communication_controllers(&self) -> impl Iterator<Item = CommunicationController> + Send + 'static {
         self.0
             .get_sub_element(ElementName::CommControllers)
             .into_iter()

@@ -25,7 +25,7 @@ pub trait AbstractPdu: AbstractionElement + Into<Pdu> {
     }
 
     /// iterate over the `PduTriggerings` that trigger this PDU
-    fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> {
+    fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> + Send + 'static {
         let model_result = self.element().model();
         let path_result = self.element().path();
         if let (Ok(model), Ok(path)) = (model_result, path_result) {
@@ -561,7 +561,7 @@ impl PduTriggering {
     }
 
     /// create an iterator over the `IPduPorts` that are connected to this `PduTriggering`
-    pub fn pdu_ports(&self) -> impl Iterator<Item = IPduPort> {
+    pub fn pdu_ports(&self) -> impl Iterator<Item = IPduPort> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::IPduPortRefs)
             .into_iter()
@@ -575,7 +575,7 @@ impl PduTriggering {
     }
 
     /// create an iterator over the `ISignalTriggerings` that are triggered by this `PduTriggering`
-    pub fn signal_triggerings(&self) -> impl Iterator<Item = ISignalTriggering> {
+    pub fn signal_triggerings(&self) -> impl Iterator<Item = ISignalTriggering> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ISignalTriggerings)
             .into_iter()

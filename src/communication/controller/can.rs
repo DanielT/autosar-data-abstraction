@@ -47,7 +47,7 @@ impl CanCommunicationController {
     /// # Errors
     ///
     /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model while trying to get the ECU-INSTANCE
-    pub fn connected_channels(&self) -> impl Iterator<Item = CanPhysicalChannel> {
+    pub fn connected_channels(&self) -> impl Iterator<Item = CanPhysicalChannel> + Send + 'static {
         if let Ok(ecu) = self.ecu_instance().map(|ecuinstance| ecuinstance.element().clone()) {
             CanCtrlChannelsIterator::new(self, &ecu)
         } else {

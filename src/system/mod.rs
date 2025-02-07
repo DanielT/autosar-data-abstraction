@@ -135,7 +135,7 @@ impl System {
     /// assert_eq!(system.ecu_instances().count(), 2);
     /// # Ok(())}
     /// ```
-    pub fn ecu_instances(&self) -> impl Iterator<Item = EcuInstance> {
+    pub fn ecu_instances(&self) -> impl Iterator<Item = EcuInstance> + Send + 'static {
         EcuInstanceIterator::new(self)
     }
 
@@ -675,7 +675,7 @@ impl System {
     /// assert_eq!(system.clusters().count(), 2);
     /// # Ok(())}
     /// ```
-    pub fn clusters(&self) -> impl Iterator<Item = Cluster> {
+    pub fn clusters(&self) -> impl Iterator<Item = Cluster> + Send + 'static {
         self.0
             .get_sub_element(ElementName::FibexElements)
             .into_iter()

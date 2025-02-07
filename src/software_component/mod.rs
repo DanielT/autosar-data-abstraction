@@ -34,7 +34,7 @@ pub trait AbstractSwComponentType: AbstractionElement {
     }
 
     /// iterator over all compositions containing instances of the component type
-    fn parent_compositions(&self) -> impl Iterator<Item = CompositionSwComponentType> {
+    fn parent_compositions(&self) -> impl Iterator<Item = CompositionSwComponentType> + Send + 'static {
         self.instances()
             .filter_map(|swcp| swcp.element().named_parent().ok().flatten())
             .filter_map(|elem| CompositionSwComponentType::try_from(elem).ok())
@@ -87,7 +87,7 @@ pub trait AbstractSwComponentType: AbstractionElement {
     }
 
     /// get an iterator over the ports of the component
-    fn ports(&self) -> impl Iterator<Item = PortPrototype> {
+    fn ports(&self) -> impl Iterator<Item = PortPrototype> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::Ports)
             .into_iter()
@@ -160,7 +160,7 @@ impl CompositionSwComponentType {
     }
 
     /// get an iterator over the components of the composition
-    pub fn components(&self) -> impl Iterator<Item = SwComponentPrototype> {
+    pub fn components(&self) -> impl Iterator<Item = SwComponentPrototype> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::Components)
             .into_iter()
@@ -361,7 +361,7 @@ impl CompositionSwComponentType {
     }
 
     /// iterate over all connectors
-    pub fn connectors(&self) -> impl Iterator<Item = SwConnector> {
+    pub fn connectors(&self) -> impl Iterator<Item = SwConnector> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::Connectors)
             .into_iter()

@@ -169,7 +169,7 @@ impl ApplicationRecordDataType {
     }
 
     ///get an iterator over the record elements of the record data type
-    pub fn record_elements(&self) -> impl Iterator<Item = ApplicationRecordElement> {
+    pub fn record_elements(&self) -> impl Iterator<Item = ApplicationRecordElement> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::Elements)
             .into_iter()

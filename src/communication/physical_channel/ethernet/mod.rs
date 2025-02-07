@@ -189,7 +189,7 @@ impl EthernetPhysicalChannel {
     /// }
     /// # assert_eq!(channel.network_endpoints().count(), 1)
     /// ```
-    pub fn network_endpoints(&self) -> impl Iterator<Item = NetworkEndpoint> {
+    pub fn network_endpoints(&self) -> impl Iterator<Item = NetworkEndpoint> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::NetworkEndpoints)
             .into_iter()
@@ -278,7 +278,7 @@ impl EthernetPhysicalChannel {
     /// channel.create_socket_address("SocketName", &network_endpoint, &tcp_port, socket_type).unwrap();
     /// assert_eq!(channel.socket_addresses().count(), 1);
     /// ```
-    pub fn socket_addresses(&self) -> impl Iterator<Item = SocketAddress> {
+    pub fn socket_addresses(&self) -> impl Iterator<Item = SocketAddress> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::SoAdConfig)
             .and_then(|sc| sc.get_sub_element(ElementName::SocketAddresss))
@@ -331,7 +331,7 @@ impl EthernetPhysicalChannel {
     ///
     /// The `SocketConnectionBundle` is the "old" way to establish a connection between two sockets.
     /// It is deprecated in newer versions of the Autosar standard, but remains available for compatibility.
-    pub fn socket_connection_bundles(&self) -> impl Iterator<Item = SocketConnectionBundle> {
+    pub fn socket_connection_bundles(&self) -> impl Iterator<Item = SocketConnectionBundle> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::SoAdConfig)
             .and_then(|sc| sc.get_sub_element(ElementName::ConnectionBundles))
@@ -921,7 +921,7 @@ impl StaticSocketConnection {
     }
 
     /// create an iterator over all `SoConIPduIdentifiers` in this static socket connection
-    pub fn ipdu_identifiers(&self) -> impl Iterator<Item = SoConIPduIdentifier> {
+    pub fn ipdu_identifiers(&self) -> impl Iterator<Item = SoConIPduIdentifier> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::IPduIdentifiers)
             .into_iter()
@@ -1013,7 +1013,7 @@ impl SocketConnectionIpduIdentifierSet {
     }
 
     /// create an iterator over all `SoConIPduIdentifiers` in this set
-    pub fn socon_ipdu_identifiers(&self) -> impl Iterator<Item = SoConIPduIdentifier> {
+    pub fn socon_ipdu_identifiers(&self) -> impl Iterator<Item = SoConIPduIdentifier> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::IPduIdentifiers)
             .into_iter()

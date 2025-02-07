@@ -32,7 +32,7 @@ impl FlexrayArTpConfig {
     }
 
     /// iterate over all `TpAddresses`
-    pub fn tp_addresses(&self) -> impl Iterator<Item = TpAddress> {
+    pub fn tp_addresses(&self) -> impl Iterator<Item = TpAddress> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TpAddresss)
             .into_iter()
@@ -61,7 +61,7 @@ impl FlexrayArTpConfig {
     }
 
     /// get an iterator over the channels in the configuration
-    pub fn channels(&self) -> impl Iterator<Item = FlexrayArTpChannel> {
+    pub fn channels(&self) -> impl Iterator<Item = FlexrayArTpChannel> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TpChannels)
             .into_iter()
@@ -76,7 +76,7 @@ impl FlexrayArTpConfig {
     }
 
     /// get an iterator over the nodes
-    pub fn nodes(&self) -> impl Iterator<Item = FlexrayArTpNode> {
+    pub fn nodes(&self) -> impl Iterator<Item = FlexrayArTpNode> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TpNodes)
             .into_iter()
@@ -196,7 +196,7 @@ impl FlexrayArTpChannel {
     }
 
     /// get the `NPdus` of the channel
-    pub fn npdus(&self) -> impl Iterator<Item = NPdu> {
+    pub fn npdus(&self) -> impl Iterator<Item = NPdu> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::NPduRefs)
             .into_iter()
@@ -354,7 +354,7 @@ impl FlexrayArTpConnection {
     }
 
     /// get the targets
-    pub fn targets(&self) -> impl Iterator<Item = FlexrayArTpNode> {
+    pub fn targets(&self) -> impl Iterator<Item = FlexrayArTpNode> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TargetRefs)
             .into_iter()
@@ -451,7 +451,7 @@ impl FlexrayArTpNode {
     }
 
     /// get the connectors
-    pub fn connectors(&self) -> impl Iterator<Item = FlexrayCommunicationConnector> {
+    pub fn connectors(&self) -> impl Iterator<Item = FlexrayCommunicationConnector> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ConnectorRefs)
             .into_iter()

@@ -22,7 +22,7 @@ pub trait AbstractFrame: AbstractionElement {
     type FrameTriggeringType: AbstractFrameTriggering;
 
     /// returns an iterator over all PDUs in the frame
-    fn mapped_pdus(&self) -> impl Iterator<Item = PduToFrameMapping> {
+    fn mapped_pdus(&self) -> impl Iterator<Item = PduToFrameMapping> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::PduToFrameMappings)
             .into_iter()
@@ -31,7 +31,7 @@ pub trait AbstractFrame: AbstractionElement {
     }
 
     /// Iterator over all [`FrameTriggering`]s using this frame
-    fn frame_triggerings(&self) -> impl Iterator<Item = Self::FrameTriggeringType>;
+    fn frame_triggerings(&self) -> impl Iterator<Item = Self::FrameTriggeringType> + Send + 'static;
 
     /// map a PDU to the frame
     fn map_pdu<T: AbstractPdu>(
@@ -67,7 +67,7 @@ impl AbstractionElement for Frame {
 impl AbstractFrame for Frame {
     type FrameTriggeringType = FrameTriggering;
 
-    fn frame_triggerings(&self) -> impl Iterator<Item = FrameTriggering> {
+    fn frame_triggerings(&self) -> impl Iterator<Item = FrameTriggering> + Send + 'static {
         let model_result = self.element().model();
         let path_result = self.element().path();
         if let (Ok(model), Ok(path)) = (model_result, path_result) {
@@ -199,7 +199,7 @@ pub trait AbstractFrameTriggering: AbstractionElement {
     /// assert_eq!(frame_triggering.frame_ports().count(), 1);
     /// # Ok(())}
     /// ```
-    fn frame_ports(&self) -> impl Iterator<Item = FramePort> {
+    fn frame_ports(&self) -> impl Iterator<Item = FramePort> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::FramePortRefs)
             .into_iter()
@@ -213,7 +213,7 @@ pub trait AbstractFrameTriggering: AbstractionElement {
     }
 
     /// iterate over all PDU triggerings used by this frame triggering
-    fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> {
+    fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::PduTriggerings)
             .into_iter()

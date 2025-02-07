@@ -269,7 +269,7 @@ impl EcucEnumerationParamDef {
     }
 
     /// iterate over all enumeration literals
-    pub fn enumeration_literals(&self) -> impl Iterator<Item = EcucEnumerationLiteralDef> {
+    pub fn enumeration_literals(&self) -> impl Iterator<Item = EcucEnumerationLiteralDef> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::Literals)
             .into_iter()

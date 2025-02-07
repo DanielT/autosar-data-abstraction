@@ -72,7 +72,7 @@ impl ServiceInstanceCollectionSet {
     }
 
     /// create an iterator over all `ServiceInstances` in this set
-    pub fn service_instances(&self) -> impl Iterator<Item = ServiceInstance> {
+    pub fn service_instances(&self) -> impl Iterator<Item = ServiceInstance> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ServiceInstances)
             .into_iter()
@@ -221,7 +221,7 @@ impl ProvidedServiceInstance {
     }
 
     /// get the `EventHandler`s in this `ProvidedServiceInstance`
-    pub fn event_handlers(&self) -> impl Iterator<Item = EventHandler> {
+    pub fn event_handlers(&self) -> impl Iterator<Item = EventHandler> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::EventHandlers)
             .into_iter()
@@ -238,7 +238,7 @@ impl ProvidedServiceInstance {
     }
 
     /// get the local unicast addresses
-    pub fn local_unicast_addresses(&self) -> impl Iterator<Item = LocalUnicastAddress> {
+    pub fn local_unicast_addresses(&self) -> impl Iterator<Item = LocalUnicastAddress> + Send + 'static {
         local_unicast_addresses_iter(self.element())
     }
 
@@ -342,7 +342,7 @@ impl EventHandler {
     }
 
     /// get the `PduActivationRoutingGroup`s in this `EventHandler`
-    pub fn pdu_activation_routing_groups(&self) -> impl Iterator<Item = PduActivationRoutingGroup> {
+    pub fn pdu_activation_routing_groups(&self) -> impl Iterator<Item = PduActivationRoutingGroup> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::PduActivationRoutingGroups)
             .into_iter()
@@ -485,7 +485,7 @@ impl ConsumedServiceInstance {
     }
 
     /// get the `ConsumedEventGroup`s in this `ConsumedServiceInstance`
-    pub fn consumed_event_groups(&self) -> impl Iterator<Item = ConsumedEventGroup> {
+    pub fn consumed_event_groups(&self) -> impl Iterator<Item = ConsumedEventGroup> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ConsumedEventGroups)
             .into_iter()
@@ -504,7 +504,7 @@ impl ConsumedServiceInstance {
     }
 
     /// get the local unicast addresses
-    pub fn local_unicast_addresses(&self) -> impl Iterator<Item = LocalUnicastAddress> {
+    pub fn local_unicast_addresses(&self) -> impl Iterator<Item = LocalUnicastAddress> + Send + 'static {
         local_unicast_addresses_iter(self.element())
     }
 
@@ -628,7 +628,7 @@ impl ConsumedEventGroup {
     }
 
     /// get the event multicast addresses
-    pub fn event_multicast_addresses(&self) -> impl Iterator<Item = SocketAddress> {
+    pub fn event_multicast_addresses(&self) -> impl Iterator<Item = SocketAddress> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::EventMulticastAddresss)
             .into_iter()
@@ -733,7 +733,7 @@ fn set_local_unicast_address(parent: &Element, target_socket: &SocketAddress) ->
     Ok(())
 }
 
-fn local_unicast_addresses_iter(element: &Element) -> impl Iterator<Item = LocalUnicastAddress> {
+fn local_unicast_addresses_iter(element: &Element) -> impl Iterator<Item = LocalUnicastAddress> + Send + 'static {
     // first, build an iterator over all the ApplicationEndpoint Elements referenced by the LocalUnicastAddresss container
     let app_endpoint_iter = element
         .get_sub_element(ElementName::LocalUnicastAddresss)
@@ -800,7 +800,7 @@ impl PduActivationRoutingGroup {
     }
 
     /// get all `SoConIPduIdentifier`s for UDP communication in this `PduActivationRoutingGroup`
-    pub fn ipdu_identifiers_udp(&self) -> impl Iterator<Item = SoConIPduIdentifier> {
+    pub fn ipdu_identifiers_udp(&self) -> impl Iterator<Item = SoConIPduIdentifier> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::IPduIdentifierUdpRefs)
             .into_iter()
@@ -823,7 +823,7 @@ impl PduActivationRoutingGroup {
     }
 
     /// get all `SoConIPduIdentifier`s for TCP communication in this `PduActivationRoutingGroup`
-    pub fn ipdu_identifiers_tcp(&self) -> impl Iterator<Item = SoConIPduIdentifier> {
+    pub fn ipdu_identifiers_tcp(&self) -> impl Iterator<Item = SoConIPduIdentifier> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::IPduIdentifierTcpRefs)
             .into_iter()
@@ -1295,7 +1295,7 @@ impl SomeipTpConfig {
     }
 
     /// iterate over all `SomeipTpChannel`s in this `SomeipTpConfig`
-    pub fn someip_tp_channels(&self) -> impl Iterator<Item = SomeipTpChannel> {
+    pub fn someip_tp_channels(&self) -> impl Iterator<Item = SomeipTpChannel> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TpChannels)
             .into_iter()
@@ -1366,7 +1366,7 @@ impl SomeipTpConfig {
     }
 
     /// get all `SomeipTpConnection`s in this `SomeipTpConfig`
-    pub fn someip_tp_connections(&self) -> impl Iterator<Item = SomeipTpConnection> {
+    pub fn someip_tp_connections(&self) -> impl Iterator<Item = SomeipTpConnection> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TpConnections)
             .into_iter()

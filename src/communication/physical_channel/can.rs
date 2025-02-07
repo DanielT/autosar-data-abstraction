@@ -85,7 +85,7 @@ impl CanPhysicalChannel {
     /// }
     /// # assert_eq!(channel.frame_triggerings().count(), 1);
     /// # Ok(())}
-    pub fn frame_triggerings(&self) -> impl Iterator<Item = CanFrameTriggering> {
+    pub fn frame_triggerings(&self) -> impl Iterator<Item = CanFrameTriggering> + Send + 'static {
         self.0
             .get_sub_element(ElementName::FrameTriggerings)
             .into_iter()

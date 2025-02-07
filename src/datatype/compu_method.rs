@@ -570,7 +570,7 @@ impl CompuMethod {
     }
 
     /// Create an iterator over the internal-to-physical `CompuScales`
-    pub fn int_to_phys_compu_scales(&self) -> impl Iterator<Item = CompuScale> {
+    pub fn int_to_phys_compu_scales(&self) -> impl Iterator<Item = CompuScale> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::CompuInternalToPhys)
             .and_then(|citp| citp.get_sub_element(ElementName::CompuScales))
@@ -580,7 +580,7 @@ impl CompuMethod {
     }
 
     /// Create an iterator over the physical-to-internal `CompuScales`
-    pub fn phys_to_int_compu_scales(&self) -> impl Iterator<Item = CompuScale> {
+    pub fn phys_to_int_compu_scales(&self) -> impl Iterator<Item = CompuScale> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::CompuPhysToInternal)
             .and_then(|citp| citp.get_sub_element(ElementName::CompuScales))

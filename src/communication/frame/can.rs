@@ -30,7 +30,7 @@ impl AbstractFrame for CanFrame {
     type FrameTriggeringType = CanFrameTriggering;
 
     /// Iterator over all [`CanFrameTriggering`]s using this frame
-    fn frame_triggerings(&self) -> impl Iterator<Item = CanFrameTriggering> {
+    fn frame_triggerings(&self) -> impl Iterator<Item = CanFrameTriggering> + Send + 'static {
         let model_result = self.element().model();
         let path_result = self.element().path();
         if let (Ok(model), Ok(path)) = (model_result, path_result) {

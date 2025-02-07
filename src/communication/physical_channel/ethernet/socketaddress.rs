@@ -287,7 +287,7 @@ impl SocketAddress {
     }
 
     /// iterate over all `StaticSocketConnection`s in this `SocketAddress`
-    pub fn static_socket_connections(&self) -> impl Iterator<Item = StaticSocketConnection> {
+    pub fn static_socket_connections(&self) -> impl Iterator<Item = StaticSocketConnection> + Send + 'static {
         self.0
             .get_sub_element(ElementName::StaticSocketConnections)
             .into_iter()
@@ -318,7 +318,7 @@ impl SocketAddress {
     }
 
     /// get the `ProvidedServiceInstanceV1`s in this `SocketAddress`
-    pub fn provided_service_instances(&self) -> impl Iterator<Item = ProvidedServiceInstanceV1> {
+    pub fn provided_service_instances(&self) -> impl Iterator<Item = ProvidedServiceInstanceV1> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ApplicationEndpoint)
             .and_then(|ae| ae.get_sub_element(ElementName::ProvidedServiceInstances))
@@ -348,7 +348,7 @@ impl SocketAddress {
     }
 
     /// get the `ConsumedServiceInstance`s in this `SocketAddress`
-    pub fn consumed_service_instances(&self) -> impl Iterator<Item = ConsumedServiceInstanceV1> {
+    pub fn consumed_service_instances(&self) -> impl Iterator<Item = ConsumedServiceInstanceV1> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ApplicationEndpoint)
             .and_then(|ae| ae.get_sub_element(ElementName::ConsumedServiceInstances))

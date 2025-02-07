@@ -82,7 +82,7 @@ impl ProvidedServiceInstanceV1 {
     }
 
     /// get the `EventHandlerV1`s in this `ProvidedServiceInstance`
-    pub fn event_handlers(&self) -> impl Iterator<Item = EventHandlerV1> {
+    pub fn event_handlers(&self) -> impl Iterator<Item = EventHandlerV1> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::EventHandlers)
             .into_iter()
@@ -264,7 +264,7 @@ impl EventHandlerV1 {
     }
 
     /// get the routing groups referenced by this `EventHandler`
-    pub fn routing_groups(&self) -> impl Iterator<Item = SoAdRoutingGroup> {
+    pub fn routing_groups(&self) -> impl Iterator<Item = SoAdRoutingGroup> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::RoutingGroupRefs)
             .into_iter()
@@ -328,7 +328,7 @@ impl EventHandlerV1 {
     }
 
     /// get the consumed event groups referenced by this `EventHandler`
-    pub fn consumed_event_groups(&self) -> impl Iterator<Item = ConsumedEventGroupV1> {
+    pub fn consumed_event_groups(&self) -> impl Iterator<Item = ConsumedEventGroupV1> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ConsumedEventGroupRefs)
             .into_iter()
@@ -413,7 +413,7 @@ impl ConsumedServiceInstanceV1 {
     }
 
     /// get the `ConsumedEventGroup`s in this `ConsumedServiceInstanceV1`
-    pub fn consumed_event_groups(&self) -> impl Iterator<Item = ConsumedEventGroupV1> {
+    pub fn consumed_event_groups(&self) -> impl Iterator<Item = ConsumedEventGroupV1> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ConsumedEventGroups)
             .into_iter()
@@ -622,7 +622,7 @@ impl ConsumedEventGroupV1 {
     }
 
     /// get the routing groups referenced by this `ConsumedEventGroup`
-    pub fn routing_groups(&self) -> impl Iterator<Item = SoAdRoutingGroup> {
+    pub fn routing_groups(&self) -> impl Iterator<Item = SoAdRoutingGroup> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::RoutingGroupRefs)
             .into_iter()

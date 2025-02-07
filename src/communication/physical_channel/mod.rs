@@ -18,7 +18,7 @@ pub trait AbstractPhysicalChannel: AbstractionElement {
     type CommunicationConnectorType: AbstractCommunicationConnector;
 
     /// iterate over all PduTriggerings of this physical channel
-    fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> {
+    fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::PduTriggerings)
             .into_iter()
@@ -27,7 +27,7 @@ pub trait AbstractPhysicalChannel: AbstractionElement {
     }
 
     /// iterate over all ISignalTriggerings of this physical channel
-    fn signal_triggerings(&self) -> impl Iterator<Item = ISignalTriggering> {
+    fn signal_triggerings(&self) -> impl Iterator<Item = ISignalTriggering> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ISignalTriggerings)
             .into_iter()
@@ -57,7 +57,7 @@ pub trait AbstractPhysicalChannel: AbstractionElement {
     /// }
     /// # assert_eq!(can_channel.connectors().count(), 1);
     /// # Ok(())}
-    fn connectors(&self) -> impl Iterator<Item = Self::CommunicationConnectorType> {
+    fn connectors(&self) -> impl Iterator<Item = Self::CommunicationConnectorType> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::CommConnectors)
             .into_iter()

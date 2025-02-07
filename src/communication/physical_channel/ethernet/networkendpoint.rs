@@ -111,7 +111,7 @@ impl NetworkEndpoint {
     }
 
     /// iterator over all addresses in the `NetworkEndpoint`
-    pub fn addresses(&self) -> impl Iterator<Item = NetworkEndpointAddress> {
+    pub fn addresses(&self) -> impl Iterator<Item = NetworkEndpointAddress> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::NetworkEndpointAddresses)
             .into_iter()
