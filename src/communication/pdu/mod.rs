@@ -801,7 +801,7 @@ mod test {
         // create an ISignalGroup with a second signal
         let syssignal_group = package.create_system_signal_group("syssignal_group").unwrap();
         let isignal_group = system
-            .create_i_signal_group("isignal_group", &package, &syssignal_group)
+            .create_isignal_group("isignal_group", &package, &syssignal_group)
             .unwrap();
         let syssignal2 = package.create_system_signal("syssignal2").unwrap();
         let isignal2 = system

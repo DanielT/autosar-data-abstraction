@@ -607,7 +607,7 @@ mod test {
         // create a signal group which contains a signal
         let syssignal_group = package.create_system_signal_group("syssignal_group").unwrap();
         let signal_group = system
-            .create_i_signal_group("signal_group", &package, &syssignal_group)
+            .create_isignal_group("signal_group", &package, &syssignal_group)
             .unwrap();
         let grouped_syssignal = package.create_system_signal("groups_syssignal").unwrap();
         syssignal_group.add_signal(&grouped_syssignal).unwrap();

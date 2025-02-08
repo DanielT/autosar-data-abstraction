@@ -1,10 +1,10 @@
 use crate::communication::{
     CanCluster, CanClusterSettings, CanFrame, CanTpConfig, Cluster, ContainerIPdu, DcmIPdu, DoIpTpConfig,
     EthernetCluster, EventGroupControlType, FlexrayArTpConfig, FlexrayCluster, FlexrayClusterSettings, FlexrayFrame,
-    FlexrayTpConfig, GeneralPurposeIPdu, GeneralPurposeIPduCategory, GeneralPurposePdu, GeneralPurposePduCategory,
-    ISignal, ISignalGroup, ISignalIPdu, MultiplexedIPdu, NPdu, NmConfig, NmPdu, SecuredIPdu,
-    ServiceInstanceCollectionSet, SoAdRoutingGroup, SocketConnectionIpduIdentifierSet, SomeipTpConfig, SystemSignal,
-    SystemSignalGroup,
+    FlexrayTpConfig, Frame, GeneralPurposeIPdu, GeneralPurposeIPduCategory, GeneralPurposePdu,
+    GeneralPurposePduCategory, ISignal, ISignalGroup, ISignalIPdu, MultiplexedIPdu, NPdu, NmConfig, NmPdu, Pdu,
+    SecuredIPdu, ServiceInstanceCollectionSet, SoAdRoutingGroup, SocketConnectionIpduIdentifierSet, SomeipTpConfig,
+    SystemSignal, SystemSignalGroup,
 };
 use crate::datatype::SwBaseType;
 use crate::software_component::{CompositionSwComponentType, RootSwCompositionPrototype};
@@ -251,6 +251,39 @@ impl System {
         Ok(cluster)
     }
 
+    /// Create an iterator over all clusters connected to the SYSTEM
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::*;
+    /// # use autosar_data_abstraction::communication::*;
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModel::new();
+    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// system.create_can_cluster("can_cluster", &package, &CanClusterSettings::default())?;
+    /// system.create_flexray_cluster("flexray_cluster", &package, &FlexrayClusterSettings::default())?;
+    /// for cluster in system.clusters() {
+    ///     // do something
+    /// }
+    /// assert_eq!(system.clusters().count(), 2);
+    /// # Ok(())}
+    /// ```
+    pub fn clusters(&self) -> impl Iterator<Item = Cluster> + Send + 'static {
+        self.0
+            .get_sub_element(ElementName::FibexElements)
+            .into_iter()
+            .flat_map(|fibexelems| fibexelems.sub_elements())
+            .filter_map(|ferc| {
+                ferc.get_sub_element(ElementName::FibexElementRef)
+                    .and_then(|fer| fer.get_reference_target().ok())
+                    .and_then(|elem| Cluster::try_from(elem).ok())
+            })
+    }
+
     /// create a new [`CanFrame`]
     ///
     /// This new frame needs to be linked to a `CanPhysicalChannel`
@@ -279,6 +312,21 @@ impl System {
         self.create_fibex_element_ref_unchecked(flexray_frame.element())?;
 
         Ok(flexray_frame)
+    }
+
+    /// iterate over all Frames in the System
+    ///
+    /// This iterator returns all CAN and Flexray frames that are connected to the System using a FibexElementRef.
+    pub fn frames(&self) -> impl Iterator<Item = Frame> + Send + 'static {
+        self.0
+            .get_sub_element(ElementName::FibexElements)
+            .into_iter()
+            .flat_map(|fibexelems| fibexelems.sub_elements())
+            .filter_map(|ferc| {
+                ferc.get_sub_element(ElementName::FibexElementRef)
+                    .and_then(|fer| fer.get_reference_target().ok())
+                    .and_then(|elem| Frame::try_from(elem).ok())
+            })
     }
 
     /// create a new isignal in the [`System`]
@@ -320,6 +368,21 @@ impl System {
         Ok(i_signal)
     }
 
+    /// iterate over all ISignals in the System
+    ///
+    /// This iterator returns all ISignals that are connected to the System using a FibexElementRef.
+    pub fn isignals(&self) -> impl Iterator<Item = ISignal> + Send + 'static {
+        self.0
+            .get_sub_element(ElementName::FibexElements)
+            .into_iter()
+            .flat_map(|fibexelems| fibexelems.sub_elements())
+            .filter_map(|ferc| {
+                ferc.get_sub_element(ElementName::FibexElementRef)
+                    .and_then(|fer| fer.get_reference_target().ok())
+                    .and_then(|elem| ISignal::try_from(elem).ok())
+            })
+    }
+
     /// create a new signal group in the [`System`]
     ///
     /// `I-SIGNAL-GROUP` and `SYSTEM-SIGNAL-GROUP` are created using the same name; therefore they must be placed in
@@ -339,7 +402,7 @@ impl System {
     /// let sig_package = ArPackage::get_or_create(&model, "/ISignals")?;
     /// let sys_package = ArPackage::get_or_create(&model, "/SystemSignals")?;
     /// let system_signal_group = sys_package.create_system_signal_group("signalgroup")?;
-    /// system.create_i_signal_group("signal_group", &sig_package, &system_signal_group)?;
+    /// system.create_isignal_group("signal_group", &sig_package, &system_signal_group)?;
     /// # Ok(())}
     /// ```
     ///
@@ -347,7 +410,7 @@ impl System {
     ///
     /// - [`AutosarAbstractionError::InvalidParameter`] `sig_package` and `sys_package` may not be identical
     /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model while trying to create elements
-    pub fn create_i_signal_group(
+    pub fn create_isignal_group(
         &self,
         name: &str,
         package: &ArPackage,
@@ -358,6 +421,21 @@ impl System {
         self.create_fibex_element_ref_unchecked(i_signal_group.element())?;
 
         Ok(i_signal_group)
+    }
+
+    /// iterate over all ISignalGroups in the System
+    ///
+    /// This iterator returns all ISignalGroups that are connected to the System using a FibexElementRef.
+    pub fn isignal_groups(&self) -> impl Iterator<Item = ISignalGroup> + Send + 'static {
+        self.0
+            .get_sub_element(ElementName::FibexElements)
+            .into_iter()
+            .flat_map(|fibexelems| fibexelems.sub_elements())
+            .filter_map(|ferc| {
+                ferc.get_sub_element(ElementName::FibexElementRef)
+                    .and_then(|fer| fer.get_reference_target().ok())
+                    .and_then(|elem| ISignalGroup::try_from(elem).ok())
+            })
     }
 
     /// create an [`ISignalIPdu`] in the [`System`]
@@ -654,28 +732,10 @@ impl System {
         Ok(pdu)
     }
 
-    /// Create an iterator over all clusters connected to the SYSTEM
+    /// iterate over all PDUs in the System
     ///
-    /// # Example
-    ///
-    /// ```
-    /// # use autosar_data::*;
-    /// # use autosar_data_abstraction::*;
-    /// # use autosar_data_abstraction::communication::*;
-    /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
-    /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// system.create_can_cluster("can_cluster", &package, &CanClusterSettings::default())?;
-    /// system.create_flexray_cluster("flexray_cluster", &package, &FlexrayClusterSettings::default())?;
-    /// for cluster in system.clusters() {
-    ///     // do something
-    /// }
-    /// assert_eq!(system.clusters().count(), 2);
-    /// # Ok(())}
-    /// ```
-    pub fn clusters(&self) -> impl Iterator<Item = Cluster> + Send + 'static {
+    /// This iterator returns all PDUs that are connected to the System using a FibexElementRef.
+    pub fn pdus(&self) -> impl Iterator<Item = Pdu> + Send + 'static {
         self.0
             .get_sub_element(ElementName::FibexElements)
             .into_iter()
@@ -683,7 +743,7 @@ impl System {
             .filter_map(|ferc| {
                 ferc.get_sub_element(ElementName::FibexElementRef)
                     .and_then(|fer| fer.get_reference_target().ok())
-                    .and_then(|elem| Cluster::try_from(elem).ok())
+                    .and_then(|elem| Pdu::try_from(elem).ok())
             })
     }
 
@@ -747,9 +807,9 @@ impl System {
         Ok(set)
     }
 
-    /// Create a `SomipTpConfig` in the SYSTEM
+    /// Create a `SomeipTpConfig` in the SYSTEM
     ///
-    /// `SomeipTpConfig`s contain the configuration how to segment or reassemble large `SomipTp` PDUs.
+    /// `SomeipTpConfig`s contain the configuration how to segment or reassemble large `SomeipTp` PDUs.
     pub fn create_somip_tp_config<T: Into<Cluster> + Clone>(
         &self,
         name: &str,
@@ -833,6 +893,21 @@ impl System {
         self.create_fibex_element_ref_unchecked(config.element())?;
 
         Ok(config)
+    }
+
+    /// Get the `NmConfig` of the SYSTEM, if any
+    ///
+    /// The System may contain zero or one `NmConfig`s.
+    pub fn nm_config(&self) -> Option<NmConfig> {
+        self.0
+            .get_sub_element(ElementName::FibexElements)
+            .into_iter()
+            .flat_map(|fibexelems| fibexelems.sub_elements())
+            .find_map(|ferc| {
+                ferc.get_sub_element(ElementName::FibexElementRef)
+                    .and_then(|fer| fer.get_reference_target().ok())
+                    .and_then(|elem| NmConfig::try_from(elem).ok())
+            })
     }
 
     /// connect an element to the SYSTEM by creating a FIBEX-ELEMENT-REF
@@ -1004,7 +1079,9 @@ impl FusedIterator for EcuInstanceIterator {}
 #[cfg(test)]
 mod test {
     use crate::{
-        communication::{CanClusterSettings, FlexrayClusterSettings},
+        communication::{
+            CanClusterSettings, FlexrayClusterSettings, GeneralPurposeIPduCategory, GeneralPurposePduCategory,
+        },
         software_component::CompositionSwComponentType,
         system::SystemCategory,
         AbstractionElement, ArPackage, System,
@@ -1157,6 +1234,120 @@ mod test {
         system.create_ecu_instance("Ecu_1", &package_3).unwrap();
 
         assert_eq!(system.clusters().count(), 3);
+    }
+
+    #[test]
+    fn frames_iterator() {
+        let model = AutosarModel::new();
+        model.create_file("filename", AutosarVersion::LATEST).unwrap();
+        let package_1 = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let system = package_1
+            .create_system("System", SystemCategory::SystemExtract)
+            .unwrap();
+        let package_2 = ArPackage::get_or_create(&model, "/Frames").unwrap();
+
+        system.create_can_frame("CanFrame", &package_2, 8).unwrap();
+        system.create_flexray_frame("FlexrayFrame", &package_2, 8).unwrap();
+
+        // the ecu-instance is a third item in the FIBEX-ELEMENTS of the system, which should not be picked up by the iterator
+        let package_3 = ArPackage::get_or_create(&model, "/ECU").unwrap();
+        system.create_ecu_instance("Ecu_1", &package_3).unwrap();
+
+        assert_eq!(system.frames().count(), 2);
+    }
+
+    #[test]
+    fn signals_iterator() {
+        let model = AutosarModel::new();
+        model.create_file("filename", AutosarVersion::LATEST).unwrap();
+        let package_1 = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let system = package_1
+            .create_system("System", SystemCategory::SystemExtract)
+            .unwrap();
+        let package_2 = ArPackage::get_or_create(&model, "/Signals").unwrap();
+
+        let syssig1 = package_2.create_system_signal("syssig1").unwrap();
+        system.create_isignal("Sig1", &package_2, 8, &syssig1, None).unwrap();
+        let syssig2 = package_2.create_system_signal("syssig2").unwrap();
+        system.create_isignal("Sig2", &package_2, 8, &syssig2, None).unwrap();
+
+        // the ecu-instance is a third item in the FIBEX-ELEMENTS of the system, which should not be picked up by the iterator
+        let package_3 = ArPackage::get_or_create(&model, "/ECU").unwrap();
+        system.create_ecu_instance("Ecu_1", &package_3).unwrap();
+
+        assert_eq!(system.isignals().count(), 2);
+    }
+
+    #[test]
+    fn isignal_groups_iterator() {
+        let model = AutosarModel::new();
+        model.create_file("filename", AutosarVersion::LATEST).unwrap();
+        let package_1 = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let system = package_1
+            .create_system("System", SystemCategory::SystemExtract)
+            .unwrap();
+        let package_2 = ArPackage::get_or_create(&model, "/SignalGroups").unwrap();
+
+        let sysgroup1 = package_2.create_system_signal_group("sysgroup1").unwrap();
+        system
+            .create_isignal_group("siggroup1", &package_2, &sysgroup1)
+            .unwrap();
+        let sysgroup2 = package_2.create_system_signal_group("sysgroup2").unwrap();
+        system
+            .create_isignal_group("siggroup2", &package_2, &sysgroup2)
+            .unwrap();
+
+        // the ecu-instance is a third item in the FIBEX-ELEMENTS of the system, which should not be picked up by the iterator
+        let package_3 = ArPackage::get_or_create(&model, "/ECU").unwrap();
+        system.create_ecu_instance("Ecu_1", &package_3).unwrap();
+
+        assert_eq!(system.isignal_groups().count(), 2);
+    }
+
+    #[test]
+    fn pdus_iterator() {
+        let model = AutosarModel::new();
+        model.create_file("filename", AutosarVersion::LATEST).unwrap();
+        let package_1 = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let system = package_1
+            .create_system("System", SystemCategory::SystemExtract)
+            .unwrap();
+        let package_2 = ArPackage::get_or_create(&model, "/Pdus").unwrap();
+
+        system.create_dcm_ipdu("DcmIpdu", &package_2, 8).unwrap();
+        system
+            .create_general_purpose_pdu("GeneralPurposePdu", &package_2, 8, GeneralPurposePduCategory::DoIp)
+            .unwrap();
+        system
+            .create_general_purpose_ipdu("GeneralPurposeIpdu", &package_2, 8, GeneralPurposeIPduCategory::Xcp)
+            .unwrap();
+        system.create_container_ipdu("ContainerIpdu", &package_2, 8).unwrap();
+        system.create_secured_ipdu("SecuredIpdu", &package_2, 8).unwrap();
+        system
+            .create_multiplexed_ipdu("MultiplexedIpdu", &package_2, 8)
+            .unwrap();
+
+        // the EcuInstance is a seventh item in the FIBEX-ELEMENTS of the system, which should not be picked up by the iterator
+        let package_3 = ArPackage::get_or_create(&model, "/ECU").unwrap();
+        system.create_ecu_instance("Ecu_1", &package_3).unwrap();
+
+        assert_eq!(system.pdus().count(), 6);
+    }
+
+    #[test]
+    fn nm_config() {
+        let model = AutosarModel::new();
+        model.create_file("filename", AutosarVersion::LATEST).unwrap();
+        let package = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
+
+        assert!(system.nm_config().is_none());
+
+        let package = ArPackage::get_or_create(&model, "/Nm").unwrap();
+        let nm_config = system.create_nm_config("NmConfig", &package).unwrap();
+
+        assert!(system.nm_config().is_some());
+        assert_eq!(system.nm_config().unwrap(), nm_config);
     }
 
     #[test]
