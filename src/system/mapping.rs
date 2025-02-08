@@ -260,17 +260,13 @@ mod test {
     use super::*;
     use crate::{
         datatype::{ApplicationPrimitiveCategory, ApplicationPrimitiveDataType},
-        ArPackage, SystemCategory,
+        AutosarModelAbstraction, SystemCategory,
     };
-    use autosar_data::AutosarModel;
 
     #[test]
     fn mappings() {
-        let model = AutosarModel::new();
-        let _file = model
-            .create_file("filename", autosar_data::AutosarVersion::LATEST)
-            .unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("filename", autosar_data::AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let system = package
             .create_system("test_system", SystemCategory::EcuExtract)
             .unwrap();

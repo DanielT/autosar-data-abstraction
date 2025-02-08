@@ -1,22 +1,21 @@
 #[cfg(test)]
 mod test {
-    use autosar_data::{AutosarModel, AutosarVersion, ElementName};
+    use autosar_data::{AutosarVersion, ElementName};
     use autosar_data_abstraction::{
         communication::{
             AbstractFrame, AbstractFrameTriggering, CanAddressingMode, CanClusterSettings, CanFrameType,
             CommunicationDirection, TransferProperty,
         },
         datatype::BaseTypeEncoding,
-        AbstractionElement, ArPackage, AutosarAbstractionError, SystemCategory,
+        AbstractionElement, AutosarAbstractionError, AutosarModelAbstraction, SystemCategory,
     };
 
     #[test]
     fn create_can_system() -> Result<(), AutosarAbstractionError> {
-        let model = AutosarModel::new();
-        model.create_file("can.arxml", AutosarVersion::LATEST)?;
-        let system_package = ArPackage::get_or_create(&model, "/System")?;
+        let model = AutosarModelAbstraction::create("can.arxml", AutosarVersion::LATEST)?;
+        let system_package = model.get_or_create_package("/System")?;
         let system = system_package.create_system("System", SystemCategory::SystemExtract)?;
-        let cluster_package = ArPackage::get_or_create(&model, "/Network/Clusters")?;
+        let cluster_package = model.get_or_create_package("/Network/Clusters")?;
 
         let settings = CanClusterSettings {
             can_fd_baudrate: Some(2000000),
@@ -26,7 +25,7 @@ mod test {
         assert_eq!(can_cluster.element().element_name(), ElementName::CanCluster);
         let can_channel = can_cluster.create_physical_channel("CanChannel")?;
 
-        let ecu_package = ArPackage::get_or_create(&model, "/Ecus")?;
+        let ecu_package = model.get_or_create_package("/Ecus")?;
 
         // create ECU A and connect it to the CAN channel
         let ecu_instance_a = system.create_ecu_instance("Ecu_A", &ecu_package)?;
@@ -42,13 +41,13 @@ mod test {
         let canctrl_b = ecu_instance_b.create_can_communication_controller("CanController")?;
         canctrl_b.connect_physical_channel("Ecu_B_connector", &can_channel)?;
 
-        let frame_package = ArPackage::get_or_create(&model, "/Network/Frames")?;
-        let pdu_package = ArPackage::get_or_create(&model, "/Network/Pdus")?;
-        let isignal_package = ArPackage::get_or_create(&model, "/Network/Signals")?;
-        let syssignal_package = ArPackage::get_or_create(&model, "/System/Signals")?;
+        let frame_package = model.get_or_create_package("/Network/Frames")?;
+        let pdu_package = model.get_or_create_package("/Network/Pdus")?;
+        let isignal_package = model.get_or_create_package("/Network/Signals")?;
+        let syssignal_package = model.get_or_create_package("/System/Signals")?;
 
         // create a base type for the CAN signals
-        let base_type_package = ArPackage::get_or_create(&model, "/BaseTypes")?;
+        let base_type_package = model.get_or_create_package("/BaseTypes")?;
         let base_type_u8 =
             base_type_package.create_sw_base_type("uint8", 8, BaseTypeEncoding::None, None, None, Some("uint8"))?;
 
@@ -102,7 +101,7 @@ mod test {
         ft_2.connect_to_ecu(&ecu_instance_b, CommunicationDirection::Out)?;
 
         // software component modeling
-        let swc_package = ArPackage::get_or_create(&model, "/SoftwareComponents")?;
+        let swc_package = model.get_or_create_package("/SoftwareComponents")?;
         let root_composition = swc_package.create_composition_sw_component_type("RootComposition")?;
 
         // ... Todo: create other swc elements ...

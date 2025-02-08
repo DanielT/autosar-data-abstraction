@@ -56,14 +56,15 @@ impl FlexrayCluster {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// let cluster = system.create_flexray_cluster("Cluster", &package, &FlexrayClusterSettings::default()).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// let cluster = system.create_flexray_cluster("Cluster", &package, &FlexrayClusterSettings::default())?;
     /// let mut settings = cluster.settings();
     /// settings.macro_per_cycle = 5000;
     /// cluster.update_settings(&settings);
+    /// # Ok(())}
     /// ```
     pub fn update_settings(&self, settings: &FlexrayClusterSettings) {
         if let Ok(cluster_content) = self
@@ -203,15 +204,16 @@ impl FlexrayCluster {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let mut settings_in = FlexrayClusterSettings::default();
     /// # settings_in.macro_per_cycle = 5000;
-    /// let cluster = system.create_flexray_cluster("Cluster", &package, &settings_in).unwrap();
+    /// let cluster = system.create_flexray_cluster("Cluster", &package, &settings_in)?;
     /// let settings = cluster.settings();
     /// # assert_eq!(settings_in, settings);
+    /// # Ok(())}
     /// ```
     #[must_use]
     pub fn settings(&self) -> FlexrayClusterSettings {
@@ -522,13 +524,14 @@ impl FlexrayCluster {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let settings = FlexrayClusterSettings::default();
-    /// let cluster = system.create_flexray_cluster("Cluster", &package, &settings).unwrap();
-    /// let channel = cluster.create_physical_channel("Channel", FlexrayChannelName::A).unwrap();
+    /// let cluster = system.create_flexray_cluster("Cluster", &package, &settings)?;
+    /// let channel = cluster.create_physical_channel("Channel", FlexrayChannelName::A)?;
+    /// # Ok(())}
     /// ```
     ///
     /// # Errors
@@ -579,12 +582,13 @@ impl FlexrayCluster {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default()).unwrap();
-    /// let channel = cluster.create_physical_channel("Channel").unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
+    /// let channel = cluster.create_physical_channel("Channel")?;
+    /// # Ok(())}
     /// ```
     #[must_use]
     pub fn physical_channels(&self) -> FlexrayPhysicalChannelsInfo {
@@ -954,18 +958,17 @@ impl Default for FlexrayClusterSettings {
 mod test {
     use crate::{
         communication::{AbstractCluster, FlexrayChannelName, FlexrayClusterSettings},
-        ArPackage, SystemCategory,
+        AutosarModelAbstraction, SystemCategory,
     };
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn cluster() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
 
-        let pkg2 = ArPackage::get_or_create(&model, "/flexray").unwrap();
+        let pkg2 = model.get_or_create_package("/flexray").unwrap();
         // create the Flexray cluster FlxCluster
         let settings = FlexrayClusterSettings::default();
         let result = system.create_flexray_cluster("FlxCluster", &pkg2, &settings);
@@ -997,9 +1000,8 @@ mod test {
 
     #[test]
     fn flexray_settings() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let settings = FlexrayClusterSettings::default();
         let cluster = system.create_flexray_cluster("FlxCluster", &pkg, &settings).unwrap();

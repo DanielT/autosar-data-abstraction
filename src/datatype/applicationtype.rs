@@ -465,14 +465,14 @@ impl ApplicationDataType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use crate::AutosarModelAbstraction;
+    use autosar_data::AutosarVersion;
     use datatype::{CompuMethodContent, CompuMethodLinearContent};
 
     #[test]
     fn test_application_array_data_type() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/DataTypes").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/DataTypes").unwrap();
         let element_type = ApplicationPrimitiveDataType::new(
             "Element",
             &package,
@@ -509,9 +509,8 @@ mod tests {
 
     #[test]
     fn test_application_record_data_type() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/DataTypes").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/DataTypes").unwrap();
         let record_data_type = ApplicationRecordDataType::new("Record", &package).unwrap();
         let element_type = ApplicationPrimitiveDataType::new(
             "Element",
@@ -533,9 +532,8 @@ mod tests {
 
     #[test]
     fn test_application_primitive_data_type() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/DataTypes").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/DataTypes").unwrap();
         let compu_method = CompuMethod::new(
             "CompuMethod",
             &package,
@@ -568,9 +566,8 @@ mod tests {
 
     #[test]
     fn test_application_data_type() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/DataTypes").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/DataTypes").unwrap();
         let element_type = ApplicationPrimitiveDataType::new(
             "Element",
             &package,

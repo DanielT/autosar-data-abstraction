@@ -35,28 +35,29 @@ impl SocketConnectionBundle {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
-    /// # let channel = cluster.create_physical_channel("Channel", None).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
+    /// # let channel = cluster.create_physical_channel("Channel", None)?;
     /// # let server_endpoint = channel.create_network_endpoint("ServerAddress", NetworkEndpointAddress::IPv4 {
     /// #    address: Some("192.168.0.1".to_string()),
     /// #    address_source: Some(IPv4AddressSource::Fixed),
     /// #    default_gateway: None,
     /// #    network_mask: None
-    /// # }, None).unwrap();
-    /// # let server_socket = channel.create_socket_address("ServerSocket", &server_endpoint, &TpConfig::TcpTp { port_number: Some(1234), port_dynamically_assigned: None }, SocketAddressType::Unicast(None)).unwrap();
+    /// # }, None)?;
+    /// # let server_socket = channel.create_socket_address("ServerSocket", &server_endpoint, &TpConfig::TcpTp { port_number: Some(1234), port_dynamically_assigned: None }, SocketAddressType::Unicast(None))?;
     /// # let client_endpoint = channel.create_network_endpoint("ClientAddress", NetworkEndpointAddress::IPv4 {
     /// #    address: Some("192.168.0.2".to_string()),
     /// #    address_source: Some(IPv4AddressSource::Fixed),
     /// #    default_gateway: None,
     /// #    network_mask: None
-    /// # }, None).unwrap();
-    /// # let client_socket = channel.create_socket_address("ClientSocket", &client_endpoint, &TpConfig::TcpTp { port_number: Some(1235), port_dynamically_assigned: None }, SocketAddressType::Unicast(None)).unwrap();
-    /// let bundle = channel.create_socket_connection_bundle("Bundle", &server_socket).unwrap();
-    /// assert_eq!(channel, bundle.physical_channel().unwrap());
+    /// # }, None)?;
+    /// # let client_socket = channel.create_socket_address("ClientSocket", &client_endpoint, &TpConfig::TcpTp { port_number: Some(1235), port_dynamically_assigned: None }, SocketAddressType::Unicast(None))?;
+    /// let bundle = channel.create_socket_connection_bundle("Bundle", &server_socket)?;
+    /// assert_eq!(channel, bundle.physical_channel()?);
+    /// # Ok(())}
     /// ```
     pub fn physical_channel(&self) -> Result<EthernetPhysicalChannel, AutosarAbstractionError> {
         let channel = self.element().named_parent()?.unwrap();
@@ -139,29 +140,30 @@ impl SocketConnection {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
-    /// # let channel = cluster.create_physical_channel("Channel", None).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
+    /// # let channel = cluster.create_physical_channel("Channel", None)?;
     /// # let server_endpoint = channel.create_network_endpoint("ServerAddress", NetworkEndpointAddress::IPv4 {
     /// #    address: Some("192.168.0.1".to_string()),
     /// #    address_source: Some(IPv4AddressSource::Fixed),
     /// #    default_gateway: None,
     /// #    network_mask: None
-    /// # }, None).unwrap();
-    /// # let server_socket = channel.create_socket_address("ServerSocket", &server_endpoint, &TpConfig::TcpTp { port_number: Some(1234), port_dynamically_assigned: None }, SocketAddressType::Unicast(None)).unwrap();
+    /// # }, None)?;
+    /// # let server_socket = channel.create_socket_address("ServerSocket", &server_endpoint, &TpConfig::TcpTp { port_number: Some(1234), port_dynamically_assigned: None }, SocketAddressType::Unicast(None))?;
     /// # let client_endpoint = channel.create_network_endpoint("ClientAddress", NetworkEndpointAddress::IPv4 {
     /// #    address: Some("192.168.0.2".to_string()),
     /// #    address_source: Some(IPv4AddressSource::Fixed),
     /// #    default_gateway: None,
     /// #    network_mask: None
-    /// # }, None).unwrap();
-    /// # let client_socket = channel.create_socket_address("ClientSocket", &client_endpoint, &TpConfig::TcpTp { port_number: Some(1235), port_dynamically_assigned: None }, SocketAddressType::Unicast(None)).unwrap();
-    /// let bundle = channel.create_socket_connection_bundle("Bundle", &server_socket).unwrap();
-    /// let connection = bundle.create_bundled_connection(&client_socket).unwrap();
-    /// assert_eq!(bundle, connection.socket_connection_bundle().unwrap());
+    /// # }, None)?;
+    /// # let client_socket = channel.create_socket_address("ClientSocket", &client_endpoint, &TpConfig::TcpTp { port_number: Some(1235), port_dynamically_assigned: None }, SocketAddressType::Unicast(None))?;
+    /// let bundle = channel.create_socket_connection_bundle("Bundle", &server_socket)?;
+    /// let connection = bundle.create_bundled_connection(&client_socket)?;
+    /// assert_eq!(bundle, connection.socket_connection_bundle()?);
+    /// # Ok(())}
     /// ```
     pub fn socket_connection_bundle(&self) -> Result<SocketConnectionBundle, AutosarAbstractionError> {
         let bundle = self.element().named_parent()?.unwrap();
@@ -553,15 +555,14 @@ mod test {
     use super::*;
     use crate::{
         communication::{IPv4AddressSource, NetworkEndpointAddress, SocketAddressType},
-        SystemCategory,
+        AutosarModelAbstraction, SystemCategory,
     };
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn test_socket_connection_bundle() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let package = model.get_or_create_package("/pkg1").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
         let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
         let channel = cluster.create_physical_channel("Channel", None).unwrap();

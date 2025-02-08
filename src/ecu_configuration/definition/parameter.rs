@@ -670,14 +670,16 @@ impl EcucCommonAttributes for EcucParameterDef {}
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::ecu_configuration::{EcucConfigurationClassEnum, EcucConfigurationVariantEnum};
+    use crate::{
+        ecu_configuration::{EcucConfigurationClassEnum, EcucConfigurationVariantEnum},
+        AutosarModelAbstraction,
+    };
     use autosar_data::AutosarVersion;
 
     #[test]
     fn parameter() {
-        let model = crate::AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let pkg = crate::ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::Autosar_00048).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let ecuc_module = pkg.create_ecuc_module_def("EcucModule").unwrap();
         let container = ecuc_module.create_param_conf_container_def("Container").unwrap();
 
@@ -716,9 +718,8 @@ mod test {
 
     #[test]
     fn string_parameters() {
-        let model = crate::AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let pkg = crate::ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::Autosar_00048).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let ecuc_module = pkg.create_ecuc_module_def("EcucModule").unwrap();
         let container = ecuc_module.create_param_conf_container_def("Container").unwrap();
 
@@ -823,9 +824,8 @@ mod test {
 
     #[test]
     fn boolean_parameters() {
-        let model = crate::AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let pkg = crate::ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::Autosar_00048).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let ecuc_module = pkg.create_ecuc_module_def("EcucModule").unwrap();
         let container = ecuc_module.create_param_conf_container_def("Container").unwrap();
 
@@ -838,9 +838,8 @@ mod test {
 
     #[test]
     fn enumeration_parameters() {
-        let model = crate::AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let pkg = crate::ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::Autosar_00048).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let ecuc_module = pkg.create_ecuc_module_def("EcucModule").unwrap();
         let container = ecuc_module.create_param_conf_container_def("Container").unwrap();
 
@@ -858,9 +857,8 @@ mod test {
 
     #[test]
     fn float_parameters() {
-        let model = crate::AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let pkg = crate::ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::Autosar_00048).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let ecuc_module = pkg.create_ecuc_module_def("EcucModule").unwrap();
         let container = ecuc_module.create_param_conf_container_def("Container").unwrap();
 
@@ -875,9 +873,8 @@ mod test {
 
     #[test]
     fn integer_parameters() {
-        let model = crate::AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let pkg = crate::ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::Autosar_00048).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let ecuc_module = pkg.create_ecuc_module_def("EcucModule").unwrap();
         let container = ecuc_module.create_param_conf_container_def("Container").unwrap();
 

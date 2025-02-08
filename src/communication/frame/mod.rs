@@ -180,9 +180,8 @@ pub trait AbstractFrameTriggering: AbstractionElement {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::{*, communication::*};
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let ecu = system.create_ecu_instance("ECU", &package)?;
     /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
@@ -472,17 +471,14 @@ reflist_iterator!(FrameTriggeringsIterator, FrameTriggering);
 
 #[cfg(test)]
 mod test {
-    use crate::{ArPackage, SystemCategory};
+    use crate::{AutosarModelAbstraction, SystemCategory};
 
     use super::*;
 
     #[test]
     fn frame() {
-        let model = autosar_data::AutosarModel::new();
-        let _file = model
-            .create_file("test.arxml", autosar_data::AutosarVersion::LATEST)
-            .unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("filename", autosar_data::AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
 
         let can_frame = system.create_can_frame("CanFrame", &package, 8).unwrap();

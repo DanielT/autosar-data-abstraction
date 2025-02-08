@@ -287,19 +287,17 @@ reflist_iterator!(CanFrameTriggeringsIterator, CanFrameTriggering);
 
 #[cfg(test)]
 mod test {
-    use autosar_data::{AutosarModel, AutosarVersion};
-
     use super::*;
     use crate::{
         communication::{AbstractPhysicalChannel, CanClusterSettings},
-        ByteOrder, SystemCategory,
+        AutosarModelAbstraction, ByteOrder, SystemCategory,
     };
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn can_frame() {
-        let model = AutosarModel::new();
-        let _ = model.create_file("test", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("System", SystemCategory::EcuExtract).unwrap();
         let can_cluster = system
             .create_can_cluster("Cluster", &package, &CanClusterSettings::default())

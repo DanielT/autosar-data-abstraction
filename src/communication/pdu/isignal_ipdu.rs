@@ -568,14 +568,13 @@ impl SignalMappingValidator {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{ByteOrder, SystemCategory};
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use crate::{AutosarModelAbstraction, ByteOrder, SystemCategory};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn isignal_ipdu() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let package = ArPackage::get_or_create(&model, "/pkg").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let package = model.get_or_create_package("/pkg").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         let pdu = system.create_isignal_ipdu("isignal_ipdu", &package, 8).unwrap();
@@ -707,9 +706,8 @@ mod test {
 
     #[test]
     fn ipdu_timing() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let package = ArPackage::get_or_create(&model, "/pkg").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let package = model.get_or_create_package("/pkg").unwrap();
         let pdu = ISignalIPdu::new("pdu_name", &package, 8).unwrap();
 
         let timing_spec = IpduTiming {

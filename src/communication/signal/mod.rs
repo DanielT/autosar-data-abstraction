@@ -695,15 +695,14 @@ mod tests {
             SomeIpTransformationTechnologyConfig, TransformationTechnologyConfig,
         },
         datatype::{BaseTypeEncoding, CompuMethodContent, SwBaseType, Unit},
-        ByteOrder, SystemCategory,
+        AutosarModelAbstraction, ByteOrder, SystemCategory,
     };
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn test_signal() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("test.arxml", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/test").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let unit = Unit::new("unit", &package, Some("Unit Name")).unwrap();
         let compu_method = CompuMethod::new("compu_method", &package, CompuMethodContent::Identical).unwrap();
@@ -745,9 +744,8 @@ mod tests {
 
     #[test]
     fn test_signal_data_transformations() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("test.arxml", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/test").unwrap();
         let sw_base_type =
             SwBaseType::new("sw_base_type", &package, 8, BaseTypeEncoding::None, None, None, None).unwrap();
         let signal = ISignal::new(
@@ -801,9 +799,8 @@ mod tests {
 
     #[test]
     fn test_signal_group_data_transformations() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("test.arxml", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/test").unwrap();
 
         let signal_group = ISignalGroup::new(
             "signal_group",
@@ -849,9 +846,8 @@ mod tests {
 
     #[test]
     fn test_signal_group() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("test.arxml", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/test").unwrap();
         let sys_signal_group = SystemSignalGroup::new("sys_signal_group", &package).unwrap();
         let signal_group = ISignalGroup::new("signal_group", &package, &sys_signal_group).unwrap();
         assert_eq!(signal_group.system_signal_group(), Some(sys_signal_group.clone()));
@@ -869,9 +865,8 @@ mod tests {
 
     #[test]
     fn test_signal_triggering() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("test.arxml", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/test").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         let sw_base_type =

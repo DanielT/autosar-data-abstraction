@@ -318,21 +318,17 @@ reflist_iterator!(FlexrayFrameTriggeringsIterator, FlexrayFrameTriggering);
 
 #[cfg(test)]
 mod test {
-    use std::result;
-
-    use autosar_data::{AutosarModel, AutosarVersion};
-
     use super::*;
     use crate::{
         communication::{FlexrayChannelName, FlexrayClusterSettings},
-        ByteOrder, SystemCategory,
+        AutosarModelAbstraction, ByteOrder, SystemCategory,
     };
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn fr_frame() {
-        let model = AutosarModel::new();
-        let _ = model.create_file("test", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("System", SystemCategory::EcuExtract).unwrap();
         let flexray_cluster = system
             .create_flexray_cluster("Cluster", &package, &FlexrayClusterSettings::default())
@@ -451,7 +447,7 @@ mod test {
         assert_eq!(CycleRepetition::C50, EnumItem::CycleRepetition50.try_into().unwrap());
         assert_eq!(CycleRepetition::C64, EnumItem::CycleRepetition64.try_into().unwrap());
 
-        let result: result::Result<CycleRepetition, _> = EnumItem::Aa.try_into();
+        let result: Result<CycleRepetition, _> = EnumItem::Aa.try_into();
         assert!(result.is_err());
     }
 }

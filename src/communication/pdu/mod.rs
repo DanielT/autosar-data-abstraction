@@ -711,15 +711,14 @@ mod test {
             AbstractFrame, AbstractFrameTriggering, CanAddressingMode, CanClusterSettings, CanFrameType,
             TransferProperty,
         },
-        ByteOrder, SystemCategory,
+        AutosarModelAbstraction, ByteOrder, SystemCategory,
     };
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn test_pdus() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let package = ArPackage::get_or_create(&model, "/pkg").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let package = model.get_or_create_package("/pkg").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         let isignal_ipdu = system.create_isignal_ipdu("isignal_ipdu", &package, 1).unwrap();
@@ -780,9 +779,8 @@ mod test {
 
     #[test]
     fn test_pdu_triggering() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let package = ArPackage::get_or_create(&model, "/pkg").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let package = model.get_or_create_package("/pkg").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         // create an ISignalIPdu with a signal
@@ -850,9 +848,8 @@ mod test {
 
     #[test]
     fn general_purpose_pdu() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let package = ArPackage::get_or_create(&model, "/pkg").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let package = model.get_or_create_package("/pkg").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         let gp_pdu1 = system
@@ -888,9 +885,8 @@ mod test {
 
     #[test]
     fn create_general_purpose_ipdu() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let package = ArPackage::get_or_create(&model, "/pkg").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let package = model.get_or_create_package("/pkg").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         let gp_ipdu1 = system

@@ -34,16 +34,17 @@ impl EthernetCluster {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// let cluster = system.create_ethernet_cluster("Cluster", &package)?;
     /// let vlan_info = EthernetVlanInfo {
     ///     vlan_name: "VLAN_1".to_string(),
     ///     vlan_id: 1,
     /// };
-    /// let channel = cluster.create_physical_channel("Channel", Some(vlan_info)).unwrap();
+    /// let channel = cluster.create_physical_channel("Channel", Some(vlan_info))?;
+    /// # Ok(())}
     /// ```
     ///
     /// # Errors
@@ -101,15 +102,16 @@ impl EthernetCluster {
     /// ```
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
-    /// cluster.create_physical_channel("Channel", None).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
+    /// cluster.create_physical_channel("Channel", None)?;
     /// for channel in cluster.physical_channels() {
     ///     // ...
     /// }
+    /// # Ok(())}
     /// ```
     pub fn physical_channels(&self) -> impl Iterator<Item = EthernetPhysicalChannel> + Send + 'static {
         self.element()
@@ -130,18 +132,17 @@ impl AbstractCluster for EthernetCluster {}
 mod test {
     use crate::{
         communication::{AbstractCluster, EthernetVlanInfo},
-        ArPackage, SystemCategory,
+        AutosarModelAbstraction, SystemCategory,
     };
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn cluster() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
 
-        let pkg2 = ArPackage::get_or_create(&model, "/ethernet").unwrap();
+        let pkg2 = model.get_or_create_package("/ethernet").unwrap();
         // create the ethernet cluster EthCluster
         let result = system.create_ethernet_cluster("EthCluster", &pkg2);
         assert!(result.is_ok());

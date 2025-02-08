@@ -472,15 +472,14 @@ mod test {
     use super::*;
     use crate::{
         communication::{FlexrayChannelName, FlexrayClusterSettings},
-        SystemCategory,
+        AutosarModelAbstraction, SystemCategory,
     };
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn test_flexray_ar_transport_protocol() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("DoipTp.arxml", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
+        let model = AutosarModelAbstraction::create("DoipTp.arxml", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/pkg1").unwrap();
 
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let flexray_cluster = system

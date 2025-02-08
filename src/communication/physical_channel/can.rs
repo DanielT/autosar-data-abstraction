@@ -22,14 +22,15 @@ impl CanPhysicalChannel {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default()).unwrap();
-    /// let channel = cluster.create_physical_channel("Channel").unwrap();
-    /// let cluster_2 = channel.cluster().unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
+    /// let channel = cluster.create_physical_channel("Channel")?;
+    /// let cluster_2 = channel.cluster()?;
     /// assert_eq!(cluster, cluster_2);
+    /// # Ok(())}
     /// ```
     pub fn cluster(&self) -> Result<CanCluster, AutosarAbstractionError> {
         let cluster_elem = self.0.named_parent()?.unwrap();
@@ -44,15 +45,16 @@ impl CanPhysicalChannel {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let frame_package = ArPackage::get_or_create(&model, "/Frames").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default()).unwrap();
-    /// let channel = cluster.create_physical_channel("Channel").unwrap();
-    /// let frame = system.create_can_frame("Frame", &frame_package, 8).unwrap();
-    /// channel.trigger_frame(&frame, 0x100, CanAddressingMode::Standard, CanFrameType::Can20).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let frame_package = model.get_or_create_package("/Frames")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
+    /// let channel = cluster.create_physical_channel("Channel")?;
+    /// let frame = system.create_can_frame("Frame", &frame_package, 8)?;
+    /// channel.trigger_frame(&frame, 0x100, CanAddressingMode::Standard, CanFrameType::Can20)?;
+    /// # Ok(())}
     /// ```
     pub fn trigger_frame(
         &self,
@@ -72,9 +74,8 @@ impl CanPhysicalChannel {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::{*, communication::*};
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::LATEST)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
     /// # let channel = cluster.create_physical_channel("Channel")?;
@@ -102,14 +103,13 @@ impl AbstractPhysicalChannel for CanPhysicalChannel {
 
 #[cfg(test)]
 mod test {
-    use crate::{communication::CanClusterSettings, ArPackage, SystemCategory};
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use crate::{communication::CanClusterSettings, AutosarModelAbstraction, SystemCategory};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn channel() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let settings = CanClusterSettings::default();
         let cluster = system.create_can_cluster("CanCluster", &pkg, &settings).unwrap();

@@ -31,12 +31,13 @@ impl EcuInstance {
     /// ```
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
-    /// let can_controller = ecu_instance.create_can_communication_controller("CanCtrl").unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// let ecu_instance = system.create_ecu_instance("ecu_name", &package)?;
+    /// let can_controller = ecu_instance.create_can_communication_controller("CanCtrl")?;
+    /// # Ok(())}
     /// ```
     ///
     /// # Errors
@@ -59,14 +60,14 @@ impl EcuInstance {
     /// ```
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// let ecu_instance = system.create_ecu_instance("ecu_name", &package)?;
     /// let ethernet_controller = ecu_instance
-    ///     .create_ethernet_communication_controller("EthCtrl", Some("ab:cd:ef:01:02:03".to_string()))
-    ///     .unwrap();
+    ///     .create_ethernet_communication_controller("EthCtrl", Some("ab:cd:ef:01:02:03".to_string()))?;
+    /// # Ok(())}
     /// ```
     ///
     /// # Errors
@@ -90,14 +91,14 @@ impl EcuInstance {
     /// ```
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// let ecu_instance = system.create_ecu_instance("ecu_name", &package)?;
     /// let flexray_controller = ecu_instance
-    ///     .create_flexray_communication_controller("FlexrayCtrl")
-    ///     .unwrap();
+    ///     .create_flexray_communication_controller("FlexrayCtrl")?;
+    /// # Ok(())}
     /// ```
     ///
     /// # Errors
@@ -117,17 +118,18 @@ impl EcuInstance {
     /// ```
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
-    /// ecu_instance.create_flexray_communication_controller("FlexrayCtrl").unwrap();
-    /// ecu_instance.create_can_communication_controller("CanCtrl").unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// let ecu_instance = system.create_ecu_instance("ecu_name", &package)?;
+    /// ecu_instance.create_flexray_communication_controller("FlexrayCtrl")?;
+    /// ecu_instance.create_can_communication_controller("CanCtrl")?;
     /// for ctrl in ecu_instance.communication_controllers() {
     ///     // ...
     /// }
     /// # assert_eq!(ecu_instance.communication_controllers().count(), 2);
+    /// # Ok(())}
     /// ```
     pub fn communication_controllers(&self) -> impl Iterator<Item = CommunicationController> + Send + 'static {
         self.0
@@ -143,13 +145,12 @@ impl EcuInstance {
 #[cfg(test)]
 mod test {
     use crate::*;
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn ecu() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let package = model.get_or_create_package("/pkg1").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
         let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
         ecu_instance

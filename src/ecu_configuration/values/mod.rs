@@ -316,22 +316,16 @@ impl EcucContainerValue {
 
 #[cfg(test)]
 mod test {
-    use crate::{system, AbstractionElement, ArPackage};
-    use autosar_data::{AutosarModel, AutosarVersion, ElementName};
+    use crate::{system, AbstractionElement, AutosarModelAbstraction};
+    use autosar_data::{AutosarVersion, ElementName};
 
     #[test]
     fn test_ecu_configuration_values() {
-        let definition_model = AutosarModel::new();
-        let _file = definition_model
-            .create_file("definition.arxml", AutosarVersion::LATEST)
-            .unwrap();
-        let def_package = ArPackage::get_or_create(&definition_model, "/def_package").unwrap();
+        let definition_model = AutosarModelAbstraction::create("definition.arxml", AutosarVersion::LATEST).unwrap();
+        let def_package = definition_model.get_or_create_package("/def_package").unwrap();
 
-        let values_model = AutosarModel::new();
-        let _file = values_model
-            .create_file("values.arxml", AutosarVersion::LATEST)
-            .unwrap();
-        let val_package = ArPackage::get_or_create(&values_model, "/val_package").unwrap();
+        let values_model = AutosarModelAbstraction::create("values.arxml", AutosarVersion::LATEST).unwrap();
+        let val_package = values_model.get_or_create_package("/val_package").unwrap();
 
         // create a definition for the ECU configuration
         let module_def = def_package.create_ecuc_module_def("ModuleDef").unwrap();

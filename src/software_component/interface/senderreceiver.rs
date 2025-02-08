@@ -73,15 +73,16 @@ impl VariableDataPrototype {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use crate::datatype::{BaseTypeEncoding, ImplementationDataTypeSettings};
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use crate::{
+        datatype::{BaseTypeEncoding, ImplementationDataTypeSettings},
+        AutosarModelAbstraction,
+    };
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn sender_receiver_interface() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
 
         let sr_interface = package
             .create_sender_receiver_interface("SenderReceiverInterface")

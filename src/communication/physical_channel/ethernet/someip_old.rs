@@ -731,15 +731,14 @@ pub struct SdEventConfig {
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use crate::{
         communication::{
             EthernetVlanInfo, EventGroupControlType, NetworkEndpointAddress, SocketAddress, SocketAddressType, TpConfig,
         },
-        ArPackage, System, SystemCategory,
+        AutosarModelAbstraction, System, SystemCategory,
     };
-
-    use super::*;
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use autosar_data::AutosarVersion;
 
     /// helper function to create a test setup with:
     /// - a system
@@ -747,8 +746,8 @@ mod test {
     ///   - a physical channel
     ///   - a network endpoint
     ///   - a socket address
-    fn helper_create_test_objects(model: &AutosarModel) -> SocketAddress {
-        let package = ArPackage::get_or_create(model, "/ethernet").unwrap();
+    fn helper_create_test_objects(model: &AutosarModelAbstraction) -> SocketAddress {
+        let package = model.get_or_create_package("/ethernet").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let cluster = system.create_ethernet_cluster("ethcluster", &package).unwrap();
         let channel = cluster
@@ -785,9 +784,8 @@ mod test {
 
     #[test]
     fn someip_v1() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file.arxml", AutosarVersion::Autosar_00047).unwrap();
-        let package = ArPackage::get_or_create(&model, "/ethernet").unwrap();
+        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::Autosar_00047).unwrap();
+        let package = model.get_or_create_package("/ethernet").unwrap();
 
         let socket_address = helper_create_test_objects(&model);
         let system = System::try_from(model.get_element_by_path("/ethernet/system").unwrap()).unwrap();
@@ -900,8 +898,7 @@ mod test {
 
     #[test]
     fn element_conversion() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file.arxml", AutosarVersion::Autosar_00047).unwrap();
+        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::Autosar_00047).unwrap();
 
         let socket_address = helper_create_test_objects(&model);
         let psi = socket_address

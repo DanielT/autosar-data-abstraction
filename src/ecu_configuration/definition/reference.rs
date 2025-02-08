@@ -320,15 +320,14 @@ impl AbstractEcucReferenceDef for EcucAnyReferenceDef {}
 mod test {
     use crate::{
         ecu_configuration::{EcucContainerDef, EcucDestinationUriNestingContract},
-        AbstractionElement, ArPackage,
+        AbstractionElement, AutosarModelAbstraction,
     };
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn test_foreign_reference_def() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file.arxml", AutosarVersion::LATEST).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/pkg").unwrap();
+        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST).unwrap();
+        let pkg = model.get_or_create_package("/pkg").unwrap();
 
         let ecuc_module_def = pkg.create_ecuc_module_def("module").unwrap();
         let container = ecuc_module_def.create_param_conf_container_def("container").unwrap();
@@ -343,9 +342,8 @@ mod test {
 
     #[test]
     fn test_instance_reference_def() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file.arxml", AutosarVersion::LATEST).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/pkg").unwrap();
+        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST).unwrap();
+        let pkg = model.get_or_create_package("/pkg").unwrap();
 
         let ecuc_module_def = pkg.create_ecuc_module_def("module").unwrap();
         let container = ecuc_module_def.create_param_conf_container_def("container").unwrap();
@@ -366,9 +364,8 @@ mod test {
 
     #[test]
     fn test_choice_reference_def() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file.arxml", AutosarVersion::LATEST).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/pkg").unwrap();
+        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST).unwrap();
+        let pkg = model.get_or_create_package("/pkg").unwrap();
 
         let ecuc_module_def = pkg.create_ecuc_module_def("module").unwrap();
         let container = ecuc_module_def.create_param_conf_container_def("container").unwrap();
@@ -384,9 +381,8 @@ mod test {
 
     #[test]
     fn test_reference_def() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file.arxml", AutosarVersion::LATEST).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/pkg").unwrap();
+        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST).unwrap();
+        let pkg = model.get_or_create_package("/pkg").unwrap();
 
         let ecuc_module_def = pkg.create_ecuc_module_def("module").unwrap();
         let container = ecuc_module_def.create_param_conf_container_def("container").unwrap();
@@ -402,9 +398,8 @@ mod test {
 
     #[test]
     fn test_uri_reference_def() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file.arxml", AutosarVersion::LATEST).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/pkg").unwrap();
+        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST).unwrap();
+        let pkg = model.get_or_create_package("/pkg").unwrap();
 
         let ecuc_module_def = pkg.create_ecuc_module_def("module").unwrap();
         let container = ecuc_module_def.create_param_conf_container_def("container").unwrap();

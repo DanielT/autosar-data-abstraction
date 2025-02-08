@@ -155,9 +155,8 @@ impl DataTransformation {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::{*, communication::*};
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg")?;
     /// let dts = package.create_data_transformation_set("dts")?;
     /// let config = TransformationTechnologyConfig::Com(ComTransformationTechnologyConfig { isignal_ipdu_length: 8 });
     /// let ttech = dts.create_transformation_technology("ttech1", &config)?;
@@ -1241,13 +1240,12 @@ impl SomeIpTransformationISignalProps {
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use crate::{
         communication::{ISignal, SystemSignal},
         datatype::{BaseTypeEncoding, SwBaseType},
+        AutosarModelAbstraction,
     };
-
-    use super::*;
-    use autosar_data::AutosarModel;
 
     #[test]
     fn transformation_technologies() {
@@ -1271,10 +1269,8 @@ mod test {
     }
 
     fn create_transformation_technologies(file_version: AutosarVersion) {
-        let model = AutosarModel::new();
-        let _file = model.create_file("test", file_version).unwrap();
-
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("test", file_version).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let dts = DataTransformationSet::new("test", &package).unwrap();
 
         // create a generic transformation technology
@@ -1380,10 +1376,8 @@ mod test {
 
     #[test]
     fn data_transformation() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("test", AutosarVersion::Autosar_4_2_1).unwrap();
-
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::Autosar_4_2_1).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let dts = DataTransformationSet::new("test_dts", &package).unwrap();
 
         let e2e_transformation = dts
@@ -1504,10 +1498,8 @@ mod test {
 
     #[test]
     fn data_transformation_chain_iter() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("test", AutosarVersion::Autosar_4_2_1).unwrap();
-
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::Autosar_4_2_1).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let dts = DataTransformationSet::new("test_dts", &package).unwrap();
 
         let com_transformation = dts
@@ -1527,10 +1519,8 @@ mod test {
 
     #[test]
     fn transformation_isignal_props() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("test", AutosarVersion::Autosar_00049).unwrap();
-
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::Autosar_00049).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let dts = DataTransformationSet::new("test_dts", &package).unwrap();
 
         let e2e_transformation = dts

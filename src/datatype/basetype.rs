@@ -17,12 +17,13 @@ use std::fmt::Display;
 /// ```
 /// # use autosar_data::*;
 /// # use autosar_data_abstraction::{*, datatype::*};
-/// # let model = AutosarModel::new();
-/// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-/// let package = ArPackage::get_or_create(&model, "/my/pkg").unwrap();
+/// # fn main() -> Result<(), AutosarAbstractionError> {
+/// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+/// let package = model.get_or_create_package("/my/pkg")?;
 /// let base_type = package.create_sw_base_type("MyBaseType",
-///    8, BaseTypeEncoding::None, None, None, Some("uint8")).unwrap();
-/// assert!(model.get_element_by_path("/my/pkg/MyBaseType").is_some())
+///    8, BaseTypeEncoding::None, None, None, Some("uint8"))?;
+/// assert!(model.get_element_by_path("/my/pkg/MyBaseType").is_some());
+/// # Ok(())}
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SwBaseType(Element);
@@ -252,8 +253,10 @@ impl TryFrom<&str> for BaseTypeEncoding {
 
 #[cfg(test)]
 mod tests {
+    use crate::AutosarModelAbstraction;
+
     use super::*;
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn test_base_type_encoding() {
@@ -264,9 +267,8 @@ mod tests {
 
     #[test]
     fn test_sw_base_type() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("test.arxml", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/BaseTypes").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/BaseTypes").unwrap();
 
         let sw_base_type = SwBaseType::new(
             "TestType",

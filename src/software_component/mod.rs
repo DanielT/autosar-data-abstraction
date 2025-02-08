@@ -739,14 +739,13 @@ reflist_iterator!(ComponentPrototypeIterator, ComponentPrototype);
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::SystemCategory;
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use crate::{AutosarModelAbstraction, SystemCategory};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn software_compositions() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
 
         let comp1 = CompositionSwComponentType::new("comp1", &package).unwrap();
         let comp2 = CompositionSwComponentType::new("comp2", &package).unwrap();
@@ -781,9 +780,8 @@ mod test {
 
     #[test]
     fn root_composition() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
 
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let comp = CompositionSwComponentType::new("comp", &package).unwrap();
@@ -798,9 +796,8 @@ mod test {
 
     #[test]
     fn data_type_mapping() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
 
         let mapping_set = DataTypeMappingSet::new("mapping_set", &package).unwrap();
         let composition = CompositionSwComponentType::new("comp", &package).unwrap();
@@ -827,9 +824,8 @@ mod test {
 
     #[test]
     fn components() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
 
         let comp = CompositionSwComponentType::new("comp", &package).unwrap();
         let app = ApplicationSwComponentType::new("app", &package).unwrap();
@@ -884,9 +880,8 @@ mod test {
 
     #[test]
     fn ports_and_connectors() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
 
         // create some components:
         // comp_parent contains comp_child, swc1, swc2

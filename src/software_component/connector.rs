@@ -248,8 +248,8 @@ impl TryFrom<Element> for SwConnector {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::ArPackage;
-    use autosar_data::{AutosarModel, AutosarVersion, ElementName};
+    use crate::AutosarModelAbstraction;
+    use autosar_data::{AutosarVersion, ElementName};
     use software_component::{
         AbstractSwComponentType, ApplicationSwComponentType, ClientServerInterface, CompositionSwComponentType,
         SenderReceiverInterface,
@@ -257,9 +257,8 @@ mod test {
 
     #[test]
     fn test_delegation_sw_connector() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
 
         // create interfaces for the ports
         let sr_interface = package.create_sender_receiver_interface("sr_interface").unwrap();
@@ -330,9 +329,8 @@ mod test {
 
     #[test]
     fn test_assembly_sw_connector() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
 
         // create interfaces for the ports
         let sr_interface = SenderReceiverInterface::new("sr_interface", &package).unwrap();
@@ -513,9 +511,8 @@ mod test {
 
     #[test]
     fn test_pass_through_sw_connector() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
 
         // create interfaces for the ports
         let sr_interface = SenderReceiverInterface::new("sr_interface", &package).unwrap();

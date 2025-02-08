@@ -690,13 +690,12 @@ pub trait AbstractNmNode: AbstractionElement {
 mod test {
     use crate::communication::*;
     use crate::*;
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn test_can_nm() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("test", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
 
         let can_cluster = system
@@ -864,9 +863,8 @@ mod test {
 
     #[test]
     fn test_flexray_nm() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("test", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
 
         let flexray_cluster = system
@@ -1077,9 +1075,8 @@ mod test {
 
     #[test]
     fn test_udp_nm() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("test", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
 
         let ethernet_cluster = system.create_ethernet_cluster("ethernet_cluster", &package).unwrap();

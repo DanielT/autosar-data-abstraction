@@ -1,28 +1,27 @@
 #[cfg(test)]
 mod test {
-    use autosar_data::{AutosarModel, AutosarVersion, ElementName};
+    use autosar_data::{AutosarVersion, ElementName};
     use autosar_data_abstraction::{
         communication::{
             AbstractFrame, AbstractFrameTriggering, CommunicationDirection, FlexrayChannelName, FlexrayClusterSettings,
             FlexrayCommunicationCycle,
         },
-        AbstractionElement, ArPackage, AutosarAbstractionError, SystemCategory,
+        AbstractionElement, AutosarAbstractionError, AutosarModelAbstraction, SystemCategory,
     };
 
     #[test]
     fn create_flexray_system() -> Result<(), AutosarAbstractionError> {
-        let model = AutosarModel::new();
-        model.create_file("flexray.arxml", AutosarVersion::LATEST)?;
-        let system_package = ArPackage::get_or_create(&model, "/System")?;
+        let model = AutosarModelAbstraction::create("flexray.arxml", AutosarVersion::LATEST)?;
+        let system_package = model.get_or_create_package("/System")?;
         let system = system_package.create_system("System", SystemCategory::SystemExtract)?;
-        let cluster_package = ArPackage::get_or_create(&model, "/Network/Clusters")?;
+        let cluster_package = model.get_or_create_package("/Network/Clusters")?;
 
         let settings = FlexrayClusterSettings::default();
         let flx_cluster = system.create_flexray_cluster("FlxCluster", &cluster_package, &settings)?;
         assert_eq!(flx_cluster.element().element_name(), ElementName::FlexrayCluster);
         let flx_channel = flx_cluster.create_physical_channel("FlxChannel", FlexrayChannelName::A)?;
 
-        let ecu_package = ArPackage::get_or_create(&model, "/Ecus")?;
+        let ecu_package = model.get_or_create_package("/Ecus")?;
 
         // create ECU A and connect it to the Flexray channel
         let ecu_instance_a = system.create_ecu_instance("Ecu_A", &ecu_package)?;
@@ -38,8 +37,8 @@ mod test {
         let flxctrl_b = ecu_instance_b.create_flexray_communication_controller("FlexrayController")?;
         flxctrl_b.connect_physical_channel("Ecu_B_connector", &flx_channel)?;
 
-        let frame_package = ArPackage::get_or_create(&model, "/Network/Frames")?;
-        let pdu_package = ArPackage::get_or_create(&model, "/Network/Pdus")?;
+        let frame_package = model.get_or_create_package("/Network/Frames")?;
+        let pdu_package = model.get_or_create_package("/Network/Pdus")?;
 
         // create Frame_1 which contains Pdu_1: Id 0x100, length 8
         let frame1 = system.create_flexray_frame("Frame_1", &frame_package, 32)?;
@@ -81,7 +80,7 @@ mod test {
         ft_2.connect_to_ecu(&ecu_instance_b, CommunicationDirection::Out)?;
 
         // software component modeling
-        let swc_package = ArPackage::get_or_create(&model, "/SoftwareComponents")?;
+        let swc_package = model.get_or_create_package("/SoftwareComponents")?;
         let root_composition = swc_package.create_composition_sw_component_type("RootComposition")?;
 
         // ... Todo: create other swc elements ...

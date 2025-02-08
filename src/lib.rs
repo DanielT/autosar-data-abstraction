@@ -17,44 +17,42 @@
 //! # use autosar_data::*;
 //! # use autosar_data_abstraction::*;
 //! # use autosar_data_abstraction::communication::*;
-//! let model = AutosarModel::new();
-//! let _file = model.create_file("file.arxml", AutosarVersion::Autosar_00049).unwrap();
-//! let package_1 = ArPackage::get_or_create(&model, "/System").unwrap();
-//! let system = package_1.create_system("System", SystemCategory::SystemExtract).unwrap();
-//! let package_2 = ArPackage::get_or_create(&model, "/Clusters").unwrap();
+//! # fn main() -> Result<(), AutosarAbstractionError> {
+//! let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::Autosar_00049)?;
+//! let package_1 = model.get_or_create_package("/System")?;
+//! let system = package_1.create_system("System", SystemCategory::SystemExtract)?;
+//! let package_2 = model.get_or_create_package("/Clusters")?;
 //!
 //! // create an Ethernet cluster and a physical channel for VLAN 33
-//! let eth_cluster = system.create_ethernet_cluster("EthCluster", &package_2).unwrap();
+//! let eth_cluster = system.create_ethernet_cluster("EthCluster", &package_2)?;
 //! let vlan_info = EthernetVlanInfo {
 //!     vlan_id: 33,
 //!     vlan_name: "VLAN_33".to_string(),
 //! };
-//! let eth_channel = eth_cluster
-//!     .create_physical_channel("EthChannel", Some(vlan_info))
-//!     .unwrap();
+//! let eth_channel = eth_cluster.create_physical_channel("EthChannel", Some(vlan_info))?;
 //! let vlan_info_2 = eth_channel.vlan_info().unwrap();
 //!
 //! // create an ECU instance and connect it to the Ethernet channel
-//! let package_3 = ArPackage::get_or_create(&model, "/Ecus").unwrap();
-//! let ecu_instance_a = system.create_ecu_instance("Ecu_A", &package_3).unwrap();
+//! let package_3 = model.get_or_create_package("/Ecus")?;
+//! let ecu_instance_a = system.create_ecu_instance("Ecu_A", &package_3)?;
 //! let ethctrl = ecu_instance_a
 //!     .create_ethernet_communication_controller(
 //!         "EthernetController",
 //!         Some("ab:cd:ef:01:02:03".to_string())
-//!     )
-//!     .unwrap();
+//!     )?;
 //! let channels_iter = ethctrl.connected_channels();
-//! ethctrl
-//!     .connect_physical_channel("Ecu_A_connector", &eth_channel)
-//!     .unwrap();
+//! ethctrl.connect_physical_channel("Ecu_A_connector", &eth_channel)?;
 //! let channels_iter = ethctrl.connected_channels();
 //!
 //! // ...
+//! # Ok(())}
 //! ```
 
 #![warn(missing_docs)]
 
-use autosar_data::{AutosarDataError, AutosarModel, Element, EnumItem};
+use std::path::Path;
+
+use autosar_data::{ArxmlFile, AutosarDataError, AutosarModel, AutosarVersion, Element, ElementName, EnumItem};
 use thiserror::Error;
 
 // modules that are visible in the API
@@ -173,6 +171,107 @@ pub(crate) use abstraction_element;
 
 //#########################################################
 
+/// The `AutosarModelAbstraction` wraps an `AutosarModel` and provides additional functionality
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AutosarModelAbstraction(AutosarModel);
+
+impl AutosarModelAbstraction {
+    /// Create a new `AutosarModelAbstraction` from an `AutosarModel`
+    #[must_use]
+    pub fn new(model: AutosarModel) -> Self {
+        Self(model)
+    }
+
+    /// create a new `AutosarModelAbstraction` with an empty `AutosarModel`
+    ///
+    /// You must specify a file name for the initial file in the model. This file is not created on disk.
+    /// The model also needs an AutosarVersion.
+    pub fn create<P: AsRef<Path>>(file_name: P, version: AutosarVersion) -> Result<Self, AutosarAbstractionError> {
+        let model = AutosarModel::new();
+        model.create_file(file_name, version)?;
+        Ok(Self(model))
+    }
+
+    /// create an `AutosarModelAbstraction` from a file on disk
+    pub fn from_file<P: AsRef<Path>>(file_name: P) -> Result<Self, AutosarAbstractionError> {
+        let model = AutosarModel::new();
+        model.load_file(file_name, true)?;
+        Ok(Self(model))
+    }
+
+    /// Get the underlying `AutosarModel` from the abstraction model
+    #[must_use]
+    pub fn model(&self) -> &AutosarModel {
+        &self.0
+    }
+
+    /// Get the root element of the model
+    #[must_use]
+    pub fn root_element(&self) -> Element {
+        self.0.root_element()
+    }
+
+    /// iterate over all top-level packages
+    pub fn packages(&self) -> impl Iterator<Item = ArPackage> + Send + 'static {
+        self.0
+            .root_element()
+            .get_sub_element(ElementName::ArPackages)
+            .into_iter()
+            .flat_map(|elem| elem.sub_elements())
+            .filter_map(|elem| ArPackage::try_from(elem).ok())
+    }
+
+    /// Get a package by its path or create it if it does not exist
+    pub fn get_or_create_package(&self, path: &str) -> Result<ArPackage, AutosarAbstractionError> {
+        ArPackage::get_or_create(&self.0, path)
+    }
+
+    /// Create a new file in the model
+    pub fn create_file(&self, file_name: &str, version: AutosarVersion) -> Result<ArxmlFile, AutosarAbstractionError> {
+        let arxml_file = self.0.create_file(file_name, version)?;
+        Ok(arxml_file)
+    }
+
+    /// iterate over all files in the model
+    pub fn files(&self) -> impl Iterator<Item = ArxmlFile> + Send + 'static {
+        self.0.files()
+    }
+
+    /// write the model to disk, creating or updating all files in the model
+    pub fn write(&self) -> Result<(), AutosarAbstractionError> {
+        self.0.write()?;
+        Ok(())
+    }
+
+    /// Get an element by its path
+    #[must_use]
+    pub fn get_element_by_path(&self, path: &str) -> Option<Element> {
+        self.0.get_element_by_path(path)
+    }
+
+    /// find an existing SYSTEM in the model, if it exists
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::*;
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/my/pkg")?;
+    /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// if let Some(sys_2) = model.find_system() {
+    ///     assert_eq!(system, sys_2);
+    /// }
+    /// # Ok(())}
+    /// ```
+    pub fn find_system(&self) -> Option<System> {
+        System::find(&self.0)
+    }
+}
+
+//#########################################################
+
 /// The `ByteOrder` is used to define the order of bytes in a multi-byte value
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ByteOrder {
@@ -272,9 +371,57 @@ pub(crate) fn make_unique_name(model: &AutosarModel, base_path: &str, initial_na
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use autosar_data::AutosarModel;
 
-    use super::*;
+    #[test]
+    fn create_model() {
+        // create a new AutosarModelAbstraction based on an existing AutosarModel
+        let raw_model = AutosarModel::new();
+        let model = AutosarModelAbstraction::new(raw_model.clone());
+        assert_eq!(model.model(), &raw_model);
+
+        // create an empty AutosarModelAbstraction from scratch
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00049).unwrap();
+        let root = model.root_element();
+        assert_eq!(root.element_name(), ElementName::Autosar);
+    }
+
+    #[test]
+    fn create_model_from_file() {
+        let tempdir = tempfile::tempdir().unwrap();
+        let filename = tempdir.path().join("test.arxml");
+
+        // write a new arxml file to disk
+        let model1 = AutosarModelAbstraction::create(filename.clone(), AutosarVersion::LATEST).unwrap();
+        model1.write().unwrap();
+
+        // create a new model from the file
+        let model2 = AutosarModelAbstraction::from_file(filename).unwrap();
+        let root = model2.root_element();
+        assert_eq!(root.element_name(), ElementName::Autosar);
+    }
+
+    #[test]
+    fn model_files() {
+        let model = AutosarModelAbstraction::create("file1.arxml", AutosarVersion::Autosar_00049).unwrap();
+        let file = model.create_file("file2.arxml", AutosarVersion::Autosar_00049).unwrap();
+        let files: Vec<_> = model.files().collect();
+        assert_eq!(files.len(), 2);
+        assert_eq!(files[1], file);
+    }
+
+    #[test]
+    fn model_packages() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00049).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
+        let package2 = model.get_or_create_package("/other_package").unwrap();
+        model.get_or_create_package("/other_package/sub_package").unwrap();
+        let packages: Vec<_> = model.packages().collect();
+        assert_eq!(packages.len(), 2);
+        assert_eq!(packages[0], package);
+        assert_eq!(packages[1], package2);
+    }
 
     #[test]
     fn errors() {

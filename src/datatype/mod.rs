@@ -225,13 +225,13 @@ pub enum DataConstrType {
 #[cfg(test)]
 mod test {
     use super::*;
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use crate::AutosarModelAbstraction;
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn data_constr() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/DataConstraints").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/DataConstraints").unwrap();
 
         let data_constr = DataConstr::new("DataConstr", &package).unwrap();
 
@@ -255,9 +255,8 @@ mod test {
 
     #[test]
     fn autosar_data_type() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/DataTypes").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/DataTypes").unwrap();
 
         let app_primitive = ApplicationPrimitiveDataType::new(
             "Primitive",

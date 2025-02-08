@@ -932,13 +932,13 @@ pub struct CompuMethodTabNoIntpContent {
 #[cfg(test)]
 mod test {
     use super::*;
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use crate::AutosarModelAbstraction;
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn compu_method() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/Package").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/Package").unwrap();
 
         let compu_method1 = CompuMethod::new("compu_method1", &package, CompuMethodContent::Identical).unwrap();
         assert_eq!(compu_method1.category(), Some(CompuMethodCategory::Identical));

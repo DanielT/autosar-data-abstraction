@@ -46,18 +46,19 @@ impl EthernetPhysicalChannel {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
     /// let vlan_info = EthernetVlanInfo {
     ///     vlan_name: "VLAN_1".to_string(),
     ///     vlan_id: 1,
     /// };
-    /// let channel = cluster.create_physical_channel("Channel", Some(vlan_info)).unwrap();
+    /// let channel = cluster.create_physical_channel("Channel", Some(vlan_info))?;
     /// let info = channel.vlan_info().unwrap();
     /// assert_eq!(info.vlan_id, 1);
+    /// # Ok(())}
     /// ```
     #[must_use]
     pub fn vlan_info(&self) -> Option<EthernetVlanInfo> {
@@ -79,14 +80,15 @@ impl EthernetPhysicalChannel {
     /// ```
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
-    /// let channel = cluster.create_physical_channel("Channel", None).unwrap();
-    /// let cluster_2 = channel.cluster().unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
+    /// let channel = cluster.create_physical_channel("Channel", None)?;
+    /// let cluster_2 = channel.cluster()?;
     /// assert_eq!(cluster, cluster_2);
+    /// # Ok(())}
     /// ```
     ///
     /// # Errors
@@ -109,19 +111,20 @@ impl EthernetPhysicalChannel {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
-    /// # let channel = cluster.create_physical_channel("Channel", None).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
+    /// # let channel = cluster.create_physical_channel("Channel", None)?;
     /// let endpoint_address = NetworkEndpointAddress::IPv4 {
     ///     address: Some("192.168.0.1".to_string()),
     ///     address_source: Some(IPv4AddressSource::Fixed),
     ///     default_gateway: Some("192.168.0.2".to_string()),
     ///     network_mask: Some("255.255.255.0".to_string()),
     /// };
-    /// let network_endpoint = channel.create_network_endpoint("Address1", endpoint_address, None).unwrap();
+    /// let network_endpoint = channel.create_network_endpoint("Address1", endpoint_address, None)?;
+    /// # Ok(())}
     /// ```
     ///
     /// # Errors
@@ -171,23 +174,24 @@ impl EthernetPhysicalChannel {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
-    /// # let channel = cluster.create_physical_channel("Channel", None).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
+    /// # let channel = cluster.create_physical_channel("Channel", None)?;
     /// # let endpoint_address = NetworkEndpointAddress::IPv4 {
     /// #     address: Some("192.168.0.1".to_string()),
     /// #     address_source: Some(IPv4AddressSource::Fixed),
     /// #     default_gateway: Some("192.168.0.2".to_string()),
     /// #     network_mask: Some("255.255.255.0".to_string()),
     /// # };
-    /// # channel.create_network_endpoint("Address1", endpoint_address, None).unwrap();
+    /// # channel.create_network_endpoint("Address1", endpoint_address, None)?;
     /// for network_endpoint in channel.network_endpoints() {
     ///     // ...
     /// }
-    /// # assert_eq!(channel.network_endpoints().count(), 1)
+    /// # assert_eq!(channel.network_endpoints().count(), 1);
+    /// # Ok(())}
     /// ```
     pub fn network_endpoints(&self) -> impl Iterator<Item = NetworkEndpoint> + Send + 'static {
         self.element()
@@ -208,28 +212,29 @@ impl EthernetPhysicalChannel {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let ecu_instance = system.create_ecu_instance("Ecu", &package).unwrap();
-    /// # let controller = ecu_instance.create_ethernet_communication_controller("EthCtrl", None).unwrap();
-    /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
-    /// # let channel = cluster.create_physical_channel("Channel", None).unwrap();
-    /// # controller.connect_physical_channel("connection", &channel).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let ecu_instance = system.create_ecu_instance("Ecu", &package)?;
+    /// # let controller = ecu_instance.create_ethernet_communication_controller("EthCtrl", None)?;
+    /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
+    /// # let channel = cluster.create_physical_channel("Channel", None)?;
+    /// # controller.connect_physical_channel("connection", &channel)?;
     /// # let endpoint_address = NetworkEndpointAddress::IPv4 {
     /// #     address: Some("192.168.0.1".to_string()),
     /// #     address_source: Some(IPv4AddressSource::Fixed),
     /// #     default_gateway: Some("192.168.0.2".to_string()),
     /// #     network_mask: Some("255.255.255.0".to_string()),
     /// # };
-    /// # let network_endpoint = channel.create_network_endpoint("Address", endpoint_address, None).unwrap();
+    /// # let network_endpoint = channel.create_network_endpoint("Address", endpoint_address, None)?;
     /// let tcp_port = TpConfig::TcpTp {
     ///     port_number: Some(1234),
     ///     port_dynamically_assigned: None,
     /// };
     /// let socket_type = SocketAddressType::Unicast(Some(ecu_instance));
-    /// channel.create_socket_address("SocketName", &network_endpoint, &tcp_port, socket_type).unwrap();
+    /// channel.create_socket_address("SocketName", &network_endpoint, &tcp_port, socket_type)?;
+    /// # Ok(())}
     /// ```
     ///
     /// # Errors
@@ -254,29 +259,30 @@ impl EthernetPhysicalChannel {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let ecu_instance = system.create_ecu_instance("Ecu", &package).unwrap();
-    /// # let controller = ecu_instance.create_ethernet_communication_controller("EthCtrl", None).unwrap();
-    /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
-    /// # let channel = cluster.create_physical_channel("Channel", None).unwrap();
-    /// # controller.connect_physical_channel("connection", &channel).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let ecu_instance = system.create_ecu_instance("Ecu", &package)?;
+    /// # let controller = ecu_instance.create_ethernet_communication_controller("EthCtrl", None)?;
+    /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
+    /// # let channel = cluster.create_physical_channel("Channel", None)?;
+    /// # controller.connect_physical_channel("connection", &channel)?;
     /// # let endpoint_address = NetworkEndpointAddress::IPv4 {
     /// #     address: Some("192.168.0.1".to_string()),
     /// #     address_source: Some(IPv4AddressSource::Fixed),
     /// #     default_gateway: Some("192.168.0.2".to_string()),
     /// #     network_mask: Some("255.255.255.0".to_string()),
     /// # };
-    /// # let network_endpoint = channel.create_network_endpoint("Address", endpoint_address, None).unwrap();
+    /// # let network_endpoint = channel.create_network_endpoint("Address", endpoint_address, None)?;
     /// let tcp_port = TpConfig::TcpTp {
     ///     port_number: Some(1234),
     ///     port_dynamically_assigned: None,
     /// };
     /// let socket_type = SocketAddressType::Unicast(Some(ecu_instance));
-    /// channel.create_socket_address("SocketName", &network_endpoint, &tcp_port, socket_type).unwrap();
+    /// channel.create_socket_address("SocketName", &network_endpoint, &tcp_port, socket_type)?;
     /// assert_eq!(channel.socket_addresses().count(), 1);
+    /// # Ok(())}
     /// ```
     pub fn socket_addresses(&self) -> impl Iterator<Item = SocketAddress> + Send + 'static {
         self.element()
@@ -298,23 +304,24 @@ impl EthernetPhysicalChannel {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00046).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
-    /// # let channel = cluster.create_physical_channel("Channel", None).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00046)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
+    /// # let channel = cluster.create_physical_channel("Channel", None)?;
     /// # let server_endpoint = channel.create_network_endpoint("ServerAddress", NetworkEndpointAddress::IPv4 {
     /// #    address: Some("192.16.0.1".to_string()),
     /// #    address_source: Some(IPv4AddressSource::Fixed),
     /// #    default_gateway: None,
     /// #    network_mask: None
-    /// # }, None).unwrap();
+    /// # }, None)?;
     /// # let server_socket = channel.create_socket_address("ServerSocket", &server_endpoint, &TpConfig::TcpTp {
     /// #    port_number: Some(1234),
     /// #    port_dynamically_assigned: None
-    /// # }, SocketAddressType::Unicast(None)).unwrap();
-    /// let bundle = channel.create_socket_connection_bundle("Bundle", &server_socket).unwrap();
+    /// # }, SocketAddressType::Unicast(None))?;
+    /// let bundle = channel.create_socket_connection_bundle("Bundle", &server_socket)?;
+    /// # Ok(())}
     /// ```
     pub fn create_socket_connection_bundle(
         &self,
@@ -359,27 +366,28 @@ impl EthernetPhysicalChannel {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
-    /// # let channel = cluster.create_physical_channel("Channel", None).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
+    /// # let channel = cluster.create_physical_channel("Channel", None)?;
     /// # let endpoint = channel.create_network_endpoint("ServerAddress", NetworkEndpointAddress::IPv4 {
     /// #    address: Some("192.168.0.1".to_string()),
     /// #    address_source: Some(IPv4AddressSource::Fixed),
     /// #    default_gateway: None,
     /// #    network_mask: None
-    /// # }, None).unwrap();
+    /// # }, None)?;
     /// # let server_socket = channel.create_socket_address("ServerSocket", &endpoint, &TpConfig::TcpTp {
     /// #    port_number: Some(1234),
     /// #    port_dynamically_assigned: None
-    /// # }, SocketAddressType::Unicast(None)).unwrap();
+    /// # }, SocketAddressType::Unicast(None))?;
     /// # let client_socket = channel.create_socket_address("ClientSocket", &endpoint, &TpConfig::TcpTp {
     /// #    port_number: Some(1235),
     /// #    port_dynamically_assigned: None
-    /// # }, SocketAddressType::Unicast(None)).unwrap();
-    /// let (connection_a, connection_b) = channel.create_static_socket_connection_pair("Connection", &server_socket, &client_socket, None).unwrap();
+    /// # }, SocketAddressType::Unicast(None))?;
+    /// let (connection_a, connection_b) = channel.create_static_socket_connection_pair("Connection", &server_socket, &client_socket, None)?;
+    /// # Ok(())}
     /// ```
     pub fn create_static_socket_connection_pair(
         &self,
@@ -420,49 +428,49 @@ impl EthernetPhysicalChannel {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let ecu_instance = system.create_ecu_instance("Ecu", &package).unwrap();
-    /// # let controller = ecu_instance.create_ethernet_communication_controller("EthCtrl", None).unwrap();
-    /// # let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
-    /// # let channel = cluster.create_physical_channel("Channel", None).unwrap();
-    /// # controller.connect_physical_channel("connection", &channel).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let ecu_instance = system.create_ecu_instance("Ecu", &package)?;
+    /// # let controller = ecu_instance.create_ethernet_communication_controller("EthCtrl", None)?;
+    /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
+    /// # let channel = cluster.create_physical_channel("Channel", None)?;
+    /// # controller.connect_physical_channel("connection", &channel)?;
     ///
     /// let unicast_endpoint = channel.create_network_endpoint("UnicastEndpoint", NetworkEndpointAddress::IPv4 {
     ///    address: Some("192.168.0.1".to_string()),
     ///    address_source: Some(IPv4AddressSource::Fixed),
     ///    default_gateway: None,
     ///    network_mask: None
-    /// }, None).unwrap();
+    /// }, None)?;
     /// let unicast_socket = channel.create_socket_address("UnicastSocket", &unicast_endpoint, &TpConfig::UdpTp {
     ///    port_number: Some(30490),
     ///    port_dynamically_assigned: None
-    /// }, SocketAddressType::Unicast(Some(ecu_instance.clone()))).unwrap();
+    /// }, SocketAddressType::Unicast(Some(ecu_instance.clone())))?;
     /// let multicast_rx_endpoint = channel.create_network_endpoint("MulticastEndpoint", NetworkEndpointAddress::IPv4 {
     ///    address: Some("239.0.0.1".to_string()),
     ///    address_source: Some(IPv4AddressSource::Fixed),
     ///    default_gateway: None,
     ///    network_mask: None
-    /// }, None).unwrap();
+    /// }, None)?;
     /// let multicast_rx_socket = channel.create_socket_address("MulticastSocket", &multicast_rx_endpoint, &TpConfig::UdpTp {
     ///    port_number: Some(30490),
     ///    port_dynamically_assigned: None
-    /// }, SocketAddressType::Multicast(vec![ecu_instance.clone()])).unwrap();
+    /// }, SocketAddressType::Multicast(vec![ecu_instance.clone()]))?;
     /// let remote_endpoint = channel.create_network_endpoint("RemoteEndpoint", NetworkEndpointAddress::IPv4 {
     ///    address: Some("ANY".to_string()),
     ///    address_source: None,
     ///    default_gateway: None,
     ///    network_mask: None
-    /// }, None).unwrap();
+    /// }, None)?;
     /// let remote_socket = channel.create_socket_address("RemoteSocket", &remote_endpoint, &TpConfig::UdpTp {
     ///   port_number: Some(0),
     ///   port_dynamically_assigned: None
-    /// }, SocketAddressType::Unicast(None)).unwrap();
-    /// let unicast_rx_pdu = system.create_general_purpose_pdu("UnicastRxPdu", &package, 0, GeneralPurposePduCategory::Sd).unwrap();
-    /// let unicast_tx_pdu = system.create_general_purpose_pdu("UnicastTxPdu", &package, 0, GeneralPurposePduCategory::Sd).unwrap();
-    /// let multicast_rx_pdu = system.create_general_purpose_pdu("MulticastRxPdu", &package, 0, GeneralPurposePduCategory::Sd).unwrap();
+    /// }, SocketAddressType::Unicast(None))?;
+    /// let unicast_rx_pdu = system.create_general_purpose_pdu("UnicastRxPdu", &package, 0, GeneralPurposePduCategory::Sd)?;
+    /// let unicast_tx_pdu = system.create_general_purpose_pdu("UnicastTxPdu", &package, 0, GeneralPurposePduCategory::Sd)?;
+    /// let multicast_rx_pdu = system.create_general_purpose_pdu("MulticastRxPdu", &package, 0, GeneralPurposePduCategory::Sd)?;
     /// let common_config = CommonServiceDiscoveryConfig {
     ///   multicast_rx_socket: &multicast_rx_socket,
     ///   multicast_rx_pdu: &multicast_rx_pdu,
@@ -472,7 +480,8 @@ impl EthernetPhysicalChannel {
     ///   ipdu_identifier_set: None,
     /// };
     ///
-    /// channel.configure_service_discovery_for_ecu(&ecu_instance, &unicast_socket, &unicast_rx_pdu, &unicast_tx_pdu, &common_config).unwrap();
+    /// channel.configure_service_discovery_for_ecu(&ecu_instance, &unicast_socket, &unicast_rx_pdu, &unicast_tx_pdu, &common_config)?;
+    /// # Ok(())}
     /// ```
     pub fn configure_service_discovery_for_ecu(
         &self,
@@ -1244,15 +1253,14 @@ impl TryFrom<EnumItem> for EventGroupControlType {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{communication::GeneralPurposePduCategory, ArPackage, System, SystemCategory};
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use crate::{communication::GeneralPurposePduCategory, ArPackage, AutosarModelAbstraction, System, SystemCategory};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn channel_network_endpoint() {
-        let model = AutosarModel::new();
         // note: for this test, the version should be < AUTOSAR_00046
-        model.create_file("filename", AutosarVersion::Autosar_00044).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00044).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
         let channel = cluster.create_physical_channel("Channel", None).unwrap();
@@ -1314,9 +1322,8 @@ mod test {
 
     #[test]
     fn channel_vlan() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
 
@@ -1345,10 +1352,9 @@ mod test {
 
     #[test]
     fn sd_configuration_old() {
-        let model = AutosarModel::new();
         // note: for this test, the version should be < AUTOSAR_00046
-        model.create_file("filename", AutosarVersion::Autosar_00044).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00044).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
         let channel = cluster.create_physical_channel("Channel", None).unwrap();
@@ -1419,10 +1425,8 @@ mod test {
 
     #[test]
     fn sd_configuration_new() {
-        let model = AutosarModel::new();
-        // note: for this test, the version should be < AUTOSAR_00046
-        model.create_file("filename", AutosarVersion::Autosar_00053).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00053).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
         let channel = cluster.create_physical_channel("Channel", None).unwrap();
@@ -1590,9 +1594,8 @@ mod test {
 
     #[test]
     fn socon_ipdu_identifier() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
         let channel = cluster.create_physical_channel("Channel", None).unwrap();
@@ -1655,9 +1658,8 @@ mod test {
 
     #[test]
     pub fn static_socket_connection() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
         let channel = cluster.create_physical_channel("Channel", None).unwrap();

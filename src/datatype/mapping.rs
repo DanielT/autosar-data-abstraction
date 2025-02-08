@@ -94,7 +94,8 @@ impl DataTypeMap {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use crate::AutosarModelAbstraction;
+    use autosar_data::AutosarVersion;
     use datatype::{
         ApplicationPrimitiveCategory, ApplicationPrimitiveDataType, BaseTypeEncoding, ImplementationDataTypeSettings,
         SwBaseType,
@@ -102,9 +103,8 @@ mod tests {
 
     #[test]
     fn test_data_type_mapping_set() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("test.arxml", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/DataTypeMappingSets").unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/DataTypeMappingSets").unwrap();
         let mapping_set = DataTypeMappingSet::new("MappingSet", &package).unwrap();
 
         // create an implementation data type

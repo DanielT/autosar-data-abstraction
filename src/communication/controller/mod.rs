@@ -84,13 +84,14 @@ pub trait AbstractCommunicationController: AbstractionElement {
     /// ```
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::{*, communication::*};
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
-    /// let can_controller = ecu_instance.create_can_communication_controller("CanCtrl").unwrap();
-    /// assert_eq!(ecu_instance, can_controller.ecu_instance().unwrap());
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package)?;
+    /// let can_controller = ecu_instance.create_can_communication_controller("CanCtrl")?;
+    /// assert_eq!(can_controller.ecu_instance()?, ecu_instance);
+    /// # Ok(()) }
     /// ```
     ///
     /// # Errors
@@ -188,15 +189,14 @@ mod tests {
     use super::*;
     use crate::{
         communication::{CanClusterSettings, FlexrayChannelName, FlexrayClusterSettings},
-        ArPackage, SystemCategory,
+        AutosarModelAbstraction, SystemCategory,
     };
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn test_communication_controller() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("test.arxml", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/test").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
 
         let ecu = system.create_ecu_instance("ecu", &package).unwrap();

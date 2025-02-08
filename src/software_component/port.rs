@@ -226,15 +226,14 @@ impl PortGroup {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::ArPackage;
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use crate::AutosarModelAbstraction;
+    use autosar_data::AutosarVersion;
     use software_component::AbstractSwComponentType;
 
     #[test]
     fn ports() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
 
         let comp = package.create_composition_sw_component_type("comp").unwrap();
 

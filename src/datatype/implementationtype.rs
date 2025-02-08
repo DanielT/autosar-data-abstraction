@@ -466,14 +466,14 @@ impl ImplementationDataTypeSettings {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use crate::AutosarModelAbstraction;
+    use autosar_data::AutosarVersion;
     use datatype::{BaseTypeEncoding, CompuMethodLinearContent, CompuScaleDirection};
 
     #[test]
     fn test_impl_data_type() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/DataTypes").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/DataTypes").unwrap();
         let base_type =
             SwBaseType::new("uint8", &package, 8, BaseTypeEncoding::None, None, None, Some("uint8")).unwrap();
         let compu_method = CompuMethod::new(

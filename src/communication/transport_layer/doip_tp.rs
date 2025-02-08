@@ -191,15 +191,14 @@ mod test {
         communication::{
             CommunicationDirection, IPv4AddressSource, NetworkEndpointAddress, SocketAddressType, TpConfig,
         },
-        SystemCategory,
+        AutosarModelAbstraction, SystemCategory,
     };
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn test_doip_transport_protocol() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("DoipTp.arxml", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/pkg1").unwrap();
 
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let eth_cluster = system.create_ethernet_cluster("can_cluster", &package).unwrap();
@@ -264,7 +263,7 @@ mod test {
         let dcm_i_pdu = system.create_dcm_ipdu("Diag", &package, 1024).unwrap();
 
         // create an IPduIdentifier, which is used to map the PDU to both sides of the socket connection
-        let ipdu_identifier_set_package = ArPackage::get_or_create(&model, "/Network/IpduIdentifierSets").unwrap();
+        let ipdu_identifier_set_package = model.get_or_create_package("/Network/IpduIdentifierSets").unwrap();
         let socon_ipdu_identifier_set = system
             .create_socket_connection_ipdu_identifier_set("IpduIdentifierSet", &ipdu_identifier_set_package)
             .unwrap();

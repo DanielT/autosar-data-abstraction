@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use autosar_data::{AutosarModel, AutosarVersion, ElementName};
+    use autosar_data::{AutosarVersion, ElementName};
     use autosar_data_abstraction::{
         communication::{
             CommonServiceDiscoveryConfig, CommunicationDirection, CyclicTiming, E2EProfile, E2EProfileBehavior,
@@ -12,16 +12,15 @@ mod test {
         },
         datatype::{ApplicationPrimitiveCategory, BaseTypeEncoding, ImplementationDataTypeSettings},
         software_component::AbstractSwComponentType,
-        AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder, SystemCategory,
+        AbstractionElement, AutosarAbstractionError, AutosarModelAbstraction, ByteOrder, SystemCategory,
     };
 
     #[test]
     fn create_ethernet_v1_system() -> Result<(), AutosarAbstractionError> {
-        let model = AutosarModel::new();
-        model.create_file("ethernet_v1.arxml", AutosarVersion::Autosar_00046)?;
-        let package_1 = ArPackage::get_or_create(&model, "/System")?;
+        let model = AutosarModelAbstraction::create("ethernet_v1.arxml", AutosarVersion::Autosar_00046)?;
+        let package_1 = model.get_or_create_package("/System")?;
         let system = package_1.create_system("System", SystemCategory::SystemExtract)?;
-        let package_2 = ArPackage::get_or_create(&model, "/Clusters")?;
+        let package_2 = model.get_or_create_package("/Clusters")?;
 
         // create an Ethernet cluster and a physical channel for VLAN 33
         let eth_cluster = system.create_ethernet_cluster("EthCluster", &package_2)?;
@@ -35,7 +34,7 @@ mod test {
         assert_eq!(vlan_info_2.vlan_id, 33);
 
         // create an ECU instance and connect it to the Ethernet channel
-        let package_3 = ArPackage::get_or_create(&model, "/Ecus")?;
+        let package_3 = model.get_or_create_package("/Ecus")?;
         let ecu_instance_a = system.create_ecu_instance("Ecu_A", &package_3)?;
         let ethctrl = ecu_instance_a
             .create_ethernet_communication_controller("EthernetController", Some("ab:cd:ef:01:02:03".to_string()))?;
@@ -100,9 +99,9 @@ mod test {
 
         // create a pdu and add it to the connection
         // PDU-based communication is not typically used in Ethernet, but it is possible. A more conventional choice would be to use SomeIp.
-        let pdu_package = ArPackage::get_or_create(&model, "/Network/Pdus")?;
-        let isignal_package = ArPackage::get_or_create(&model, "/Network/Signals")?;
-        let syssignal_package = ArPackage::get_or_create(&model, "/System/Signals")?;
+        let pdu_package = model.get_or_create_package("/Network/Pdus")?;
+        let isignal_package = model.get_or_create_package("/Network/Signals")?;
+        let syssignal_package = model.get_or_create_package("/System/Signals")?;
         let static_pdu = system.create_isignal_ipdu("Pdu_1", &pdu_package, 800)?;
         // create two signals for the PDU
         let system_signal_1 = syssignal_package.create_system_signal("Signal_1")?;
@@ -147,7 +146,7 @@ mod test {
 
         // ---------------------------------------------------------
         // software component modeling
-        let swc_package = ArPackage::get_or_create(&model, "/SoftwareComponents")?;
+        let swc_package = model.get_or_create_package("/SoftwareComponents")?;
         let root_composition = swc_package.create_composition_sw_component_type("RootComposition")?;
 
         // add the root composition to the system
@@ -174,8 +173,8 @@ mod test {
         )?;
 
         // create a pair of implementaion and application data types
-        let base_type_package = ArPackage::get_or_create(&model, "/BaseTypes")?;
-        let data_type_package = ArPackage::get_or_create(&model, "/DataTypes")?;
+        let base_type_package = model.get_or_create_package("/BaseTypes")?;
+        let data_type_package = model.get_or_create_package("/DataTypes")?;
 
         let base_type_u8 =
             base_type_package.create_sw_base_type("uint8", 8, BaseTypeEncoding::None, None, None, Some("uint8"))?;
@@ -210,13 +209,13 @@ mod test {
             data_type_package.create_application_array_data_type("AppDataType_array", &application_data_type_u8, 50)?;
 
         // create a type mapping
-        let type_mapping_package = ArPackage::get_or_create(&model, "/TypeMappings")?;
+        let type_mapping_package = model.get_or_create_package("/TypeMappings")?;
         let type_mapping_set = type_mapping_package.create_data_type_mapping_set("TypeMappingSet")?;
         type_mapping_set.create_data_type_map(&implementation_data_type_u8, &application_data_type_u8)?;
         type_mapping_set.create_data_type_map(&implementation_data_type_array, &application_data_type_array)?;
 
         // create a sender-receiver interface
-        let sender_receiver_package = ArPackage::get_or_create(&model, "/Interfaces")?;
+        let sender_receiver_package = model.get_or_create_package("/Interfaces")?;
         let sender_receiver_interface =
             sender_receiver_package.create_sender_receiver_interface("SenderReceiverInterface")?;
         let data_element_a =
@@ -339,7 +338,7 @@ mod test {
         // the chain can also contain other transformations, in particular an E2E transformation.
 
         // create a data transformation
-        let data_transformer_package = ArPackage::get_or_create(&model, "/DataTransformations")?;
+        let data_transformer_package = model.get_or_create_package("/DataTransformations")?;
         let transformation_set = data_transformer_package.create_data_transformation_set("DataTransformationSet")?;
         let someip_config = TransformationTechnologyConfig::SomeIp(SomeIpTransformationTechnologyConfig {
             alignment: 8,
@@ -422,7 +421,7 @@ mod test {
         })?;
 
         // SomeIp transport layer: the service instances should be created inside the SocketAddresses
-        let rg_package = ArPackage::get_or_create(&model, "/RoutingGroups")?;
+        let rg_package = model.get_or_create_package("/RoutingGroups")?;
         let someip_routing_group = system.create_so_ad_routing_group(
             "SomeIpRoutingGroup",
             &rg_package,

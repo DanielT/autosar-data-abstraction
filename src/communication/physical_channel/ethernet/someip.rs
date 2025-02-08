@@ -1483,7 +1483,7 @@ impl SomeipTpChannel {
 mod test {
     use super::*;
     use crate::*;
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use autosar_data::AutosarVersion;
     use communication::{EthernetVlanInfo, NetworkEndpointAddress, PduCollectionTrigger, SocketAddressType};
 
     /// helper function to create a test setup with:
@@ -1492,8 +1492,8 @@ mod test {
     ///   - a physical channel
     ///   - a network endpoint
     ///   - a socket address
-    fn helper_create_test_objects(model: &AutosarModel) -> SocketAddress {
-        let package = ArPackage::get_or_create(model, "/ethernet").unwrap();
+    fn helper_create_test_objects(model: &AutosarModelAbstraction) -> SocketAddress {
+        let package = model.get_or_create_package("/ethernet").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let cluster = system.create_ethernet_cluster("ethcluster", &package).unwrap();
         let channel = cluster
@@ -1530,9 +1530,8 @@ mod test {
 
     #[test]
     fn test_service_instance_collection_set() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         let si_set = system
@@ -1557,9 +1556,8 @@ mod test {
 
     #[test]
     fn test_provided_service_instance() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         let socket = helper_create_test_objects(&model);
@@ -1585,7 +1583,7 @@ mod test {
         let eh = psi.create_event_handler("EventHandler", 1).unwrap();
         assert_eq!(eh.event_group_identifier().unwrap(), 1);
 
-        let sd_config_package = ArPackage::get_or_create(&model, "/SomeipSdTimingConfigs").unwrap();
+        let sd_config_package = model.get_or_create_package("/SomeipSdTimingConfigs").unwrap();
         let server_service_instance_config =
             SomeipSdServerServiceInstanceConfig::new("ssssic", &sd_config_package, 10).unwrap();
         psi.set_sd_server_instance_config(&server_service_instance_config)
@@ -1595,9 +1593,8 @@ mod test {
 
     #[test]
     fn test_event_handler() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         let si_set = system
@@ -1620,7 +1617,7 @@ mod test {
             EventGroupControlType::ActivationUnicast
         );
 
-        let sd_config_package = ArPackage::get_or_create(&model, "/SomeipSdTimingConfigs").unwrap();
+        let sd_config_package = model.get_or_create_package("/SomeipSdTimingConfigs").unwrap();
         let rrd = RequestResponseDelay {
             min_value: 1.0,
             max_value: 2.0,
@@ -1637,9 +1634,8 @@ mod test {
 
     #[test]
     fn server_sd_config() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         let si_set = system
@@ -1710,9 +1706,8 @@ mod test {
 
     #[test]
     fn test_consumed_service_instance() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         let socket = helper_create_test_objects(&model);
@@ -1738,7 +1733,7 @@ mod test {
         let ceg = csi.create_consumed_event_group("EventGroup", 1).unwrap();
         assert_eq!(ceg.event_group_identifier().unwrap(), 1);
 
-        let sd_config_package = ArPackage::get_or_create(&model, "/SomeipSdTimingConfigs").unwrap();
+        let sd_config_package = model.get_or_create_package("/SomeipSdTimingConfigs").unwrap();
         let client_service_instance_config =
             SomeipSdClientServiceInstanceConfig::new("cscic", &sd_config_package).unwrap();
         csi.set_sd_client_instance_config(&client_service_instance_config)
@@ -1748,9 +1743,8 @@ mod test {
 
     #[test]
     fn test_consumed_event_group() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         let socket = helper_create_test_objects(&model);
@@ -1769,7 +1763,7 @@ mod test {
         ceg.add_event_multicast_address(&socket).unwrap();
         assert_eq!(ceg.event_multicast_addresses().next().unwrap(), socket);
 
-        let sd_config_package = ArPackage::get_or_create(&model, "/SomeipSdTimingConfigs").unwrap();
+        let sd_config_package = model.get_or_create_package("/SomeipSdTimingConfigs").unwrap();
         let client_event_group_timing_config =
             SomeipSdClientEventGroupTimingConfig::new("cegtc", &sd_config_package, 10).unwrap();
         ceg.set_sd_client_timer_config(&client_event_group_timing_config)
@@ -1779,9 +1773,8 @@ mod test {
 
     #[test]
     fn client_sd_config() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         let si_set = system
@@ -1861,9 +1854,8 @@ mod test {
 
     #[test]
     fn test_local_unicast_addresses() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         let udp_socket = helper_create_test_objects(&model);
@@ -1917,9 +1909,8 @@ mod test {
 
     #[test]
     fn test_pdus() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let cluster = system.create_ethernet_cluster("ethcluster", &package).unwrap();
         let channel = cluster
@@ -1974,9 +1965,8 @@ mod test {
 
     #[test]
     fn test_conversion() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
         let si_set = system
@@ -2052,9 +2042,8 @@ mod test {
 
     #[test]
     fn someip_tp() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
 
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let cluster = system.create_ethernet_cluster("ethcluster", &package).unwrap();

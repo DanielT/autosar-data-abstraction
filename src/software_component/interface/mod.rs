@@ -157,16 +157,14 @@ impl TryFrom<Element> for PortInterface {
 
 #[cfg(test)]
 mod test {
-    use crate::software_component::AbstractSwComponentType;
-
     use super::*;
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use crate::{software_component::AbstractSwComponentType, AutosarModelAbstraction};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn test_interfaces() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
 
         let sender_receiver_interface = package
             .create_sender_receiver_interface("sender_receiver_interface")

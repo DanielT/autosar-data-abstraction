@@ -100,14 +100,13 @@ impl From<FlexrayCluster> for Cluster {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ArPackage;
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use crate::AutosarModelAbstraction;
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn cluster_system() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("test.arxml", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/Test").unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/Test").unwrap();
         let system = package
             .create_system("System", crate::SystemCategory::EcuExtract)
             .unwrap();
@@ -121,9 +120,8 @@ mod tests {
 
     #[test]
     fn cluster_conversion() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("test.arxml", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/Test").unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/Test").unwrap();
         let can_settings = CanClusterSettings::default();
         let can_cluster = CanCluster::new("CanCluster", &package, &can_settings).unwrap();
         let ethernet_cluster = EthernetCluster::new("EthernetCluster", &package).unwrap();

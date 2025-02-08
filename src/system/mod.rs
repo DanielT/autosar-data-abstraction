@@ -25,24 +25,9 @@ pub struct System(Element);
 abstraction_element!(System, System);
 
 impl System {
-    /// find an existing \<SYSTEM\> in the model, or return None
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use autosar_data::*;
-    /// # use autosar_data_abstraction::*;
-    /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/my/pkg")?;
-    /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// let sys_2 = System::find(&model).unwrap();
-    /// assert_eq!(system, sys_2);
-    /// # Ok(())}
-    /// ```
+    // find an existing \<SYSTEM\> in the model, if it exists
     #[must_use]
-    pub fn find(model: &AutosarModel) -> Option<Self> {
+    pub(crate) fn find(model: &AutosarModel) -> Option<Self> {
         let elem = model
             .identifiable_elements()
             .filter_map(|(_, weak)| weak.upgrade())
@@ -62,9 +47,8 @@ impl System {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// let package = ArPackage::get_or_create(&model, "/my/pkg")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// let package = model.get_or_create_package("/my/pkg")?;
     /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// assert!(model.get_element_by_path("/my/pkg/System").is_some());
     /// # Ok(())}
@@ -96,11 +80,10 @@ impl System {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package1 = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package1 = model.get_or_create_package("/pkg1")?;
     /// let system = package1.create_system("System", SystemCategory::SystemExtract)?;
-    /// # let package2 = ArPackage::get_or_create(&model, "/pkg2")?;
+    /// # let package2 = model.get_or_create_package("/pkg2")?;
     /// let ecu_instance = system.create_ecu_instance("ecu_name", &package2)?;
     /// # Ok(())}
     /// ```
@@ -123,9 +106,8 @@ impl System {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// system.create_ecu_instance("ecu_name1", &package)?;
     /// system.create_ecu_instance("ecu_name2", &package)?;
@@ -153,9 +135,8 @@ impl System {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// let cluster = system.create_can_cluster("can_cluster", &package, &CanClusterSettings::default())?;
     /// cluster.create_physical_channel("can_channel");
@@ -189,9 +170,8 @@ impl System {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// let cluster = system.create_ethernet_cluster("ethernet_cluster", &package)?;
     /// let vlan_info = EthernetVlanInfo { vlan_name: "VLAN_1".to_string(), vlan_id: 1};
@@ -227,9 +207,8 @@ impl System {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// let cluster = system.create_flexray_cluster("flexray_cluster", &package, &FlexrayClusterSettings::default())?;
     /// cluster.create_physical_channel("flexray_channel", FlexrayChannelName::A);
@@ -260,9 +239,8 @@ impl System {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// system.create_can_cluster("can_cluster", &package, &CanClusterSettings::default())?;
     /// system.create_flexray_cluster("flexray_cluster", &package, &FlexrayClusterSettings::default())?;
@@ -338,12 +316,11 @@ impl System {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// let sig_package = ArPackage::get_or_create(&model, "/ISignals")?;
-    /// let sys_package = ArPackage::get_or_create(&model, "/SystemSignals")?;
+    /// let sig_package = model.get_or_create_package("/ISignals")?;
+    /// let sys_package = model.get_or_create_package("/SystemSignals")?;
     /// let system_signal = sys_package.create_system_signal("signal1")?;
     /// system.create_isignal("signal1", &sig_package, 32, &system_signal, None)?;
     /// # Ok(())}
@@ -395,12 +372,11 @@ impl System {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// let sig_package = ArPackage::get_or_create(&model, "/ISignals")?;
-    /// let sys_package = ArPackage::get_or_create(&model, "/SystemSignals")?;
+    /// let sig_package = model.get_or_create_package("/ISignals")?;
+    /// let sys_package = model.get_or_create_package("/SystemSignals")?;
     /// let system_signal_group = sys_package.create_system_signal_group("signalgroup")?;
     /// system.create_isignal_group("signal_group", &sig_package, &system_signal_group)?;
     /// # Ok(())}
@@ -447,11 +423,10 @@ impl System {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// let package = ArPackage::get_or_create(&model, "/Pdus")?;
+    /// let package = model.get_or_create_package("/Pdus")?;
     /// system.create_isignal_ipdu("pdu", &package, 42)?;
     /// # Ok(())}
     /// ```
@@ -480,11 +455,10 @@ impl System {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// let package = ArPackage::get_or_create(&model, "/Pdus")?;
+    /// let package = model.get_or_create_package("/Pdus")?;
     /// system.create_nm_pdu("pdu", &package, 42)?;
     /// # Ok(())}
     /// ```
@@ -513,11 +487,10 @@ impl System {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// let package = ArPackage::get_or_create(&model, "/Pdus")?;
+    /// let package = model.get_or_create_package("/Pdus")?;
     /// system.create_n_pdu("pdu", &package, 42)?;
     /// # Ok(())}
     /// ```
@@ -541,11 +514,10 @@ impl System {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// let package = ArPackage::get_or_create(&model, "/Pdus")?;
+    /// let package = model.get_or_create_package("/Pdus")?;
     /// system.create_dcm_ipdu("pdu", &package, 42)?;
     /// # Ok(())}
     /// ```
@@ -574,11 +546,10 @@ impl System {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// let package = ArPackage::get_or_create(&model, "/Pdus")?;
+    /// let package = model.get_or_create_package("/Pdus")?;
     /// system.create_general_purpose_pdu("pdu", &package, 42, GeneralPurposePduCategory::GlobalTime)?;
     /// # Ok(())}
     /// ```
@@ -608,11 +579,10 @@ impl System {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// let package = ArPackage::get_or_create(&model, "/Pdus")?;
+    /// let package = model.get_or_create_package("/Pdus")?;
     /// system.create_general_purpose_ipdu("pdu", &package, 42, GeneralPurposeIPduCategory::Xcp)?;
     /// # Ok(())}
     /// ```
@@ -642,11 +612,10 @@ impl System {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// let package = ArPackage::get_or_create(&model, "/Pdus")?;
+    /// let package = model.get_or_create_package("/Pdus")?;
     /// system.create_container_ipdu("pdu", &package, 42)?;
     /// # Ok(())}
     /// ```
@@ -675,11 +644,10 @@ impl System {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// let package = ArPackage::get_or_create(&model, "/Pdus")?;
+    /// let package = model.get_or_create_package("/Pdus")?;
     /// system.create_secured_ipdu("pdu", &package, 42)?;
     /// # Ok(())}
     /// ```
@@ -708,11 +676,10 @@ impl System {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// let package = ArPackage::get_or_create(&model, "/Pdus")?;
+    /// let package = model.get_or_create_package("/Pdus")?;
     /// system.create_multiplexed_ipdu("pdu", &package, 42)?;
     /// # Ok(())}
     /// ```
@@ -758,9 +725,8 @@ impl System {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// let set = system.create_socket_connection_ipdu_identifier_set("set", &package)?;
     /// # Ok(())}
@@ -921,12 +887,11 @@ impl System {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1")?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
     /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let pkg_elements = package.element().get_sub_element(ElementName::Elements).unwrap();
-    /// let can_cluster = pkg_elements.create_named_sub_element(ElementName::CanCluster, "Cluster").unwrap();
+    /// let can_cluster = pkg_elements.create_named_sub_element(ElementName::CanCluster, "Cluster")?;
     /// system.create_fibex_element_ref(&can_cluster)?;
     /// # Ok(())}
     /// ```
@@ -1084,76 +1049,66 @@ mod test {
         },
         software_component::CompositionSwComponentType,
         system::SystemCategory,
-        AbstractionElement, ArPackage, System,
+        AbstractionElement, AutosarModelAbstraction, System,
     };
-    use autosar_data::{AutosarModel, AutosarVersion, ElementName};
+    use autosar_data::{AutosarVersion, ElementName};
 
     #[test]
     fn system() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
 
         // try to find a system in the empty model
-        let result = System::find(&model);
+        let result = model.find_system();
         assert!(result.is_none());
 
         // create a System
-        let package = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let package = model.get_or_create_package("/SYSTEM").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
 
         // find the newly created system
-        let system_2 = System::find(&model).unwrap();
+        let system_2 = model.find_system().unwrap();
         assert_eq!(system, system_2);
     }
 
     #[test]
     fn system_category() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/SYSTEM").unwrap();
         System::new("System", &package, SystemCategory::AbstractSystemDescription).unwrap();
 
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/SYSTEM").unwrap();
         System::new("System", &package, SystemCategory::EcuExtract).unwrap();
 
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/SYSTEM").unwrap();
         System::new("System", &package, SystemCategory::EcuSystemDescription).unwrap();
 
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/SYSTEM").unwrap();
         System::new("System", &package, SystemCategory::RptSystem).unwrap();
 
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/SYSTEM").unwrap();
         System::new("System", &package, SystemCategory::SwClusterSystemDescription).unwrap();
 
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/SYSTEM").unwrap();
         System::new("System", &package, SystemCategory::SystemConstraints).unwrap();
 
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/SYSTEM").unwrap();
         System::new("System", &package, SystemCategory::SystemDescription).unwrap();
 
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/SYSTEM").unwrap();
         System::new("System", &package, SystemCategory::SystemExtract).unwrap();
     }
 
     #[test]
     fn fibex_ref() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/SYSTEM").unwrap();
         let system = package
             .create_system("System", SystemCategory::SystemDescription)
             .unwrap();
@@ -1182,13 +1137,12 @@ mod test {
 
     #[test]
     fn ecu_instance_iterator() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package_1 = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package_1 = model.get_or_create_package("/SYSTEM").unwrap();
         let system = package_1
             .create_system("System", SystemCategory::SystemExtract)
             .unwrap();
-        let package_2 = ArPackage::get_or_create(&model, "/ECU").unwrap();
+        let package_2 = model.get_or_create_package("/ECU").unwrap();
         system.create_ecu_instance("Ecu_1", &package_2).unwrap();
         system.create_ecu_instance("Ecu_2", &package_2).unwrap();
         system.create_ecu_instance("Ecu_3", &package_2).unwrap();
@@ -1211,13 +1165,12 @@ mod test {
 
     #[test]
     fn cluster_iterator() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package_1 = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package_1 = model.get_or_create_package("/SYSTEM").unwrap();
         let system = package_1
             .create_system("System", SystemCategory::SystemExtract)
             .unwrap();
-        let package_2 = ArPackage::get_or_create(&model, "/Clusters").unwrap();
+        let package_2 = model.get_or_create_package("/Clusters").unwrap();
 
         let settings = CanClusterSettings::new();
         system.create_can_cluster("CanCluster", &package_2, &settings).unwrap();
@@ -1230,7 +1183,7 @@ mod test {
         system.create_ethernet_cluster("EthernetCluster", &package_2).unwrap();
 
         // the ecu-instance is a fourth item in the FIBEX-ELEMENTS of the system, which should not be picked up by the iterator
-        let package_3 = ArPackage::get_or_create(&model, "/ECU").unwrap();
+        let package_3 = model.get_or_create_package("/ECU").unwrap();
         system.create_ecu_instance("Ecu_1", &package_3).unwrap();
 
         assert_eq!(system.clusters().count(), 3);
@@ -1238,19 +1191,18 @@ mod test {
 
     #[test]
     fn frames_iterator() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package_1 = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package_1 = model.get_or_create_package("/SYSTEM").unwrap();
         let system = package_1
             .create_system("System", SystemCategory::SystemExtract)
             .unwrap();
-        let package_2 = ArPackage::get_or_create(&model, "/Frames").unwrap();
+        let package_2 = model.get_or_create_package("/Frames").unwrap();
 
         system.create_can_frame("CanFrame", &package_2, 8).unwrap();
         system.create_flexray_frame("FlexrayFrame", &package_2, 8).unwrap();
 
         // the ecu-instance is a third item in the FIBEX-ELEMENTS of the system, which should not be picked up by the iterator
-        let package_3 = ArPackage::get_or_create(&model, "/ECU").unwrap();
+        let package_3 = model.get_or_create_package("/ECU").unwrap();
         system.create_ecu_instance("Ecu_1", &package_3).unwrap();
 
         assert_eq!(system.frames().count(), 2);
@@ -1258,13 +1210,12 @@ mod test {
 
     #[test]
     fn signals_iterator() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package_1 = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package_1 = model.get_or_create_package("/SYSTEM").unwrap();
         let system = package_1
             .create_system("System", SystemCategory::SystemExtract)
             .unwrap();
-        let package_2 = ArPackage::get_or_create(&model, "/Signals").unwrap();
+        let package_2 = model.get_or_create_package("/Signals").unwrap();
 
         let syssig1 = package_2.create_system_signal("syssig1").unwrap();
         system.create_isignal("Sig1", &package_2, 8, &syssig1, None).unwrap();
@@ -1272,7 +1223,7 @@ mod test {
         system.create_isignal("Sig2", &package_2, 8, &syssig2, None).unwrap();
 
         // the ecu-instance is a third item in the FIBEX-ELEMENTS of the system, which should not be picked up by the iterator
-        let package_3 = ArPackage::get_or_create(&model, "/ECU").unwrap();
+        let package_3 = model.get_or_create_package("/ECU").unwrap();
         system.create_ecu_instance("Ecu_1", &package_3).unwrap();
 
         assert_eq!(system.isignals().count(), 2);
@@ -1280,13 +1231,12 @@ mod test {
 
     #[test]
     fn isignal_groups_iterator() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package_1 = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package_1 = model.get_or_create_package("/SYSTEM").unwrap();
         let system = package_1
             .create_system("System", SystemCategory::SystemExtract)
             .unwrap();
-        let package_2 = ArPackage::get_or_create(&model, "/SignalGroups").unwrap();
+        let package_2 = model.get_or_create_package("/SignalGroups").unwrap();
 
         let sysgroup1 = package_2.create_system_signal_group("sysgroup1").unwrap();
         system
@@ -1298,7 +1248,7 @@ mod test {
             .unwrap();
 
         // the ecu-instance is a third item in the FIBEX-ELEMENTS of the system, which should not be picked up by the iterator
-        let package_3 = ArPackage::get_or_create(&model, "/ECU").unwrap();
+        let package_3 = model.get_or_create_package("/ECU").unwrap();
         system.create_ecu_instance("Ecu_1", &package_3).unwrap();
 
         assert_eq!(system.isignal_groups().count(), 2);
@@ -1306,13 +1256,12 @@ mod test {
 
     #[test]
     fn pdus_iterator() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package_1 = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package_1 = model.get_or_create_package("/SYSTEM").unwrap();
         let system = package_1
             .create_system("System", SystemCategory::SystemExtract)
             .unwrap();
-        let package_2 = ArPackage::get_or_create(&model, "/Pdus").unwrap();
+        let package_2 = model.get_or_create_package("/Pdus").unwrap();
 
         system.create_dcm_ipdu("DcmIpdu", &package_2, 8).unwrap();
         system
@@ -1328,7 +1277,7 @@ mod test {
             .unwrap();
 
         // the EcuInstance is a seventh item in the FIBEX-ELEMENTS of the system, which should not be picked up by the iterator
-        let package_3 = ArPackage::get_or_create(&model, "/ECU").unwrap();
+        let package_3 = model.get_or_create_package("/ECU").unwrap();
         system.create_ecu_instance("Ecu_1", &package_3).unwrap();
 
         assert_eq!(system.pdus().count(), 6);
@@ -1336,15 +1285,16 @@ mod test {
 
     #[test]
     fn nm_config() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
-        let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let sys_package = model.get_or_create_package("/SYSTEM").unwrap();
+        let system = sys_package
+            .create_system("System", SystemCategory::SystemExtract)
+            .unwrap();
 
         assert!(system.nm_config().is_none());
 
-        let package = ArPackage::get_or_create(&model, "/Nm").unwrap();
-        let nm_config = system.create_nm_config("NmConfig", &package).unwrap();
+        let nm_package = model.get_or_create_package("/Nm").unwrap();
+        let nm_config = system.create_nm_config("NmConfig", &nm_package).unwrap();
 
         assert!(system.nm_config().is_some());
         assert_eq!(system.nm_config().unwrap(), nm_config);
@@ -1352,14 +1302,13 @@ mod test {
 
     #[test]
     fn sw_mapping() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package_1 = ArPackage::get_or_create(&model, "/SYSTEM").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package_1 = model.get_or_create_package("/SYSTEM").unwrap();
         let system = package_1
             .create_system("System", SystemCategory::SystemExtract)
             .unwrap();
-        let package_2 = ArPackage::get_or_create(&model, "/SWC").unwrap();
-        let package_3 = ArPackage::get_or_create(&model, "/ECU").unwrap();
+        let package_2 = model.get_or_create_package("/SWC").unwrap();
+        let package_3 = model.get_or_create_package("/ECU").unwrap();
 
         let root_composition = CompositionSwComponentType::new("RootComposition", &package_2).unwrap();
         let context_composition = CompositionSwComponentType::new("ContextComposition", &package_2).unwrap();

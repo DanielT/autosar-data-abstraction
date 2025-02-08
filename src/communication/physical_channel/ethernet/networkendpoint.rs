@@ -284,14 +284,13 @@ impl IPv6AddressSource {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{ArPackage, SystemCategory};
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use crate::{AutosarModelAbstraction, SystemCategory};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn test_network_endpoint_ipv4() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
         let channel = cluster.create_physical_channel("Channel", None).unwrap();
@@ -321,9 +320,8 @@ mod test {
 
     #[test]
     fn test_network_endpoint_ipv6() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
         let channel = cluster.create_physical_channel("Channel", None).unwrap();

@@ -30,18 +30,19 @@ impl CanCommunicationController {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
-    /// let can_controller = ecu_instance.create_can_communication_controller("CanCtrl").unwrap();
-    /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default()).unwrap();
-    /// # let physical_channel = cluster.create_physical_channel("Channel").unwrap();
-    /// can_controller.connect_physical_channel("connection", &physical_channel).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package)?;
+    /// let can_controller = ecu_instance.create_can_communication_controller("CanCtrl")?;
+    /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
+    /// # let physical_channel = cluster.create_physical_channel("Channel")?;
+    /// can_controller.connect_physical_channel("connection", &physical_channel)?;
     /// for channel in can_controller.connected_channels() {
     ///     // ...
     /// }
+    /// # Ok(())}
     /// ```
     ///
     /// # Errors
@@ -73,15 +74,16 @@ impl CanCommunicationController {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
-    /// let can_controller = ecu_instance.create_can_communication_controller("CanCtrl").unwrap();
-    /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default()).unwrap();
-    /// # let physical_channel = cluster.create_physical_channel("Channel").unwrap();
-    /// can_controller.connect_physical_channel("connection", &physical_channel).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package)?;
+    /// let can_controller = ecu_instance.create_can_communication_controller("CanCtrl")?;
+    /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
+    /// # let physical_channel = cluster.create_physical_channel("Channel")?;
+    /// can_controller.connect_physical_channel("connection", &physical_channel)?;
+    /// # Ok(())}
     /// ```
     ///
     /// # Errors
@@ -225,14 +227,13 @@ impl Iterator for CanCtrlChannelsIterator {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{communication::CanClusterSettings, ArPackage, SystemCategory};
+    use crate::{communication::CanClusterSettings, AutosarModelAbstraction, SystemCategory};
     use autosar_data::AutosarVersion;
 
     #[test]
     fn controller() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let ecu = system.create_ecu_instance("ECU", &pkg).unwrap();
 
@@ -266,9 +267,8 @@ mod test {
 
     #[test]
     fn connector() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let ecu = system.create_ecu_instance("ECU", &pkg).unwrap();
 

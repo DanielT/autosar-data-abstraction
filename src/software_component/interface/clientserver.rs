@@ -249,14 +249,14 @@ impl ArgumentDataPrototype {
 #[cfg(test)]
 mod test {
     use super::*;
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use crate::AutosarModelAbstraction;
+    use autosar_data::AutosarVersion;
     use datatype::{BaseTypeEncoding, ImplementationDataTypeSettings};
 
     #[test]
     fn test_client_server_interface() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("filename", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
         let client_server_interface = ClientServerInterface::new("TestInterface", &package).unwrap();
 
         assert_eq!(client_server_interface.name().unwrap(), "TestInterface");

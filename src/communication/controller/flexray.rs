@@ -27,18 +27,19 @@ impl FlexrayCommunicationController {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
-    /// let flexray_controller = ecu_instance.create_flexray_communication_controller("FRCtrl").unwrap();
-    /// # let cluster = system.create_flexray_cluster("Cluster", &package, &FlexrayClusterSettings::default()).unwrap();
-    /// # let physical_channel = cluster.create_physical_channel("Channel", FlexrayChannelName::A).unwrap();
-    /// flexray_controller.connect_physical_channel("connection", &physical_channel).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package)?;
+    /// let flexray_controller = ecu_instance.create_flexray_communication_controller("FRCtrl")?;
+    /// # let cluster = system.create_flexray_cluster("Cluster", &package, &FlexrayClusterSettings::default())?;
+    /// # let physical_channel = cluster.create_physical_channel("Channel", FlexrayChannelName::A)?;
+    /// flexray_controller.connect_physical_channel("connection", &physical_channel)?;
     /// for channel in flexray_controller.connected_channels() {
     ///     // ...
     /// }
+    /// # Ok(())}
     /// ```
     ///
     /// # Errors
@@ -70,15 +71,16 @@ impl FlexrayCommunicationController {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
-    /// # let model = AutosarModel::new();
-    /// # model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-    /// # let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
-    /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package).unwrap();
-    /// let flexray_controller = ecu_instance.create_flexray_communication_controller("FlxCtrl").unwrap();
-    /// # let cluster = system.create_flexray_cluster("Cluster", &package, &FlexrayClusterSettings::default()).unwrap();
-    /// # let physical_channel = cluster.create_physical_channel("Channel", FlexrayChannelName::A).unwrap();
-    /// flexray_controller.connect_physical_channel("connection", &physical_channel).unwrap();
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package)?;
+    /// let flexray_controller = ecu_instance.create_flexray_communication_controller("FlxCtrl")?;
+    /// # let cluster = system.create_flexray_cluster("Cluster", &package, &FlexrayClusterSettings::default())?;
+    /// # let physical_channel = cluster.create_physical_channel("Channel", FlexrayChannelName::A)?;
+    /// flexray_controller.connect_physical_channel("connection", &physical_channel)?;
+    /// # Ok(()) }
     /// ```
     ///
     /// # Errors
@@ -216,7 +218,7 @@ impl Iterator for FlexrayCtrlChannelsIterator {
 mod test {
     use crate::{
         communication::{FlexrayChannelName, FlexrayClusterSettings},
-        ArPackage, SystemCategory,
+        AutosarModelAbstraction, SystemCategory,
     };
 
     use super::*;
@@ -224,9 +226,8 @@ mod test {
 
     #[test]
     fn controller() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let ecu = system.create_ecu_instance("ECU", &pkg).unwrap();
 
@@ -260,9 +261,8 @@ mod test {
 
     #[test]
     fn connector() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
-        let pkg = ArPackage::get_or_create(&model, "/test").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let ecu = system.create_ecu_instance("ECU", &pkg).unwrap();
 

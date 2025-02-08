@@ -843,13 +843,13 @@ impl TryFrom<EnumItem> for EcucDestinationUriNestingContract {
 #[cfg(test)]
 mod test {
     use super::*;
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use crate::AutosarModelAbstraction;
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn ecuc_module_def() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file.arxml", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
 
         let ecuc_definition_collection = package.create_ecuc_definition_collection("collection").unwrap();
         assert_eq!(ecuc_definition_collection.module_defs().count(), 0);
@@ -928,9 +928,8 @@ mod test {
 
     #[test]
     fn destionation_uri_defs() {
-        let model = AutosarModel::new();
-        let _file = model.create_file("file.arxml", AutosarVersion::LATEST).unwrap();
-        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST).unwrap();
+        let package = model.get_or_create_package("/package").unwrap();
 
         let ecuc_destination_uri_def_set = package
             .create_ecuc_destination_uri_def_set("destination_uri_def_set")

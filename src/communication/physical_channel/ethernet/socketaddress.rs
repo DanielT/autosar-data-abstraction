@@ -398,14 +398,13 @@ pub enum SocketAddressType {
 mod test {
     use super::*;
     use crate::communication::{IPv4AddressSource, NetworkEndpointAddress};
-    use crate::{ArPackage, SystemCategory};
-    use autosar_data::{AutosarModel, AutosarVersion};
+    use crate::{AutosarModelAbstraction, SystemCategory};
+    use autosar_data::AutosarVersion;
 
     #[test]
     fn socket_address() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_4_3_0).unwrap();
-        let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_4_3_0).unwrap();
+        let package = model.get_or_create_package("/pkg1").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
         let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
         let channel = cluster.create_physical_channel("Channel", None).unwrap();
@@ -486,9 +485,8 @@ mod test {
 
     #[test]
     fn socket_sd_config() {
-        let model = AutosarModel::new();
-        model.create_file("filename", AutosarVersion::Autosar_4_3_0).unwrap();
-        let package = ArPackage::get_or_create(&model, "/pkg1").unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_4_3_0).unwrap();
+        let package = model.get_or_create_package("/pkg1").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
         let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
         let channel = cluster.create_physical_channel("Channel", None).unwrap();
