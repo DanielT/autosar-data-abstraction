@@ -65,11 +65,68 @@ impl System {
         let pkg_elem_elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
 
         let system_elem = pkg_elem_elements.create_named_sub_element(ElementName::System, name)?;
-        system_elem
-            .create_sub_element(ElementName::Category)
-            .and_then(|cat| cat.set_character_data(category.to_string()))?;
+        let system = System(system_elem);
+        system.set_category(category)?;
 
-        Ok(System(system_elem))
+        Ok(system)
+    }
+
+    /// set the category of the system
+    pub fn set_category(&self, category: SystemCategory) -> Result<(), AutosarAbstractionError> {
+        self.0
+            .get_or_create_sub_element(ElementName::Category)?
+            .set_character_data(category.to_string())?;
+        Ok(())
+    }
+
+    /// get the category of the system
+    pub fn category(&self) -> Option<SystemCategory> {
+        self.0
+            .get_sub_element(ElementName::Category)?
+            .character_data()?
+            .string_value()?
+            .parse()
+            .ok()
+    }
+
+    /// set the pncVectorLength of the system
+    pub fn set_pnc_vector_length(&self, length: Option<u32>) -> Result<(), AutosarAbstractionError> {
+        if let Some(length) = length {
+            self.0
+                .get_or_create_sub_element(ElementName::PncVectorLength)?
+                .set_character_data(length as u64)?;
+        } else {
+            self.0.remove_sub_element_kind(ElementName::PncVectorLength)?;
+        }
+        Ok(())
+    }
+
+    /// get the pncVectorLength of the system
+    pub fn pnc_vector_length(&self) -> Option<u32> {
+        self.0
+            .get_sub_element(ElementName::PncVectorLength)?
+            .character_data()?
+            .parse_integer()
+    }
+
+    /// set the pncVectorOffset of the system
+    pub fn set_pnc_vector_offset(&self, offset: Option<u32>) -> Result<(), AutosarAbstractionError> {
+        if let Some(offset) = offset {
+            self.0
+                .get_or_create_sub_element(ElementName::PncVectorOffset)?
+                .set_character_data(offset as u64)?;
+        } else {
+            self.0.remove_sub_element_kind(ElementName::PncVectorOffset)?;
+        }
+        Ok(())
+    }
+
+    /// get the pncVectorOffset of the system
+    pub fn pnc_vector_offset(&self) -> Option<u32> {
+        self.0
+            .get_sub_element(ElementName::PncVectorOffset)?
+            .character_data()?
+            .parse_integer()
     }
 
     /// create an `EcuInstance` that is connected to this System
@@ -997,6 +1054,24 @@ impl std::fmt::Display for SystemCategory {
     }
 }
 
+impl std::str::FromStr for SystemCategory {
+    type Err = AutosarAbstractionError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "SYSTEM_CONSTRAINTS" => Ok(SystemCategory::SystemConstraints),
+            "SYSTEM_DESCRIPTION" => Ok(SystemCategory::SystemDescription),
+            "SYSTEM_EXTRACT" => Ok(SystemCategory::SystemExtract),
+            "ECU_EXTRACT" => Ok(SystemCategory::EcuExtract),
+            "ABSTRACT_SYSTEM_DESCRIPTION" => Ok(SystemCategory::AbstractSystemDescription),
+            "ECU_SYSTEM_DESCRIPTION" => Ok(SystemCategory::EcuSystemDescription),
+            "SW_CLUSTER_SYSTEM_DESCRIPTION" => Ok(SystemCategory::SwClusterSystemDescription),
+            "RPT_SYSTEM" => Ok(SystemCategory::RptSystem),
+            _ => Err(AutosarAbstractionError::InvalidParameter(s.to_string())),
+        }
+    }
+}
+
 //#########################################################
 
 /// An iterator over all `EcuInstances` in a System
@@ -1068,6 +1143,25 @@ mod test {
         // find the newly created system
         let system_2 = model.find_system().unwrap();
         assert_eq!(system, system_2);
+
+        // category
+        assert_eq!(system.category().unwrap(), SystemCategory::SystemExtract);
+        system.set_category(SystemCategory::EcuExtract).unwrap();
+        assert_eq!(system.category().unwrap(), SystemCategory::EcuExtract);
+
+        // pnc vector length
+        assert!(system.pnc_vector_length().is_none());
+        system.set_pnc_vector_length(Some(42)).unwrap();
+        assert_eq!(system.pnc_vector_length().unwrap(), 42);
+        system.set_pnc_vector_length(None).unwrap();
+        assert!(system.pnc_vector_length().is_none());
+
+        // pnc vector offset
+        assert!(system.pnc_vector_offset().is_none());
+        system.set_pnc_vector_offset(Some(42)).unwrap();
+        assert_eq!(system.pnc_vector_offset().unwrap(), 42);
+        system.set_pnc_vector_offset(None).unwrap();
+        assert!(system.pnc_vector_offset().is_none());
     }
 
     #[test]
