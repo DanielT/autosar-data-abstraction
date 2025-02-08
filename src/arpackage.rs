@@ -976,6 +976,51 @@ impl ArPackage {
             .into_iter()
             .flat_map(|element| element.sub_elements())
     }
+
+    /// create a new `ArPackage` as a sub-package of the package
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::*;
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModel::new();
+    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
+    /// let package = ArPackage::get_or_create(&model, "/some/package")?;
+    /// let sub_package = package.create_sub_package("SubPackage")?;
+    /// assert!(model.get_element_by_path("/some/package/SubPackage").is_some());
+    /// # Ok(())}
+    /// ```
+    pub fn create_sub_package(&self, name: &str) -> Result<ArPackage, AutosarAbstractionError> {
+        let sub_package_elem = self
+            .0
+            .get_or_create_sub_element(ElementName::ArPackages)
+            .and_then(|elem| elem.create_named_sub_element(ElementName::ArPackage, name))?;
+        Ok(Self(sub_package_elem))
+    }
+
+    /// iterate over all sub-packages in the package
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::*;
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModel::new();
+    /// # model.create_file("filename", AutosarVersion::Autosar_00048)?;
+    /// let package = ArPackage::get_or_create(&model, "/some/package")?;
+    /// for sub_package in package.sub_packages() {
+    ///   println!("{:?}", sub_package);
+    /// }
+    pub fn sub_packages(&self) -> impl Iterator<Item = ArPackage> + Send + 'static {
+        self.0
+            .get_sub_element(ElementName::ArPackages)
+            .into_iter()
+            .flat_map(|element| element.sub_elements())
+            .filter_map(|element| ArPackage::try_from(element).ok())
+    }
 }
 
 //##################################################################
@@ -1409,5 +1454,23 @@ mod test {
 
         let item = elements.next().unwrap();
         assert_eq!(item.element_name(), ElementName::Unit);
+    }
+
+    #[test]
+    fn sub_packages() {
+        let model = AutosarModel::new();
+        model.create_file("filename", AutosarVersion::Autosar_00048).unwrap();
+        let package = ArPackage::get_or_create(&model, "/package").unwrap();
+
+        // create sub-packages
+        package.create_sub_package("sub1").unwrap();
+        package.create_sub_package("sub2").unwrap();
+
+        // name conflict: can't create a sub-package with the same name
+        let result = package.create_sub_package("sub2");
+        assert!(result.is_err());
+
+        // iterate over sub-packages
+        assert_eq!(package.sub_packages().count(), 2);
     }
 }
