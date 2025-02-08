@@ -16,6 +16,14 @@ pub use isignal_ipdu::*;
 
 /// This trait is implemented by all Pdus
 pub trait AbstractPdu: AbstractionElement + Into<Pdu> {
+    /// set the length of the PDU
+    fn set_length(&self, length: u32) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::Length)?
+            .set_character_data(length as u64)?;
+        Ok(())
+    }
+
     /// get the length of the PDU
     fn length(&self) -> Option<u32> {
         self.element()
@@ -734,6 +742,19 @@ mod test {
         let container_ipdu = system.create_container_ipdu("container_ipdu", &package, 1).unwrap();
         let secured_ipdu = system.create_secured_ipdu("secured_ipdu", &package, 1).unwrap();
         let multiplexed_ipdu = system.create_multiplexed_ipdu("multiplexed_ipdu", &package, 1).unwrap();
+
+        assert_eq!(isignal_ipdu.length().unwrap(), 1);
+        assert_eq!(nm_pdu.length().unwrap(), 1);
+        assert_eq!(n_pdu.length().unwrap(), 1);
+        assert_eq!(dcm_ipdu.length().unwrap(), 1);
+        assert_eq!(gp_pdu.length().unwrap(), 1);
+        assert_eq!(gp_ipdu.length().unwrap(), 1);
+        assert_eq!(container_ipdu.length().unwrap(), 1);
+        assert_eq!(secured_ipdu.length().unwrap(), 1);
+        assert_eq!(multiplexed_ipdu.length().unwrap(), 1);
+
+        isignal_ipdu.set_length(2).unwrap();
+        assert_eq!(isignal_ipdu.length().unwrap(), 2);
 
         let frame = system.create_flexray_frame("frame1", &package, 64).unwrap();
         frame

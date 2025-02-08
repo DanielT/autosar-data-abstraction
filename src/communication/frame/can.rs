@@ -317,6 +317,10 @@ mod test {
         let frame1 = system.create_can_frame("frame1", &package, 8).unwrap();
         let frame2 = system.create_can_frame("frame2", &package, 8).unwrap();
 
+        assert_eq!(frame1.length().unwrap(), 8);
+        frame1.set_length(6).unwrap();
+        assert_eq!(frame1.length().unwrap(), 6);
+
         // map a PDU to the frame before it has been connected to the channel
         let mapping1 = frame1
             .map_pdu(&pdu1, 7, ByteOrder::MostSignificantByteFirst, None)

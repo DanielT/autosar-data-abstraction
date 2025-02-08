@@ -33,16 +33,12 @@ impl ISignal {
         let elem_isignal = pkg_elements.create_named_sub_element(ElementName::ISignal, name)?;
 
         elem_isignal
-            .create_sub_element(ElementName::Length)?
-            .set_character_data(bit_length.to_string())?;
-        elem_isignal
-            .create_sub_element(ElementName::SystemSignalRef)?
-            .set_reference_target(syssignal.element())?;
-        elem_isignal
             .create_sub_element(ElementName::DataTypePolicy)?
             .set_character_data(EnumItem::Override)?;
 
         let isignal = Self(elem_isignal);
+        isignal.set_length(bit_length)?;
+        isignal.set_system_signal(syssignal)?;
 
         if let Some(datatype) = datatype {
             isignal.set_datatype(datatype)?;
@@ -62,6 +58,27 @@ impl ISignal {
         Ok(())
     }
 
+    /// get the data type of this signal
+    pub fn datatype(&self) -> Option<SwBaseType> {
+        self.element()
+            .get_sub_element(ElementName::NetworkRepresentationProps)?
+            .get_sub_element(ElementName::SwDataDefPropsVariants)?
+            .get_sub_element(ElementName::SwDataDefPropsConditional)?
+            .get_sub_element(ElementName::BaseTypeRef)?
+            .get_reference_target()
+            .ok()?
+            .try_into()
+            .ok()
+    }
+
+    /// set the length of this signal in bits
+    pub fn set_length(&self, bit_length: u64) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::Length)?
+            .set_character_data(bit_length)?;
+        Ok(())
+    }
+
     /// get the length of this signal in bits
     #[must_use]
     pub fn length(&self) -> Option<u64> {
@@ -69,6 +86,14 @@ impl ISignal {
             .get_sub_element(ElementName::Length)?
             .character_data()?
             .parse_integer()
+    }
+
+    /// set the system signal that corresponds to this signal
+    pub fn set_system_signal(&self, syssignal: &SystemSignal) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::SystemSignalRef)?
+            .set_reference_target(syssignal.element())?;
+        Ok(())
     }
 
     /// get the system signal that corresponds to this isignal
@@ -720,6 +745,7 @@ mod tests {
         sys_signal.set_data_constr(&data_constr).unwrap();
 
         assert_eq!(signal.length(), Some(8));
+        assert_eq!(signal.datatype(), Some(sw_base_type));
         assert_eq!(signal.system_signal(), Some(sys_signal.clone()));
         assert_eq!(sys_signal.unit(), Some(unit));
         assert_eq!(sys_signal.compu_method(), Some(compu_method));

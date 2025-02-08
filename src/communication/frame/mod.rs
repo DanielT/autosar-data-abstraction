@@ -41,6 +41,22 @@ pub trait AbstractFrame: AbstractionElement {
         byte_order: ByteOrder,
         update_bit: Option<u32>,
     ) -> Result<PduToFrameMapping, AutosarAbstractionError>;
+
+    /// set the length of the frame
+    fn set_length(&self, length: u32) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::FrameLength)?
+            .set_character_data(u64::from(length))?;
+        Ok(())
+    }
+
+    /// get the length of the frame
+    fn length(&self) -> Option<u32> {
+        self.element()
+            .get_sub_element(ElementName::FrameLength)
+            .and_then(|elem| elem.character_data())
+            .and_then(|cdata| cdata.parse_integer())
+    }
 }
 
 //##################################################################

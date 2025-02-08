@@ -350,6 +350,10 @@ mod test {
         let frame1 = system.create_flexray_frame("frame1", &package, 64).unwrap();
         let frame2 = system.create_flexray_frame("frame2", &package, 64).unwrap();
 
+        assert_eq!(frame1.length().unwrap(), 64);
+        frame1.set_length(60).unwrap();
+        assert_eq!(frame1.length().unwrap(), 60);
+
         // map a PDU to frame1 before it has been connected to the channel
         let mapping = frame1
             .map_pdu(&pdu1, 7, ByteOrder::MostSignificantByteFirst, Some(8))
