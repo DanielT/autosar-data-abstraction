@@ -11,7 +11,7 @@ mod test {
 
     #[test]
     fn create_flexray_system() -> Result<(), AutosarAbstractionError> {
-        let model = AutosarModelAbstraction::create("flexray.arxml", AutosarVersion::LATEST)?;
+        let model = AutosarModelAbstraction::create("flexray.arxml", AutosarVersion::LATEST);
         let system_package = model.get_or_create_package("/System")?;
         let system = system_package.create_system("System", SystemCategory::SystemExtract)?;
         let cluster_package = model.get_or_create_package("/Network/Clusters")?;

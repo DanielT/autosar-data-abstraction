@@ -725,7 +725,7 @@ mod test {
 
     #[test]
     fn test_pdus() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
         let package = model.get_or_create_package("/pkg").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
@@ -800,7 +800,7 @@ mod test {
 
     #[test]
     fn test_pdu_triggering() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
         let package = model.get_or_create_package("/pkg").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
@@ -869,7 +869,7 @@ mod test {
 
     #[test]
     fn general_purpose_pdu() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
         let package = model.get_or_create_package("/pkg").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
@@ -906,7 +906,7 @@ mod test {
 
     #[test]
     fn create_general_purpose_ipdu() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
         let package = model.get_or_create_package("/pkg").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 

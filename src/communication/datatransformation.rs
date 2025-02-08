@@ -155,7 +155,7 @@ impl DataTransformation {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::{*, communication::*};
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg")?;
     /// let dts = package.create_data_transformation_set("dts")?;
     /// let config = TransformationTechnologyConfig::Com(ComTransformationTechnologyConfig { isignal_ipdu_length: 8 });
@@ -1269,7 +1269,7 @@ mod test {
     }
 
     fn create_transformation_technologies(file_version: AutosarVersion) {
-        let model = AutosarModelAbstraction::create("test", file_version).unwrap();
+        let model = AutosarModelAbstraction::create("test", file_version);
         let package = model.get_or_create_package("/package").unwrap();
         let dts = DataTransformationSet::new("test", &package).unwrap();
 
@@ -1376,7 +1376,7 @@ mod test {
 
     #[test]
     fn data_transformation() {
-        let model = AutosarModelAbstraction::create("test", AutosarVersion::Autosar_4_2_1).unwrap();
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::Autosar_4_2_1);
         let package = model.get_or_create_package("/package").unwrap();
         let dts = DataTransformationSet::new("test_dts", &package).unwrap();
 
@@ -1498,7 +1498,7 @@ mod test {
 
     #[test]
     fn data_transformation_chain_iter() {
-        let model = AutosarModelAbstraction::create("test", AutosarVersion::Autosar_4_2_1).unwrap();
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::Autosar_4_2_1);
         let package = model.get_or_create_package("/package").unwrap();
         let dts = DataTransformationSet::new("test_dts", &package).unwrap();
 
@@ -1519,7 +1519,7 @@ mod test {
 
     #[test]
     fn transformation_isignal_props() {
-        let model = AutosarModelAbstraction::create("test", AutosarVersion::Autosar_00049).unwrap();
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::Autosar_00049);
         let package = model.get_or_create_package("/package").unwrap();
         let dts = DataTransformationSet::new("test_dts", &package).unwrap();
 

@@ -848,7 +848,7 @@ mod test {
 
     #[test]
     fn ecuc_module_def() {
-        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
 
         let ecuc_definition_collection = package.create_ecuc_definition_collection("collection").unwrap();
@@ -928,7 +928,7 @@ mod test {
 
     #[test]
     fn destionation_uri_defs() {
-        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
 
         let ecuc_destination_uri_def_set = package

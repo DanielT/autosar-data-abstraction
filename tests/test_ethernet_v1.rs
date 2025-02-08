@@ -17,7 +17,7 @@ mod test {
 
     #[test]
     fn create_ethernet_v1_system() -> Result<(), AutosarAbstractionError> {
-        let model = AutosarModelAbstraction::create("ethernet_v1.arxml", AutosarVersion::Autosar_00046)?;
+        let model = AutosarModelAbstraction::create("ethernet_v1.arxml", AutosarVersion::Autosar_00046);
         let package_1 = model.get_or_create_package("/System")?;
         let system = package_1.create_system("System", SystemCategory::SystemExtract)?;
         let package_2 = model.get_or_create_package("/Clusters")?;

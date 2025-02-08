@@ -345,10 +345,10 @@ mod test {
 
     #[test]
     fn test_parameter_values() {
-        let definition_model = AutosarModelAbstraction::create("definition.arxml", AutosarVersion::LATEST).unwrap();
+        let definition_model = AutosarModelAbstraction::create("definition.arxml", AutosarVersion::LATEST);
         let def_package = definition_model.get_or_create_package("/def_package").unwrap();
 
-        let values_model = AutosarModelAbstraction::create("values.arxml", AutosarVersion::LATEST).unwrap();
+        let values_model = AutosarModelAbstraction::create("values.arxml", AutosarVersion::LATEST);
         let val_package = values_model.get_or_create_package("/val_package").unwrap();
 
         // create a definition for the ECU configuration

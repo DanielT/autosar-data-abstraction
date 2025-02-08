@@ -85,7 +85,7 @@ pub trait AbstractCommunicationController: AbstractionElement {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::{*, communication::*};
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package)?;
@@ -195,7 +195,7 @@ mod tests {
 
     #[test]
     fn test_communication_controller() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/test").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
 

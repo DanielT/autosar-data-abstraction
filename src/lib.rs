@@ -18,7 +18,7 @@
 //! # use autosar_data_abstraction::*;
 //! # use autosar_data_abstraction::communication::*;
 //! # fn main() -> Result<(), AutosarAbstractionError> {
-//! let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::Autosar_00049)?;
+//! let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::Autosar_00049);
 //! let package_1 = model.get_or_create_package("/System")?;
 //! let system = package_1.create_system("System", SystemCategory::SystemExtract)?;
 //! let package_2 = model.get_or_create_package("/Clusters")?;
@@ -184,12 +184,14 @@ impl AutosarModelAbstraction {
 
     /// create a new `AutosarModelAbstraction` with an empty `AutosarModel`
     ///
-    /// You must specify a file name for the initial file in the model. This file is not created on disk.
+    /// You must specify a file name for the initial file in the model. This file is not created on disk immediately.
     /// The model also needs an AutosarVersion.
-    pub fn create<P: AsRef<Path>>(file_name: P, version: AutosarVersion) -> Result<Self, AutosarAbstractionError> {
+    pub fn create<P: AsRef<Path>>(file_name: P, version: AutosarVersion) -> Self {
         let model = AutosarModel::new();
-        model.create_file(file_name, version)?;
-        Ok(Self(model))
+        // create the initial file in the model - create_file can return a DuplicateFileName
+        // error, but hthis is not a concern for the first file, so it is always safe to unwrap
+        model.create_file(file_name, version).unwrap();
+        Self(model)
     }
 
     /// create an `AutosarModelAbstraction` from a file on disk
@@ -257,7 +259,7 @@ impl AutosarModelAbstraction {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/my/pkg")?;
     /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// if let Some(sys_2) = model.find_system() {
@@ -382,7 +384,7 @@ mod test {
         assert_eq!(model.model(), &raw_model);
 
         // create an empty AutosarModelAbstraction from scratch
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00049).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00049);
         let root = model.root_element();
         assert_eq!(root.element_name(), ElementName::Autosar);
     }
@@ -393,7 +395,7 @@ mod test {
         let filename = tempdir.path().join("test.arxml");
 
         // write a new arxml file to disk
-        let model1 = AutosarModelAbstraction::create(filename.clone(), AutosarVersion::LATEST).unwrap();
+        let model1 = AutosarModelAbstraction::create(filename.clone(), AutosarVersion::LATEST);
         model1.write().unwrap();
 
         // create a new model from the file
@@ -404,7 +406,7 @@ mod test {
 
     #[test]
     fn model_files() {
-        let model = AutosarModelAbstraction::create("file1.arxml", AutosarVersion::Autosar_00049).unwrap();
+        let model = AutosarModelAbstraction::create("file1.arxml", AutosarVersion::Autosar_00049);
         let file = model.create_file("file2.arxml", AutosarVersion::Autosar_00049).unwrap();
         let files: Vec<_> = model.files().collect();
         assert_eq!(files.len(), 2);
@@ -413,7 +415,7 @@ mod test {
 
     #[test]
     fn model_packages() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00049).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00049);
         let package = model.get_or_create_package("/package").unwrap();
         let package2 = model.get_or_create_package("/other_package").unwrap();
         model.get_or_create_package("/other_package/sub_package").unwrap();

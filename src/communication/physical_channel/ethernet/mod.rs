@@ -47,7 +47,7 @@ impl EthernetPhysicalChannel {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
@@ -81,7 +81,7 @@ impl EthernetPhysicalChannel {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
@@ -112,7 +112,7 @@ impl EthernetPhysicalChannel {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
@@ -175,7 +175,7 @@ impl EthernetPhysicalChannel {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
@@ -213,7 +213,7 @@ impl EthernetPhysicalChannel {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let ecu_instance = system.create_ecu_instance("Ecu", &package)?;
@@ -260,7 +260,7 @@ impl EthernetPhysicalChannel {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let ecu_instance = system.create_ecu_instance("Ecu", &package)?;
@@ -305,7 +305,7 @@ impl EthernetPhysicalChannel {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00046)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00046);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
@@ -367,7 +367,7 @@ impl EthernetPhysicalChannel {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
@@ -429,7 +429,7 @@ impl EthernetPhysicalChannel {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let ecu_instance = system.create_ecu_instance("Ecu", &package)?;
@@ -1259,7 +1259,7 @@ mod test {
     #[test]
     fn channel_network_endpoint() {
         // note: for this test, the version should be < AUTOSAR_00046
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00044).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00044);
         let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
@@ -1322,7 +1322,7 @@ mod test {
 
     #[test]
     fn channel_vlan() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
         let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
@@ -1353,7 +1353,7 @@ mod test {
     #[test]
     fn sd_configuration_old() {
         // note: for this test, the version should be < AUTOSAR_00046
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00044).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00044);
         let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
@@ -1425,7 +1425,7 @@ mod test {
 
     #[test]
     fn sd_configuration_new() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00053).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00053);
         let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
@@ -1594,7 +1594,7 @@ mod test {
 
     #[test]
     fn socon_ipdu_identifier() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
@@ -1658,7 +1658,7 @@ mod test {
 
     #[test]
     pub fn static_socket_connection() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();

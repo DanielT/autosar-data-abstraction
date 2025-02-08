@@ -257,7 +257,7 @@ mod test {
 
     #[test]
     fn test_delegation_sw_connector() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
 
         // create interfaces for the ports
@@ -329,7 +329,7 @@ mod test {
 
     #[test]
     fn test_assembly_sw_connector() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
 
         // create interfaces for the ports
@@ -511,7 +511,7 @@ mod test {
 
     #[test]
     fn test_pass_through_sw_connector() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
 
         // create interfaces for the ports

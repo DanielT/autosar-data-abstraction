@@ -105,7 +105,7 @@ mod tests {
 
     #[test]
     fn cluster_system() {
-        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/Test").unwrap();
         let system = package
             .create_system("System", crate::SystemCategory::EcuExtract)
@@ -120,7 +120,7 @@ mod tests {
 
     #[test]
     fn cluster_conversion() {
-        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/Test").unwrap();
         let can_settings = CanClusterSettings::default();
         let can_cluster = CanCluster::new("CanCluster", &package, &can_settings).unwrap();

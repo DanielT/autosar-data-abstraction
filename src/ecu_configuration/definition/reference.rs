@@ -326,7 +326,7 @@ mod test {
 
     #[test]
     fn test_foreign_reference_def() {
-        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST);
         let pkg = model.get_or_create_package("/pkg").unwrap();
 
         let ecuc_module_def = pkg.create_ecuc_module_def("module").unwrap();
@@ -342,7 +342,7 @@ mod test {
 
     #[test]
     fn test_instance_reference_def() {
-        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST);
         let pkg = model.get_or_create_package("/pkg").unwrap();
 
         let ecuc_module_def = pkg.create_ecuc_module_def("module").unwrap();
@@ -364,7 +364,7 @@ mod test {
 
     #[test]
     fn test_choice_reference_def() {
-        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST);
         let pkg = model.get_or_create_package("/pkg").unwrap();
 
         let ecuc_module_def = pkg.create_ecuc_module_def("module").unwrap();
@@ -381,7 +381,7 @@ mod test {
 
     #[test]
     fn test_reference_def() {
-        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST);
         let pkg = model.get_or_create_package("/pkg").unwrap();
 
         let ecuc_module_def = pkg.create_ecuc_module_def("module").unwrap();
@@ -398,7 +398,7 @@ mod test {
 
     #[test]
     fn test_uri_reference_def() {
-        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::LATEST);
         let pkg = model.get_or_create_package("/pkg").unwrap();
 
         let ecuc_module_def = pkg.create_ecuc_module_def("module").unwrap();

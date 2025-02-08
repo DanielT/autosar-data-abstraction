@@ -784,7 +784,7 @@ mod test {
 
     #[test]
     fn someip_v1() {
-        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::Autosar_00047).unwrap();
+        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::Autosar_00047);
         let package = model.get_or_create_package("/ethernet").unwrap();
 
         let socket_address = helper_create_test_objects(&model);
@@ -898,7 +898,7 @@ mod test {
 
     #[test]
     fn element_conversion() {
-        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::Autosar_00047).unwrap();
+        let model = AutosarModelAbstraction::create("file.arxml", AutosarVersion::Autosar_00047);
 
         let socket_address = helper_create_test_objects(&model);
         let psi = socket_address

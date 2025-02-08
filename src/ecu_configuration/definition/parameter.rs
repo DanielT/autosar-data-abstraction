@@ -678,7 +678,7 @@ mod test {
 
     #[test]
     fn parameter() {
-        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::Autosar_00048).unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::Autosar_00048);
         let pkg = model.get_or_create_package("/test").unwrap();
         let ecuc_module = pkg.create_ecuc_module_def("EcucModule").unwrap();
         let container = ecuc_module.create_param_conf_container_def("Container").unwrap();
@@ -718,7 +718,7 @@ mod test {
 
     #[test]
     fn string_parameters() {
-        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::Autosar_00048).unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::Autosar_00048);
         let pkg = model.get_or_create_package("/test").unwrap();
         let ecuc_module = pkg.create_ecuc_module_def("EcucModule").unwrap();
         let container = ecuc_module.create_param_conf_container_def("Container").unwrap();
@@ -824,7 +824,7 @@ mod test {
 
     #[test]
     fn boolean_parameters() {
-        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::Autosar_00048).unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::Autosar_00048);
         let pkg = model.get_or_create_package("/test").unwrap();
         let ecuc_module = pkg.create_ecuc_module_def("EcucModule").unwrap();
         let container = ecuc_module.create_param_conf_container_def("Container").unwrap();
@@ -838,7 +838,7 @@ mod test {
 
     #[test]
     fn enumeration_parameters() {
-        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::Autosar_00048).unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::Autosar_00048);
         let pkg = model.get_or_create_package("/test").unwrap();
         let ecuc_module = pkg.create_ecuc_module_def("EcucModule").unwrap();
         let container = ecuc_module.create_param_conf_container_def("Container").unwrap();
@@ -857,7 +857,7 @@ mod test {
 
     #[test]
     fn float_parameters() {
-        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::Autosar_00048).unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::Autosar_00048);
         let pkg = model.get_or_create_package("/test").unwrap();
         let ecuc_module = pkg.create_ecuc_module_def("EcucModule").unwrap();
         let container = ecuc_module.create_param_conf_container_def("Container").unwrap();
@@ -873,7 +873,7 @@ mod test {
 
     #[test]
     fn integer_parameters() {
-        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::Autosar_00048).unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::Autosar_00048);
         let pkg = model.get_or_create_package("/test").unwrap();
         let ecuc_module = pkg.create_ecuc_module_def("EcucModule").unwrap();
         let container = ecuc_module.create_param_conf_container_def("Container").unwrap();

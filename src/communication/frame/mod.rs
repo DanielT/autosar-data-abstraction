@@ -196,7 +196,7 @@ pub trait AbstractFrameTriggering: AbstractionElement {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::{*, communication::*};
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let ecu = system.create_ecu_instance("ECU", &package)?;
@@ -493,7 +493,7 @@ mod test {
 
     #[test]
     fn frame() {
-        let model = AutosarModelAbstraction::create("filename", autosar_data::AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", autosar_data::AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
 

@@ -576,7 +576,7 @@ mod test {
 
     #[test]
     fn can_transport_protocol() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/pkg1").unwrap();
 
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();

@@ -694,7 +694,7 @@ mod test {
 
     #[test]
     fn test_can_nm() {
-        let model = AutosarModelAbstraction::create("test", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
 
@@ -863,7 +863,7 @@ mod test {
 
     #[test]
     fn test_flexray_nm() {
-        let model = AutosarModelAbstraction::create("test", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
 
@@ -1075,7 +1075,7 @@ mod test {
 
     #[test]
     fn test_udp_nm() {
-        let model = AutosarModelAbstraction::create("test", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
 

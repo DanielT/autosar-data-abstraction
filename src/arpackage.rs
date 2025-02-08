@@ -39,7 +39,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/pkg1")?;
     /// # Ok(())}
     /// ```
@@ -74,7 +74,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::{*, datatype::*};
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let element_type = package.create_application_primitive_data_type("ElementType", ApplicationPrimitiveCategory::Value, None, None, None)?;
     /// let data_type = package.create_application_array_data_type("ArrayDataType", &element_type, 4)?;
@@ -102,7 +102,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::{*, datatype::*};
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let data_type = package.create_application_primitive_data_type("ApplicationPrimitiveDataType", ApplicationPrimitiveCategory::Value, None, None, None)?;
     /// assert!(model.get_element_by_path("/some/package/ApplicationPrimitiveDataType").is_some());
@@ -131,7 +131,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::{*, datatype::*};
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let data_type = package.create_application_record_data_type("ApplicationRecordDataType")?;
     /// assert!(model.get_element_by_path("/some/package/ApplicationRecordDataType").is_some());
@@ -156,7 +156,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let component = package.create_application_sw_component_type("MyComponent")?;
     /// assert!(model.get_element_by_path("/some/package/MyComponent").is_some());
@@ -181,7 +181,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let interface = package.create_client_server_interface("ClientServerInterface")?;
     /// assert!(model.get_element_by_path("/some/package/ClientServerInterface").is_some());
@@ -203,7 +203,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let component = package.create_complex_device_driver_sw_component_type("ComplexDeviceDriverSwComponentType")?;
     /// assert!(model.get_element_by_path("/some/package/ComplexDeviceDriverSwComponentType").is_some());
@@ -228,7 +228,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let component = package.create_composition_sw_component_type("CompositionSwComponentType")?;
     /// assert!(model.get_element_by_path("/some/package/CompositionSwComponentType").is_some());
@@ -253,7 +253,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::{*, datatype::*};
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let compu_content = CompuMethodContent::Linear(CompuMethodLinearContent {
     ///    direction: CompuScaleDirection::IntToPhys,
@@ -287,7 +287,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::{*, datatype::*};
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let data_constr = package.create_data_constr("DataConstr")?;
     /// assert!(model.get_element_by_path("/some/package/DataConstr").is_some());
@@ -309,7 +309,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let transformation_set = package.create_data_transformation_set("DataTransformationSet")?;
     /// assert!(model.get_element_by_path("/some/package/DataTransformationSet").is_some());
@@ -331,7 +331,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let mapping_set = package.create_data_type_mapping_set("DataTypeMappingSet")?;
     /// assert!(model.get_element_by_path("/some/package/DataTypeMappingSet").is_some());
@@ -353,7 +353,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let component = package.create_ecu_abstraction_sw_component_type("EcuAbstractionSwComponentType")?;
     /// assert!(model.get_element_by_path("/some/package/EcuAbstractionSwComponentType").is_some());
@@ -378,7 +378,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
     /// let package = model.get_or_create_package("/pkg")?;
     /// let definition_collection = package.create_ecuc_definition_collection("DefinitionCollection")?;
     /// assert!(model.get_element_by_path("/pkg/DefinitionCollection").is_some());
@@ -403,7 +403,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
     /// let package = model.get_or_create_package("/pkg")?;
     /// let uri_def_set = package.create_ecuc_destination_uri_def_set("DestinationUriDefSet")?;
     /// assert!(model.get_element_by_path("/pkg/DestinationUriDefSet").is_some());
@@ -428,7 +428,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
     /// let package = model.get_or_create_package("/pkg")?;
     /// # let module_definition = package.create_ecuc_module_def("ModuleDef")?;
     /// let module_config = package.create_ecuc_module_configuration_values("ModuleConfig", &module_definition)?;
@@ -455,7 +455,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
     /// let package = model.get_or_create_package("/pkg")?;
     /// let bsw_module = package.create_ecuc_module_def("BswModule")?;
     /// assert!(model.get_element_by_path("/pkg/BswModule").is_some());
@@ -477,7 +477,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
     /// let package = model.get_or_create_package("/pkg")?;
     /// let value_collection = package.create_ecuc_value_collection("ValueCollection")?;
     /// assert!(model.get_element_by_path("/pkg/ValueCollection").is_some());
@@ -499,7 +499,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::{*, datatype::*};
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let sw_base_type = package.create_sw_base_type("uint8", 8, BaseTypeEncoding::None, None, None, None)?;
     /// let settings = ImplementationDataTypeSettings::Value {
@@ -531,7 +531,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let interface = package.create_mode_switch_interface("ModeSwitchInterface")?;
     /// assert!(model.get_element_by_path("/some/package/ModeSwitchInterface").is_some());
@@ -553,7 +553,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let interface = package.create_nv_data_interface("NvDataInterface")?;
     /// assert!(model.get_element_by_path("/some/package/NvDataInterface").is_some());
@@ -575,7 +575,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let interface = package.create_parameter_interface("ParameterInterface")?;
     /// assert!(model.get_element_by_path("/some/package/ParameterInterface").is_some());
@@ -597,7 +597,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let interface = package.create_sender_receiver_interface("SenderReceiverInterface")?;
     /// assert!(model.get_element_by_path("/some/package/SenderReceiverInterface").is_some());
@@ -622,7 +622,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::{*, communication::*};
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let component = package.create_sensor_actuator_sw_component_type("SensorActuatorSwComponentType")?;
     /// assert!(model.get_element_by_path("/some/package/SensorActuatorSwComponentType").is_some());
@@ -647,7 +647,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let component = package.create_service_sw_component_type("ServiceSwComponentType")?;
     /// assert!(model.get_element_by_path("/some/package/ServiceSwComponentType").is_some());
@@ -672,7 +672,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::{*, communication::*};
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let client_config = package.create_someip_sd_client_event_group_timing_config("SomeipSdClientEventGroupTimingConfig", 10)?;
     /// assert!(model.get_element_by_path("/some/package/SomeipSdClientEventGroupTimingConfig").is_some());
@@ -698,7 +698,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let service_instance = package.create_someip_sd_client_service_instance_config("SomeipSdClientServiceInstanceConfig")?;
     /// assert!(model.get_element_by_path("/some/package/SomeipSdClientServiceInstanceConfig").is_some());
@@ -723,7 +723,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::{*, communication::*};
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let request_response_delay = RequestResponseDelay {
     ///     min_value: 0.1,
@@ -753,7 +753,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let service_instance = package.create_someip_sd_server_service_instance_config("SomeipSdServerServiceInstanceConfig", 10)?;
     /// assert!(model.get_element_by_path("/some/package/SomeipSdServerServiceInstanceConfig").is_some());
@@ -779,7 +779,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::{*, datatype::*};
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let base_type = package.create_sw_base_type("MyBaseType", 8, BaseTypeEncoding::None, None, None, None)?;
     /// assert!(model.get_element_by_path("/some/package/MyBaseType").is_some());
@@ -819,7 +819,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// assert!(model.get_element_by_path("/some/package/System").is_some());
@@ -841,7 +841,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let signal = package.create_system_signal("MySignal")?;
     /// assert!(model.get_element_by_path("/some/package/MySignal").is_some());
@@ -863,7 +863,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let signal_group = package.create_system_signal_group("MySignalGroup")?;
     /// assert!(model.get_element_by_path("/some/package/MySignalGroup").is_some());
@@ -885,7 +885,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let interface = package.create_trigger_interface("TriggerInterface")?;
     /// assert!(model.get_element_by_path("/some/package/TriggerInterface").is_some());
@@ -907,7 +907,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let unit = package.create_unit("Unit", Some("UnitDisplayName"))?;
     /// assert!(model.get_element_by_path("/some/package/Unit").is_some());
@@ -929,7 +929,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// for element in package.elements() {
     ///    println!("{:?}", element);
@@ -951,7 +951,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let sub_package = package.create_sub_package("SubPackage")?;
     /// assert!(model.get_element_by_path("/some/package/SubPackage").is_some());
@@ -973,7 +973,7 @@ impl ArPackage {
     /// # use autosar_data::*;
     /// # use autosar_data_abstraction::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// for sub_package in package.sub_packages() {
     ///   println!("{:?}", sub_package);
@@ -1043,7 +1043,7 @@ mod test {
 
     #[test]
     fn create_package_items() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
         let package = model.get_or_create_package("/some/package").unwrap();
 
         // create a new application primitive data type
@@ -1252,7 +1252,7 @@ mod test {
 
     #[test]
     fn test_elements_iter() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
         let package = model.get_or_create_package("/some/package").unwrap();
 
         package
@@ -1422,7 +1422,7 @@ mod test {
 
     #[test]
     fn sub_packages() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
         let package = model.get_or_create_package("/package").unwrap();
 
         // create sub-packages

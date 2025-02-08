@@ -289,7 +289,7 @@ mod test {
 
     #[test]
     fn test_network_endpoint_ipv4() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
@@ -320,7 +320,7 @@ mod test {
 
     #[test]
     fn test_network_endpoint_ipv6() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
         let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();

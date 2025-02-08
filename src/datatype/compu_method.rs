@@ -937,7 +937,7 @@ mod test {
 
     #[test]
     fn compu_method() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/Package").unwrap();
 
         let compu_method1 = CompuMethod::new("compu_method1", &package, CompuMethodContent::Identical).unwrap();

@@ -726,7 +726,7 @@ mod tests {
 
     #[test]
     fn test_signal() {
-        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/test").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let unit = Unit::new("unit", &package, Some("Unit Name")).unwrap();
@@ -770,7 +770,7 @@ mod tests {
 
     #[test]
     fn test_signal_data_transformations() {
-        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/test").unwrap();
         let sw_base_type =
             SwBaseType::new("sw_base_type", &package, 8, BaseTypeEncoding::None, None, None, None).unwrap();
@@ -825,7 +825,7 @@ mod tests {
 
     #[test]
     fn test_signal_group_data_transformations() {
-        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/test").unwrap();
 
         let signal_group = ISignalGroup::new(
@@ -872,7 +872,7 @@ mod tests {
 
     #[test]
     fn test_signal_group() {
-        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/test").unwrap();
         let sys_signal_group = SystemSignalGroup::new("sys_signal_group", &package).unwrap();
         let signal_group = ISignalGroup::new("signal_group", &package, &sys_signal_group).unwrap();
@@ -891,7 +891,7 @@ mod tests {
 
     #[test]
     fn test_signal_triggering() {
-        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/test").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 

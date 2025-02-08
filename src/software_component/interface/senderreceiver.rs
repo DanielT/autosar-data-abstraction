@@ -81,7 +81,7 @@ mod test {
 
     #[test]
     fn sender_receiver_interface() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
 
         let sr_interface = package

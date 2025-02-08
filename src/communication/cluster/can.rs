@@ -46,7 +46,7 @@ impl CanCluster {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
@@ -91,7 +91,7 @@ impl CanCluster {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// let settings = CanClusterSettings {baudrate: 500000, can_fd_baudrate: None, can_xl_baudrate: None};
@@ -144,7 +144,7 @@ impl CanCluster {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
@@ -181,7 +181,7 @@ impl CanCluster {
     /// # use autosar_data_abstraction::*;
     /// # use autosar_data_abstraction::communication::*;
     /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
@@ -249,7 +249,7 @@ mod test {
 
     #[test]
     fn cluster() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00051).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00051);
         let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
 

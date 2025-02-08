@@ -1530,7 +1530,7 @@ mod test {
 
     #[test]
     fn test_service_instance_collection_set() {
-        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
@@ -1556,7 +1556,7 @@ mod test {
 
     #[test]
     fn test_provided_service_instance() {
-        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
@@ -1593,7 +1593,7 @@ mod test {
 
     #[test]
     fn test_event_handler() {
-        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
@@ -1634,7 +1634,7 @@ mod test {
 
     #[test]
     fn server_sd_config() {
-        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
@@ -1706,7 +1706,7 @@ mod test {
 
     #[test]
     fn test_consumed_service_instance() {
-        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
@@ -1743,7 +1743,7 @@ mod test {
 
     #[test]
     fn test_consumed_event_group() {
-        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
@@ -1773,7 +1773,7 @@ mod test {
 
     #[test]
     fn client_sd_config() {
-        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
@@ -1854,7 +1854,7 @@ mod test {
 
     #[test]
     fn test_local_unicast_addresses() {
-        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
@@ -1909,7 +1909,7 @@ mod test {
 
     #[test]
     fn test_pdus() {
-        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
         let cluster = system.create_ethernet_cluster("ethcluster", &package).unwrap();
@@ -1965,7 +1965,7 @@ mod test {
 
     #[test]
     fn test_conversion() {
-        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
@@ -2042,7 +2042,7 @@ mod test {
 
     #[test]
     fn someip_tp() {
-        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("file", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
 
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();

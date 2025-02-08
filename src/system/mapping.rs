@@ -265,7 +265,7 @@ mod test {
 
     #[test]
     fn mappings() {
-        let model = AutosarModelAbstraction::create("filename", autosar_data::AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", autosar_data::AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
         let system = package
             .create_system("test_system", SystemCategory::EcuExtract)

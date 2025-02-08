@@ -327,7 +327,7 @@ mod test {
 
     #[test]
     fn fr_frame() {
-        let model = AutosarModelAbstraction::create("test", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("System", SystemCategory::EcuExtract).unwrap();
         let flexray_cluster = system

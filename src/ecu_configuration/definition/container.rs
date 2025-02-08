@@ -295,7 +295,7 @@ mod test {
 
     #[test]
     fn container() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/pkg1").unwrap();
         let ecuc_module = package.create_ecuc_module_def("ecuc_module").unwrap();
         assert_eq!(ecuc_module.containers().count(), 0);

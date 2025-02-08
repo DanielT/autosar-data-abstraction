@@ -18,7 +18,7 @@ use std::fmt::Display;
 /// # use autosar_data::*;
 /// # use autosar_data_abstraction::{*, datatype::*};
 /// # fn main() -> Result<(), AutosarAbstractionError> {
-/// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048)?;
+/// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
 /// let package = model.get_or_create_package("/my/pkg")?;
 /// let base_type = package.create_sw_base_type("MyBaseType",
 ///    8, BaseTypeEncoding::None, None, None, Some("uint8"))?;
@@ -267,7 +267,7 @@ mod tests {
 
     #[test]
     fn test_sw_base_type() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/BaseTypes").unwrap();
 
         let sw_base_type = SwBaseType::new(

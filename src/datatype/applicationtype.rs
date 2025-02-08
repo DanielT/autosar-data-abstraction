@@ -471,7 +471,7 @@ mod tests {
 
     #[test]
     fn test_application_array_data_type() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/DataTypes").unwrap();
         let element_type = ApplicationPrimitiveDataType::new(
             "Element",
@@ -509,7 +509,7 @@ mod tests {
 
     #[test]
     fn test_application_record_data_type() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/DataTypes").unwrap();
         let record_data_type = ApplicationRecordDataType::new("Record", &package).unwrap();
         let element_type = ApplicationPrimitiveDataType::new(
@@ -532,7 +532,7 @@ mod tests {
 
     #[test]
     fn test_application_primitive_data_type() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/DataTypes").unwrap();
         let compu_method = CompuMethod::new(
             "CompuMethod",
@@ -566,7 +566,7 @@ mod tests {
 
     #[test]
     fn test_application_data_type() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/DataTypes").unwrap();
         let element_type = ApplicationPrimitiveDataType::new(
             "Element",

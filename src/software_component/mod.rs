@@ -744,7 +744,7 @@ mod test {
 
     #[test]
     fn software_compositions() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
 
         let comp1 = CompositionSwComponentType::new("comp1", &package).unwrap();
@@ -780,7 +780,7 @@ mod test {
 
     #[test]
     fn root_composition() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
 
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
@@ -796,7 +796,7 @@ mod test {
 
     #[test]
     fn data_type_mapping() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
 
         let mapping_set = DataTypeMappingSet::new("mapping_set", &package).unwrap();
@@ -824,7 +824,7 @@ mod test {
 
     #[test]
     fn components() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
 
         let comp = CompositionSwComponentType::new("comp", &package).unwrap();
@@ -880,7 +880,7 @@ mod test {
 
     #[test]
     fn ports_and_connectors() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
 
         // create some components:

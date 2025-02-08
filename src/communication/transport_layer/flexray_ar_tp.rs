@@ -478,7 +478,7 @@ mod test {
 
     #[test]
     fn test_flexray_ar_transport_protocol() {
-        let model = AutosarModelAbstraction::create("DoipTp.arxml", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("DoipTp.arxml", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/pkg1").unwrap();
 
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();

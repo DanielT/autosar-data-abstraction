@@ -403,7 +403,7 @@ mod test {
 
     #[test]
     fn socket_address() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_4_3_0).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_4_3_0);
         let package = model.get_or_create_package("/pkg1").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
         let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();
@@ -485,7 +485,7 @@ mod test {
 
     #[test]
     fn socket_sd_config() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_4_3_0).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_4_3_0);
         let package = model.get_or_create_package("/pkg1").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
         let cluster = system.create_ethernet_cluster("Cluster", &package).unwrap();

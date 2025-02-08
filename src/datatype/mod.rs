@@ -230,7 +230,7 @@ mod test {
 
     #[test]
     fn data_constr() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/DataConstraints").unwrap();
 
         let data_constr = DataConstr::new("DataConstr", &package).unwrap();
@@ -255,7 +255,7 @@ mod test {
 
     #[test]
     fn autosar_data_type() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/DataTypes").unwrap();
 
         let app_primitive = ApplicationPrimitiveDataType::new(

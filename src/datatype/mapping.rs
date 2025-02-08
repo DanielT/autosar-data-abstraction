@@ -103,7 +103,7 @@ mod tests {
 
     #[test]
     fn test_data_type_mapping_set() {
-        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/DataTypeMappingSets").unwrap();
         let mapping_set = DataTypeMappingSet::new("MappingSet", &package).unwrap();
 

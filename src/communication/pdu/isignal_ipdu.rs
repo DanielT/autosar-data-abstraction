@@ -573,7 +573,7 @@ mod test {
 
     #[test]
     fn isignal_ipdu() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
         let package = model.get_or_create_package("/pkg").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
 
@@ -706,7 +706,7 @@ mod test {
 
     #[test]
     fn ipdu_timing() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
         let package = model.get_or_create_package("/pkg").unwrap();
         let pdu = ISignalIPdu::new("pdu_name", &package, 8).unwrap();
 

@@ -232,7 +232,7 @@ mod test {
 
     #[test]
     fn ports() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST).unwrap();
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
 
         let comp = package.create_composition_sw_component_type("comp").unwrap();
