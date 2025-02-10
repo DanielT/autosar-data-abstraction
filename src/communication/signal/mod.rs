@@ -645,6 +645,7 @@ impl ISignalTriggering {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ISignalPort(Element);
 abstraction_element!(ISignalPort, ISignalPort);
+impl IdentifiableAbstractionElement for ISignalPort {}
 
 impl ISignalPort {
     /// get the ECU that is connected to this signal port
@@ -930,5 +931,7 @@ mod tests {
         assert_eq!(st.signal_ports().count(), 1);
         assert_eq!(signal_port.ecu(), Some(ecuinstance));
         assert_eq!(signal_port.communication_direction(), Some(CommunicationDirection::In));
+        signal_port.set_name("new_name").unwrap();
+        assert_eq!(signal_port.name().unwrap(), "new_name");
     }
 }

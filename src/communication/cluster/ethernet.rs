@@ -1,5 +1,5 @@
 use crate::communication::{AbstractCluster, EthernetPhysicalChannel, EthernetVlanInfo};
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError};
+use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement};
 use autosar_data::{Element, ElementName};
 
 /// An `EthernetCluster` contains all configuration items associated with an ethernet network.
@@ -7,6 +7,7 @@ use autosar_data::{Element, ElementName};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EthernetCluster(Element);
 abstraction_element!(EthernetCluster, EthernetCluster);
+impl IdentifiableAbstractionElement for EthernetCluster {}
 
 impl EthernetCluster {
     // create a new EthernetCluster - for internal use. User code should call System::create_ethernet_cluster

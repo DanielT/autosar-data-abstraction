@@ -402,6 +402,8 @@ mod test {
             frame_port.communication_direction().unwrap(),
             CommunicationDirection::Out
         );
+        frame_port.set_name("port").unwrap();
+        assert_eq!(frame_port.name().unwrap(), "port");
 
         assert_eq!(frame_triggering1.frame().unwrap(), frame1);
         assert_eq!(frame_triggering1.slot().unwrap(), 1);

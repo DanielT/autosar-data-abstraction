@@ -657,6 +657,7 @@ impl PduTriggering {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct IPduPort(Element);
 abstraction_element!(IPduPort, IPduPort);
+impl IdentifiableAbstractionElement for IPduPort {}
 
 impl IPduPort {
     /// get the ECU instance that contains this `IPduPort`
@@ -875,6 +876,8 @@ mod test {
         let pdu_port = pdu_triggering.pdu_ports().next().unwrap();
         assert_eq!(pdu_port.ecu().unwrap().name().unwrap(), "ecu");
         assert_eq!(pdu_port.communication_direction().unwrap(), CommunicationDirection::In);
+        pdu_port.set_name("new_name").unwrap();
+        assert_eq!(pdu_port.name().unwrap(), "new_name");
     }
 
     #[test]

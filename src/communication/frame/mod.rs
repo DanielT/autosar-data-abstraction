@@ -462,6 +462,7 @@ impl PduToFrameMapping {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FramePort(Element);
 abstraction_element!(FramePort, FramePort);
+impl IdentifiableAbstractionElement for FramePort {}
 
 impl FramePort {
     /// get the ECU instance that contains this frame port

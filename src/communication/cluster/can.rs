@@ -1,5 +1,5 @@
 use crate::communication::{AbstractCluster, CanPhysicalChannel};
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError};
+use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement};
 use autosar_data::{Element, ElementName};
 
 /// A `CanCluster` contains all configuration items associated with a CAN network.
@@ -7,6 +7,7 @@ use autosar_data::{Element, ElementName};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CanCluster(Element);
 abstraction_element!(CanCluster, CanCluster);
+impl IdentifiableAbstractionElement for CanCluster {}
 
 impl CanCluster {
     // create a new CanCluster - for internal use. User code should call System::create_can_cluster
