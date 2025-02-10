@@ -1,11 +1,12 @@
 use crate::communication::EthernetPhysicalChannel;
-use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError};
+use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement};
 use autosar_data::{CharacterData, Element, ElementName, EnumItem};
 
 /// A network endpoint contains address information for a connection
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NetworkEndpoint(Element);
 abstraction_element!(NetworkEndpoint, NetworkEndpoint);
+impl IdentifiableAbstractionElement for NetworkEndpoint {}
 
 impl NetworkEndpoint {
     pub(crate) fn new(

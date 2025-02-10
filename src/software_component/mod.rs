@@ -5,6 +5,7 @@
 
 use crate::{
     abstraction_element, datatype, reflist_iterator, AbstractionElement, ArPackage, AutosarAbstractionError, Element,
+    IdentifiableAbstractionElement,
 };
 use autosar_data::ElementName;
 use datatype::DataTypeMappingSet;
@@ -20,7 +21,7 @@ pub use port::*;
 //##################################################################
 
 /// The `AbstractSwComponentType` is the common interface for all types of software components
-pub trait AbstractSwComponentType: AbstractionElement {
+pub trait AbstractSwComponentType: IdentifiableAbstractionElement {
     /// iterator over the instances of the component type
     fn instances(&self) -> ComponentPrototypeIterator {
         let model_result = self.element().model();
@@ -110,6 +111,7 @@ pub trait AbstractSwComponentType: AbstractionElement {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CompositionSwComponentType(Element);
 abstraction_element!(CompositionSwComponentType, CompositionSwComponentType);
+impl IdentifiableAbstractionElement for CompositionSwComponentType {}
 
 impl CompositionSwComponentType {
     /// create a new composition component with the given name
@@ -391,6 +393,7 @@ impl AbstractSwComponentType for CompositionSwComponentType {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ApplicationSwComponentType(Element);
 abstraction_element!(ApplicationSwComponentType, ApplicationSwComponentType);
+impl IdentifiableAbstractionElement for ApplicationSwComponentType {}
 
 impl ApplicationSwComponentType {
     /// create a new application component with the given name
@@ -411,6 +414,7 @@ impl AbstractSwComponentType for ApplicationSwComponentType {}
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ComplexDeviceDriverSwComponentType(Element);
 abstraction_element!(ComplexDeviceDriverSwComponentType, ComplexDeviceDriverSwComponentType);
+impl IdentifiableAbstractionElement for ComplexDeviceDriverSwComponentType {}
 
 impl ComplexDeviceDriverSwComponentType {
     /// create a new complex device driver component with the given name
@@ -432,6 +436,7 @@ impl AbstractSwComponentType for ComplexDeviceDriverSwComponentType {}
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ServiceSwComponentType(Element);
 abstraction_element!(ServiceSwComponentType, ServiceSwComponentType);
+impl IdentifiableAbstractionElement for ServiceSwComponentType {}
 
 impl ServiceSwComponentType {
     /// create a new service component with the given name
@@ -452,6 +457,7 @@ impl AbstractSwComponentType for ServiceSwComponentType {}
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SensorActuatorSwComponentType(Element);
 abstraction_element!(SensorActuatorSwComponentType, SensorActuatorSwComponentType);
+impl IdentifiableAbstractionElement for SensorActuatorSwComponentType {}
 
 impl SensorActuatorSwComponentType {
     /// create a new sensor/actuator component with the given name
@@ -473,6 +479,7 @@ impl AbstractSwComponentType for SensorActuatorSwComponentType {}
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcuAbstractionSwComponentType(Element);
 abstraction_element!(EcuAbstractionSwComponentType, EcuAbstractionSwComponentType);
+impl IdentifiableAbstractionElement for EcuAbstractionSwComponentType {}
 
 impl EcuAbstractionSwComponentType {
     /// create a new ECU abstraction component with the given name
@@ -516,6 +523,8 @@ impl AbstractionElement for SwComponentType {
         }
     }
 }
+
+impl IdentifiableAbstractionElement for SwComponentType {}
 
 impl TryFrom<Element> for SwComponentType {
     type Error = AutosarAbstractionError;
@@ -605,6 +614,7 @@ impl AbstractSwComponentType for SwComponentType {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SwComponentPrototype(Element);
 abstraction_element!(SwComponentPrototype, SwComponentPrototype);
+impl IdentifiableAbstractionElement for SwComponentPrototype {}
 
 impl SwComponentPrototype {
     fn new(
@@ -644,6 +654,7 @@ impl SwComponentPrototype {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RootSwCompositionPrototype(Element);
 abstraction_element!(RootSwCompositionPrototype, RootSwCompositionPrototype);
+impl IdentifiableAbstractionElement for RootSwCompositionPrototype {}
 
 impl RootSwCompositionPrototype {
     pub(crate) fn new(
@@ -708,6 +719,8 @@ impl TryFrom<Element> for ComponentPrototype {
         }
     }
 }
+
+impl IdentifiableAbstractionElement for ComponentPrototype {}
 
 impl ComponentPrototype {
     #[must_use]

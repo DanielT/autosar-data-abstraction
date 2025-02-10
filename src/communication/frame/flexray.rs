@@ -4,7 +4,7 @@ use crate::communication::{
 };
 use crate::{
     abstraction_element, make_unique_name, reflist_iterator, AbstractionElement, ArPackage, AutosarAbstractionError,
-    ByteOrder, EcuInstance,
+    ByteOrder, EcuInstance, IdentifiableAbstractionElement,
 };
 use autosar_data::{Element, ElementName, EnumItem};
 
@@ -12,6 +12,7 @@ use autosar_data::{Element, ElementName, EnumItem};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlexrayFrame(Element);
 abstraction_element!(FlexrayFrame, FlexrayFrame);
+impl IdentifiableAbstractionElement for FlexrayFrame {}
 
 impl FlexrayFrame {
     pub(crate) fn new(name: &str, package: &ArPackage, byte_length: u64) -> Result<Self, AutosarAbstractionError> {
@@ -59,6 +60,7 @@ impl AbstractFrame for FlexrayFrame {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlexrayFrameTriggering(Element);
 abstraction_element!(FlexrayFrameTriggering, FlexrayFrameTriggering);
+impl IdentifiableAbstractionElement for FlexrayFrameTriggering {}
 
 impl FlexrayFrameTriggering {
     pub(crate) fn new(

@@ -1,4 +1,7 @@
-use crate::{abstraction_element, datatype, AbstractionElement, ArPackage, AutosarAbstractionError, Element};
+use crate::{
+    abstraction_element, datatype, AbstractionElement, ArPackage, AutosarAbstractionError, Element,
+    IdentifiableAbstractionElement,
+};
 use autosar_data::ElementName;
 use datatype::{AbstractAutosarDataType, CompuMethod, DataConstr, Unit};
 
@@ -10,7 +13,7 @@ use datatype::{AbstractAutosarDataType, CompuMethod, DataConstr, Unit};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ApplicationArrayDataType(Element);
 abstraction_element!(ApplicationArrayDataType, ApplicationArrayDataType);
-
+impl IdentifiableAbstractionElement for ApplicationArrayDataType {}
 impl AbstractAutosarDataType for ApplicationArrayDataType {}
 
 impl ApplicationArrayDataType {
@@ -94,6 +97,7 @@ impl ApplicationArrayDataType {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ApplicationArrayElement(Element);
 abstraction_element!(ApplicationArrayElement, Element);
+impl IdentifiableAbstractionElement for ApplicationArrayElement {}
 
 impl ApplicationArrayElement {
     fn new(
@@ -142,7 +146,7 @@ impl ApplicationArrayElement {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ApplicationRecordDataType(Element);
 abstraction_element!(ApplicationRecordDataType, ApplicationRecordDataType);
-
+impl IdentifiableAbstractionElement for ApplicationRecordDataType {}
 impl AbstractAutosarDataType for ApplicationRecordDataType {}
 
 impl ApplicationRecordDataType {
@@ -184,6 +188,7 @@ impl ApplicationRecordDataType {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ApplicationRecordElement(Element);
 abstraction_element!(ApplicationRecordElement, ApplicationRecordElement);
+impl IdentifiableAbstractionElement for ApplicationRecordElement {}
 
 impl ApplicationRecordElement {
     fn new(
@@ -230,7 +235,7 @@ impl ApplicationRecordElement {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ApplicationPrimitiveDataType(Element);
 abstraction_element!(ApplicationPrimitiveDataType, ApplicationPrimitiveDataType);
-
+impl IdentifiableAbstractionElement for ApplicationPrimitiveDataType {}
 impl AbstractAutosarDataType for ApplicationPrimitiveDataType {}
 
 impl ApplicationPrimitiveDataType {
@@ -430,6 +435,8 @@ impl TryFrom<Element> for ApplicationDataType {
         }
     }
 }
+
+impl IdentifiableAbstractionElement for ApplicationDataType {}
 
 impl From<ApplicationPrimitiveDataType> for ApplicationDataType {
     fn from(val: ApplicationPrimitiveDataType) -> Self {

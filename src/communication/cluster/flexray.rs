@@ -1,7 +1,7 @@
 use crate::{
     abstraction_element,
     communication::{AbstractCluster, FlexrayChannelName, FlexrayPhysicalChannel},
-    AbstractionElement, ArPackage, AutosarAbstractionError,
+    AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
 };
 use autosar_data::{Element, ElementName, EnumItem};
 
@@ -10,6 +10,7 @@ use autosar_data::{Element, ElementName, EnumItem};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlexrayCluster(Element);
 abstraction_element!(FlexrayCluster, FlexrayCluster);
+impl IdentifiableAbstractionElement for FlexrayCluster {}
 
 impl FlexrayCluster {
     // create a new FlexrayCluster - internal use only. User code should call System::create_flexray_cluster

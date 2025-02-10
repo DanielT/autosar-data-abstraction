@@ -1,5 +1,5 @@
 use crate::communication::{AbstractCommunicationConnector, CommunicationConnector, ISignalTriggering, PduTriggering};
-use crate::{AbstractionElement, AutosarAbstractionError, EcuInstance};
+use crate::{AbstractionElement, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement};
 use autosar_data::{Element, ElementName};
 
 mod can;
@@ -114,32 +114,16 @@ impl AbstractionElement for PhysicalChannel {
     }
 }
 
-impl From<CanPhysicalChannel> for PhysicalChannel {
-    fn from(value: CanPhysicalChannel) -> Self {
-        PhysicalChannel::Can(value)
-    }
-}
-
-impl From<EthernetPhysicalChannel> for PhysicalChannel {
-    fn from(value: EthernetPhysicalChannel) -> Self {
-        PhysicalChannel::Ethernet(value)
-    }
-}
-
-impl From<FlexrayPhysicalChannel> for PhysicalChannel {
-    fn from(value: FlexrayPhysicalChannel) -> Self {
-        PhysicalChannel::FlexRay(value)
-    }
-}
+impl IdentifiableAbstractionElement for PhysicalChannel {}
 
 impl TryFrom<Element> for PhysicalChannel {
     type Error = AutosarAbstractionError;
 
     fn try_from(element: Element) -> Result<Self, Self::Error> {
         match element.element_name() {
-            ElementName::CanPhysicalChannel => Ok(CanPhysicalChannel::try_from(element)?.into()),
-            ElementName::EthernetPhysicalChannel => Ok(EthernetPhysicalChannel::try_from(element)?.into()),
-            ElementName::FlexrayPhysicalChannel => Ok(FlexrayPhysicalChannel::try_from(element)?.into()),
+            ElementName::CanPhysicalChannel => Ok(Self::Can(CanPhysicalChannel::try_from(element)?)),
+            ElementName::EthernetPhysicalChannel => Ok(Self::Ethernet(EthernetPhysicalChannel::try_from(element)?)),
+            ElementName::FlexrayPhysicalChannel => Ok(Self::FlexRay(FlexrayPhysicalChannel::try_from(element)?)),
             _ => Err(AutosarAbstractionError::ConversionError {
                 element,
                 dest: "PhysicalChannel".to_string(),

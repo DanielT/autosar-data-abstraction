@@ -2,7 +2,9 @@ use crate::communication::{
     AbstractPhysicalChannel, ConsumedServiceInstanceV1, EthernetPhysicalChannel, NetworkEndpoint,
     ProvidedServiceInstanceV1, StaticSocketConnection, TcpRole,
 };
-use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError, EcuInstance};
+use crate::{
+    abstraction_element, AbstractionElement, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement,
+};
 use autosar_data::{Element, ElementName};
 
 //##################################################################
@@ -12,6 +14,7 @@ use autosar_data::{Element, ElementName};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SocketAddress(Element);
 abstraction_element!(SocketAddress, SocketAddress);
+impl IdentifiableAbstractionElement for SocketAddress {}
 
 impl SocketAddress {
     pub(crate) fn new(

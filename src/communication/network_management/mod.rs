@@ -1,7 +1,10 @@
 use crate::communication::{
     AbstractCluster, AbstractCommunicationController, CanCluster, EthernetCluster, FlexrayCluster, NmPdu,
 };
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance};
+use crate::{
+    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance,
+    IdentifiableAbstractionElement,
+};
 use autosar_data::{Element, ElementName};
 
 mod can_nm;
@@ -22,6 +25,7 @@ pub use udp_nm::*;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NmConfig(Element);
 abstraction_element!(NmConfig, NmConfig);
+impl IdentifiableAbstractionElement for NmConfig {}
 
 impl NmConfig {
     /// create a new `NmConfig` in the given `ArPackage`
@@ -363,6 +367,8 @@ impl AbstractionElement for NmCluster {
     }
 }
 
+impl IdentifiableAbstractionElement for NmCluster {}
+
 //##################################################################
 
 /// The `NmClusterCoupling` is used to couple two `NmClusters` together.
@@ -442,12 +448,15 @@ impl AbstractionElement for NmClusterCoupling {
     }
 }
 
+impl IdentifiableAbstractionElement for NmClusterCoupling {}
+
 //##################################################################
 
 /// The `NmEcu` represents an `EcuInstance` wich participates in network management.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NmEcu(Element);
 abstraction_element!(NmEcu, NmEcu);
+impl IdentifiableAbstractionElement for NmEcu {}
 
 impl NmEcu {
     pub(crate) fn new(

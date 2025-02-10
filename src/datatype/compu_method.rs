@@ -1,4 +1,6 @@
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError};
+use crate::{
+    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
+};
 use autosar_data::{AttributeName, Element, ElementName};
 
 //#########################################################
@@ -9,6 +11,7 @@ use autosar_data::{AttributeName, Element, ElementName};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CompuMethod(Element);
 abstraction_element!(CompuMethod, CompuMethod);
+impl IdentifiableAbstractionElement for CompuMethod {}
 
 impl CompuMethod {
     /// Create a new `CompuMethod`

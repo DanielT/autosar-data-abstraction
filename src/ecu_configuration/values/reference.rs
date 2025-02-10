@@ -1,5 +1,5 @@
 use crate::ecu_configuration::{AbstractEcucReferenceDef, EcucAnyReferenceDef, EcucInstanceReferenceDef};
-use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError};
+use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement};
 use autosar_data::{Element, ElementName};
 
 //#########################################################
@@ -315,6 +315,8 @@ impl AbstractionElement for EcucAnyReferenceValue {
         }
     }
 }
+
+impl IdentifiableAbstractionElement for EcucAnyReferenceValue {}
 
 //#########################################################
 

@@ -125,15 +125,24 @@ pub trait AbstractionElement: Clone + PartialEq + TryFrom<autosar_data::Element>
     #[must_use]
     fn element(&self) -> &Element;
 
+    // fn set_timestamp(&self) {
+    //     todo!()
+    // }
+}
+
+/// The `IdentifiableAbstractionElement` trait is implemented by all classes that represent elements in the AUTOSAR model that have an item name.
+pub trait IdentifiableAbstractionElement: AbstractionElement {
     /// Get the item name of the element
     #[must_use]
     fn name(&self) -> Option<String> {
         self.element().item_name()
     }
 
-    // fn set_timestamp(&self) {
-    //     todo!()
-    // }
+    /// Set the item name of the element
+    fn set_name(&self, name: &str) -> Result<(), AutosarAbstractionError> {
+        self.element().set_item_name(name)?;
+        Ok(())
+    }
 }
 
 macro_rules! abstraction_element {

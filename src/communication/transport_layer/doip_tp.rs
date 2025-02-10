@@ -1,11 +1,14 @@
 use crate::communication::{EthernetCluster, PduTriggering};
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError};
+use crate::{
+    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
+};
 use autosar_data::{Element, ElementName};
 
 /// Container for `DoIp` TP configuration
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DoIpTpConfig(Element);
 abstraction_element!(DoIpTpConfig, DoIpTpConfig);
+impl IdentifiableAbstractionElement for DoIpTpConfig {}
 
 impl DoIpTpConfig {
     pub(crate) fn new(
@@ -72,6 +75,7 @@ impl DoIpTpConfig {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DoIpLogicAddress(Element);
 abstraction_element!(DoIpLogicAddress, DoIpLogicAddress);
+impl IdentifiableAbstractionElement for DoIpLogicAddress {}
 
 impl DoIpLogicAddress {
     pub(crate) fn new(name: &str, parent: &Element, address: u32) -> Result<Self, AutosarAbstractionError> {
@@ -99,6 +103,30 @@ impl DoIpLogicAddress {
 pub struct DoIpTpConnection(Element);
 abstraction_element!(DoIpTpConnection, DoIpTpConnection);
 
+impl IdentifiableAbstractionElement for DoIpTpConnection {
+    /// get the name of the connection
+    ///
+    /// In early versions of the Autosar standard, TpConnections were not identifiable.
+    /// This was fixed later by adding the Ident sub-element. This method returns the name
+    /// provied in the Ident element, if it exists.
+    #[must_use]
+    fn name(&self) -> Option<String> {
+        self.element()
+            .get_sub_element(ElementName::Ident)
+            .and_then(|elem| elem.item_name())
+    }
+
+    /// set the name of the connection
+    fn set_name(&self, name: &str) -> Result<(), AutosarAbstractionError> {
+        if let Some(ident_elem) = self.element().get_sub_element(ElementName::Ident) {
+            ident_elem.set_item_name(name)?;
+        } else {
+            self.element().create_named_sub_element(ElementName::Ident, name)?;
+        }
+        Ok(())
+    }
+}
+
 impl DoIpTpConnection {
     pub(crate) fn new(
         name: Option<&str>,
@@ -121,28 +149,6 @@ impl DoIpTpConnection {
             .create_sub_element(ElementName::TpSduRef)?
             .set_reference_target(tp_sdu_triggering.element())?;
         Ok(Self(tp_connection_elem))
-    }
-
-    /// get the name of the connection
-    ///
-    /// In early versions of the Autosar standard, TpConnections were not identifiable.
-    /// This was fixed later by adding the Ident sub-element. This method returns the name
-    /// provied in the Ident element, if it exists.
-    #[must_use]
-    pub fn name(&self) -> Option<String> {
-        self.element()
-            .get_sub_element(ElementName::Ident)
-            .and_then(|elem| elem.item_name())
-    }
-
-    /// set the name of the connection
-    pub fn set_name(&self, name: &str) -> Result<(), AutosarAbstractionError> {
-        if let Some(ident_elem) = self.element().get_sub_element(ElementName::Ident) {
-            ident_elem.set_item_name(name)?;
-        } else {
-            self.element().create_named_sub_element(ElementName::Ident, name)?;
-        }
-        Ok(())
     }
 
     /// get the source `DoIpLogicAddress`

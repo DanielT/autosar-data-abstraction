@@ -1,4 +1,4 @@
-use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError};
+use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement};
 use autosar_data::{Element, ElementName};
 
 mod can_tp;
@@ -19,6 +19,7 @@ pub use flexray_tp::*;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TpAddress(Element);
 abstraction_element!(TpAddress, TpAddress);
+impl IdentifiableAbstractionElement for TpAddress {}
 
 impl TpAddress {
     pub(crate) fn new(name: &str, parent: &Element, address: u32) -> Result<Self, AutosarAbstractionError> {

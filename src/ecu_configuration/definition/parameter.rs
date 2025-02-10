@@ -1,5 +1,5 @@
 use crate::ecu_configuration::{EcucCommonAttributes, EcucDefinitionElement};
-use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError};
+use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement};
 use autosar_data::{Element, ElementName};
 
 //#########################################################
@@ -184,6 +184,7 @@ pub trait EcucTextualParamDef: EcucCommonAttributes {}
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucAddInfoParamDef(Element);
 abstraction_element!(EcucAddInfoParamDef, EcucAddInfoParamDef);
+impl IdentifiableAbstractionElement for EcucAddInfoParamDef {}
 impl EcucCommonAttributes for EcucAddInfoParamDef {}
 impl EcucDefinitionElement for EcucAddInfoParamDef {}
 
@@ -204,6 +205,7 @@ impl EcucAddInfoParamDef {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucBooleanParamDef(Element);
 abstraction_element!(EcucBooleanParamDef, EcucBooleanParamDef);
+impl IdentifiableAbstractionElement for EcucBooleanParamDef {}
 impl EcucCommonAttributes for EcucBooleanParamDef {}
 impl EcucDefinitionElement for EcucBooleanParamDef {}
 impl EcucNumericalParamDef for EcucBooleanParamDef {}
@@ -246,6 +248,7 @@ impl EcucBooleanParamDef {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucEnumerationParamDef(Element);
 abstraction_element!(EcucEnumerationParamDef, EcucEnumerationParamDef);
+impl IdentifiableAbstractionElement for EcucEnumerationParamDef {}
 impl EcucCommonAttributes for EcucEnumerationParamDef {}
 impl EcucDefinitionElement for EcucEnumerationParamDef {}
 impl EcucTextualParamDef for EcucEnumerationParamDef {}
@@ -315,6 +318,7 @@ impl EcucEnumerationParamDef {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucEnumerationLiteralDef(Element);
 abstraction_element!(EcucEnumerationLiteralDef, EcucEnumerationLiteralDef);
+impl IdentifiableAbstractionElement for EcucEnumerationLiteralDef {}
 
 impl EcucEnumerationLiteralDef {
     pub(crate) fn new(name: &str, literals_elem: &Element) -> Result<Self, AutosarAbstractionError> {
@@ -331,6 +335,7 @@ impl EcucEnumerationLiteralDef {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucFloatParamDef(Element);
 abstraction_element!(EcucFloatParamDef, EcucFloatParamDef);
+impl IdentifiableAbstractionElement for EcucFloatParamDef {}
 impl EcucCommonAttributes for EcucFloatParamDef {}
 impl EcucDefinitionElement for EcucFloatParamDef {}
 impl EcucNumericalParamDef for EcucFloatParamDef {}
@@ -415,6 +420,7 @@ impl EcucFloatParamDef {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucIntegerParamDef(Element);
 abstraction_element!(EcucIntegerParamDef, EcucIntegerParamDef);
+impl IdentifiableAbstractionElement for EcucIntegerParamDef {}
 impl EcucCommonAttributes for EcucIntegerParamDef {}
 impl EcucDefinitionElement for EcucIntegerParamDef {}
 impl EcucNumericalParamDef for EcucIntegerParamDef {}
@@ -499,6 +505,7 @@ impl EcucIntegerParamDef {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucFunctionNameDef(Element);
 abstraction_element!(EcucFunctionNameDef, EcucFunctionNameDef);
+impl IdentifiableAbstractionElement for EcucFunctionNameDef {}
 impl EcucCommonAttributes for EcucFunctionNameDef {}
 impl EcucDefinitionElement for EcucFunctionNameDef {}
 
@@ -526,6 +533,7 @@ impl EcucFunctionNameDef {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucLinkerSymbolDef(Element);
 abstraction_element!(EcucLinkerSymbolDef, EcucLinkerSymbolDef);
+impl IdentifiableAbstractionElement for EcucLinkerSymbolDef {}
 impl EcucCommonAttributes for EcucLinkerSymbolDef {}
 impl EcucDefinitionElement for EcucLinkerSymbolDef {}
 
@@ -553,6 +561,7 @@ impl EcucLinkerSymbolDef {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucMultilineStringParamDef(Element);
 abstraction_element!(EcucMultilineStringParamDef, EcucMultilineStringParamDef);
+impl IdentifiableAbstractionElement for EcucMultilineStringParamDef {}
 impl EcucCommonAttributes for EcucMultilineStringParamDef {}
 impl EcucDefinitionElement for EcucMultilineStringParamDef {}
 
@@ -580,6 +589,7 @@ impl EcucMultilineStringParamDef {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucStringParamDef(Element);
 abstraction_element!(EcucStringParamDef, EcucStringParamDef);
+impl IdentifiableAbstractionElement for EcucStringParamDef {}
 impl EcucCommonAttributes for EcucStringParamDef {}
 impl EcucDefinitionElement for EcucStringParamDef {}
 string_param!(
@@ -662,6 +672,7 @@ impl TryFrom<Element> for EcucParameterDef {
     }
 }
 
+impl IdentifiableAbstractionElement for EcucParameterDef {}
 impl EcucDefinitionElement for EcucParameterDef {}
 impl EcucCommonAttributes for EcucParameterDef {}
 

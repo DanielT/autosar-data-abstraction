@@ -2,7 +2,7 @@ use crate::communication::{
     AbstractNmCluster, AbstractNmClusterCoupling, AbstractNmNode, EthernetCluster, EthernetCommunicationController,
     EthernetPhysicalChannel, NmEcu,
 };
-use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError};
+use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement};
 use autosar_data::{Element, ElementName};
 
 //##################################################################
@@ -11,6 +11,7 @@ use autosar_data::{Element, ElementName};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct UdpNmCluster(Element);
 abstraction_element!(UdpNmCluster, UdpNmCluster);
+impl IdentifiableAbstractionElement for UdpNmCluster {}
 
 impl UdpNmCluster {
     pub(crate) fn new(
@@ -307,6 +308,7 @@ impl AbstractNmClusterCoupling for UdpNmClusterCoupling {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct UdpNmNode(Element);
 abstraction_element!(UdpNmNode, UdpNmNode);
+impl IdentifiableAbstractionElement for UdpNmNode {}
 
 impl UdpNmNode {
     pub(crate) fn new(

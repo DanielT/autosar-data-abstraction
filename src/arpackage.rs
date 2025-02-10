@@ -22,13 +22,14 @@ use crate::{
         ParameterInterface, SenderReceiverInterface, SensorActuatorSwComponentType, ServiceSwComponentType,
         TriggerInterface,
     },
-    AbstractionElement, AutosarAbstractionError, ByteOrder, System, SystemCategory,
+    AbstractionElement, AutosarAbstractionError, ByteOrder, IdentifiableAbstractionElement, System, SystemCategory,
 };
 
 /// An `ArPackage` is an Autosar package, which can contain other packages or elements
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ArPackage(Element);
 abstraction_element!(ArPackage, ArPackage);
+impl IdentifiableAbstractionElement for ArPackage {}
 
 impl ArPackage {
     /// Get or create an autosar package for the given path

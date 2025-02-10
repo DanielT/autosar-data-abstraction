@@ -1,5 +1,8 @@
 use crate::communication::{AbstractIpdu, AbstractPdu, ISignal, ISignalGroup, Pdu, TransferProperty};
-use crate::{abstraction_element, make_unique_name, AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder};
+use crate::{
+    abstraction_element, make_unique_name, AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder,
+    IdentifiableAbstractionElement,
+};
 use autosar_data::{Element, ElementName, EnumItem};
 
 //##################################################################
@@ -8,6 +11,7 @@ use autosar_data::{Element, ElementName, EnumItem};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ISignalIPdu(Element);
 abstraction_element!(ISignalIPdu, ISignalIPdu);
+impl IdentifiableAbstractionElement for ISignalIPdu {}
 
 impl ISignalIPdu {
     pub(crate) fn new(name: &str, package: &ArPackage, length: u32) -> Result<Self, AutosarAbstractionError> {
@@ -286,6 +290,7 @@ impl From<ISignalIPdu> for Pdu {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ISignalToIPduMapping(Element);
 abstraction_element!(ISignalToIPduMapping, ISignalToIPduMapping);
+impl IdentifiableAbstractionElement for ISignalToIPduMapping {}
 
 impl ISignalToIPduMapping {
     fn new_with_signal(

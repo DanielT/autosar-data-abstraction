@@ -1,7 +1,7 @@
 use crate::communication::{
     AbstractNmCluster, AbstractNmClusterCoupling, AbstractNmNode, CanCluster, CanCommunicationController, NmEcu,
 };
-use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError};
+use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement};
 use autosar_data::{Element, ElementName};
 
 //##################################################################
@@ -10,6 +10,7 @@ use autosar_data::{Element, ElementName};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CanNmCluster(Element);
 abstraction_element!(CanNmCluster, CanNmCluster);
+impl IdentifiableAbstractionElement for CanNmCluster {}
 
 impl CanNmCluster {
     pub(crate) fn new(
@@ -297,6 +298,7 @@ impl AbstractNmClusterCoupling for CanNmClusterCoupling {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CanNmNode(Element);
 abstraction_element!(CanNmNode, CanNmNode);
+impl IdentifiableAbstractionElement for CanNmNode {}
 
 impl CanNmNode {
     pub(crate) fn new(

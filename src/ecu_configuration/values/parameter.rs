@@ -1,7 +1,7 @@
 use crate::{
     abstraction_element,
     ecu_configuration::{EcucNumericalParamDef, EcucParameterDef, EcucTextualParamDef},
-    AbstractionElement, AutosarAbstractionError,
+    AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement,
 };
 use autosar_data::{Element, ElementName};
 
@@ -332,6 +332,8 @@ impl TryFrom<Element> for EcucParameterValue {
         }
     }
 }
+
+impl IdentifiableAbstractionElement for EcucParameterValue {}
 
 //#########################################################
 

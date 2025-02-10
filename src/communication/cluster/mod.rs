@@ -1,4 +1,4 @@
-use crate::{AbstractionElement, AutosarAbstractionError, System};
+use crate::{AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement, System};
 use autosar_data::{Element, ElementName};
 
 mod can;
@@ -59,6 +59,7 @@ impl AbstractionElement for Cluster {
     }
 }
 
+impl IdentifiableAbstractionElement for Cluster {}
 impl AbstractCluster for Cluster {}
 
 impl TryFrom<Element> for Cluster {

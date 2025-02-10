@@ -6,7 +6,7 @@ use crate::{
         EcucInstanceReferenceDef, EcucIntegerParamDef, EcucLinkerSymbolDef, EcucMultilineStringParamDef,
         EcucParameterDef, EcucReferenceDef, EcucStringParamDef, EcucUriReferenceDef,
     },
-    AbstractionElement, AutosarAbstractionError,
+    AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement,
 };
 use autosar_data::{Element, ElementName};
 
@@ -22,6 +22,7 @@ pub trait AbstractEcucContainerDef: EcucDefinitionElement {}
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucChoiceContainerDef(Element);
 abstraction_element!(EcucChoiceContainerDef, EcucChoiceContainerDef);
+impl IdentifiableAbstractionElement for EcucChoiceContainerDef {}
 impl EcucDefinitionElement for EcucChoiceContainerDef {}
 impl AbstractEcucContainerDef for EcucChoiceContainerDef {}
 
@@ -58,6 +59,7 @@ impl EcucChoiceContainerDef {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucParamConfContainerDef(Element);
 abstraction_element!(EcucParamConfContainerDef, EcucParamConfContainerDef);
+impl IdentifiableAbstractionElement for EcucParamConfContainerDef {}
 impl EcucDefinitionElement for EcucParamConfContainerDef {}
 impl AbstractEcucContainerDef for EcucParamConfContainerDef {}
 
@@ -283,6 +285,7 @@ impl TryFrom<Element> for EcucContainerDef {
     }
 }
 
+impl IdentifiableAbstractionElement for EcucContainerDef {}
 impl EcucDefinitionElement for EcucContainerDef {}
 impl AbstractEcucContainerDef for EcucContainerDef {}
 

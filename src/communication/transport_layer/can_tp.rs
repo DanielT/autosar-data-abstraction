@@ -1,5 +1,8 @@
 use crate::communication::{AbstractIpdu, CanCluster, CanCommunicationConnector, NPdu, Pdu};
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance};
+use crate::{
+    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance,
+    IdentifiableAbstractionElement,
+};
 use autosar_data::{Element, ElementName, EnumItem};
 
 //#########################################################
@@ -10,6 +13,7 @@ use autosar_data::{Element, ElementName, EnumItem};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CanTpConfig(Element);
 abstraction_element!(CanTpConfig, CanTpConfig);
+impl IdentifiableAbstractionElement for CanTpConfig {}
 
 impl CanTpConfig {
     pub(crate) fn new(name: &str, package: &ArPackage, cluster: &CanCluster) -> Result<Self, AutosarAbstractionError> {
@@ -177,6 +181,7 @@ impl CanTpEcu {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CanTpAddress(Element);
 abstraction_element!(CanTpAddress, CanTpAddress);
+impl IdentifiableAbstractionElement for CanTpAddress {}
 
 impl CanTpAddress {
     pub(crate) fn new(name: &str, parent: &Element, tp_address: u32) -> Result<Self, AutosarAbstractionError> {
@@ -194,6 +199,7 @@ impl CanTpAddress {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CanTpChannel(Element);
 abstraction_element!(CanTpChannel, CanTpChannel);
+impl IdentifiableAbstractionElement for CanTpChannel {}
 
 impl CanTpChannel {
     pub(crate) fn new(
@@ -275,6 +281,31 @@ impl TryFrom<EnumItem> for CanTpChannelMode {
 pub struct CanTpConnection(Element);
 abstraction_element!(CanTpConnection, CanTpConnection);
 
+impl IdentifiableAbstractionElement for CanTpConnection {
+    /// get the name of the connection
+    ///
+    /// In early versions of the Autosar standard, `CanTpConnection` was not identifiable.
+    /// This was fixed later by adding the Ident sub-element. This method returns the name
+    /// provied in the Ident element, if it exists.
+    #[must_use]
+    fn name(&self) -> Option<String> {
+        self.element()
+            .get_sub_element(ElementName::Ident)
+            .and_then(|elem| elem.item_name())
+    }
+
+    /// set the name of the connection
+    fn set_name(&self, name: &str) -> Result<(), AutosarAbstractionError> {
+        // rename an existing Ident element or create a new one
+        if let Some(ident_elem) = self.element().get_sub_element(ElementName::Ident) {
+            ident_elem.set_item_name(name)?;
+        } else {
+            self.element().create_named_sub_element(ElementName::Ident, name)?;
+        }
+        Ok(())
+    }
+}
+
 impl CanTpConnection {
     pub(crate) fn new(
         name: Option<&str>,
@@ -306,18 +337,6 @@ impl CanTpConnection {
             .set_character_data(padding_activation)?;
 
         Ok(Self(connection_elem))
-    }
-
-    /// get the name of the connection
-    ///
-    /// In early versions of the Autosar standard, `CanTpConnection` was not identifiable.
-    /// This was fixed later by adding the Ident sub-element. This method returns the name
-    /// provied in the Ident element, if it exists.
-    #[must_use]
-    pub fn name(&self) -> Option<String> {
-        self.element()
-            .get_sub_element(ElementName::Ident)
-            .and_then(|elem| elem.item_name())
     }
 
     /// get the `CanTpChannel` associated with this connection
@@ -368,16 +387,6 @@ impl CanTpConnection {
             .get_sub_element(ElementName::PaddingActivation)
             .and_then(|elem| elem.character_data())
             .and_then(|cdata| cdata.parse_bool())
-    }
-
-    /// set the name of the connection
-    pub fn set_name(&self, name: &str) -> Result<(), AutosarAbstractionError> {
-        if let Some(ident_elem) = self.element().get_sub_element(ElementName::Ident) {
-            ident_elem.set_item_name(name)?;
-        } else {
-            self.element().create_named_sub_element(ElementName::Ident, name)?;
-        }
-        Ok(())
     }
 
     /// set the `CanTpChannel` associated with this connection
@@ -521,6 +530,8 @@ impl TryFrom<EnumItem> for CanTpAddressingFormat {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CanTpNode(Element);
 abstraction_element!(CanTpNode, CanTpNode);
+
+impl IdentifiableAbstractionElement for CanTpNode {}
 
 impl CanTpNode {
     pub(crate) fn new(name: &str, parent: &Element) -> Result<Self, AutosarAbstractionError> {

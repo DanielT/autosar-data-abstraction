@@ -2,13 +2,16 @@ use crate::communication::{
     CanCommunicationController, CommunicationController, EthernetCommunicationController,
     FlexrayCommunicationController,
 };
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError};
+use crate::{
+    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
+};
 use autosar_data::{Element, ElementName};
 
 /// The `EcuInstance` represents one ECU in a `System`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcuInstance(Element);
 abstraction_element!(EcuInstance, EcuInstance);
+impl IdentifiableAbstractionElement for EcuInstance {}
 
 impl EcuInstance {
     // Create a new EcuInstance

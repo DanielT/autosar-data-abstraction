@@ -1,8 +1,10 @@
 use crate::communication::{
     AbstractPdu, EthernetPhysicalChannel, EventGroupControlType, Pdu, PduCollectionTrigger, PduTriggering,
-    SocketAddress, TpConfig,
+    PhysicalChannel, SocketAddress, TpConfig,
 };
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError};
+use crate::{
+    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
+};
 use autosar_data::{Element, ElementName, EnumItem};
 
 //##################################################################
@@ -12,6 +14,7 @@ use autosar_data::{Element, ElementName, EnumItem};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SocketConnectionBundle(Element);
 abstraction_element!(SocketConnectionBundle, SocketConnectionBundle);
+impl IdentifiableAbstractionElement for SocketConnectionBundle {}
 
 impl SocketConnectionBundle {
     pub(crate) fn new(
@@ -215,7 +218,10 @@ impl SocketConnection {
                 .set_character_data::<EnumItem>(collection_trigger.into())?;
         }
 
-        let pt = PduTriggering::new(pdu, &self.socket_connection_bundle()?.physical_channel()?.into())?;
+        let pt = PduTriggering::new(
+            pdu,
+            &PhysicalChannel::Ethernet(self.socket_connection_bundle()?.physical_channel()?),
+        )?;
         scii.create_sub_element(ElementName::PduTriggeringRef)?
             .set_reference_target(pt.element())?;
 
@@ -504,6 +510,7 @@ impl SocketConnection {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SoAdRoutingGroup(Element);
 abstraction_element!(SoAdRoutingGroup, SoAdRoutingGroup);
+impl IdentifiableAbstractionElement for SoAdRoutingGroup {}
 
 impl SoAdRoutingGroup {
     /// create a new `SoAdRoutingGroup`

@@ -1,11 +1,15 @@
 use crate::communication::{AbstractIpdu, FlexrayCluster, FlexrayCommunicationConnector, NPdu, Pdu, TpAddress};
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance};
+use crate::{
+    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance,
+    IdentifiableAbstractionElement,
+};
 use autosar_data::{Element, ElementName};
 
 /// `FlexrayTpConfig` defines exactly one `FlexRay` ISO TP Configuration
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlexrayTpConfig(Element);
 abstraction_element!(FlexrayTpConfig, FlexrayTpConfig);
+impl IdentifiableAbstractionElement for FlexrayTpConfig {}
 
 impl FlexrayTpConfig {
     pub(crate) fn new(
@@ -139,6 +143,7 @@ impl FlexrayTpConfig {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlexrayTpPduPool(Element);
 abstraction_element!(FlexrayTpPduPool, FlexrayTpPduPool);
+impl IdentifiableAbstractionElement for FlexrayTpPduPool {}
 
 impl FlexrayTpPduPool {
     pub(crate) fn new(name: &str, parent: &Element) -> Result<Self, AutosarAbstractionError> {
@@ -176,6 +181,30 @@ impl FlexrayTpPduPool {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlexrayTpConnection(Element);
 abstraction_element!(FlexrayTpConnection, FlexrayTpConnection);
+
+impl IdentifiableAbstractionElement for FlexrayTpConnection {
+    /// get the name of the connection
+    ///
+    /// In early versions of the Autosar standard, TpConnections were not identifiable.
+    /// This was fixed later by adding the Ident sub-element. This method returns the name
+    /// provied in the Ident element, if it exists.
+    #[must_use]
+    fn name(&self) -> Option<String> {
+        self.element()
+            .get_sub_element(ElementName::Ident)
+            .and_then(|elem| elem.item_name())
+    }
+
+    /// set the name of the connection
+    fn set_name(&self, name: &str) -> Result<(), AutosarAbstractionError> {
+        if let Some(ident_elem) = self.element().get_sub_element(ElementName::Ident) {
+            ident_elem.set_item_name(name)?;
+        } else {
+            self.element().create_named_sub_element(ElementName::Ident, name)?;
+        }
+        Ok(())
+    }
+}
 
 impl FlexrayTpConnection {
     pub(crate) fn new(
@@ -338,6 +367,7 @@ impl FlexrayTpConnection {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlexrayTpConnectionControl(Element);
 abstraction_element!(FlexrayTpConnectionControl, FlexrayTpConnectionControl);
+impl IdentifiableAbstractionElement for FlexrayTpConnectionControl {}
 
 impl FlexrayTpConnectionControl {
     pub(crate) fn new(name: &str, parent: &Element) -> Result<Self, AutosarAbstractionError> {
@@ -490,6 +520,7 @@ impl FlexrayTpEcu {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlexrayTpNode(Element);
 abstraction_element!(FlexrayTpNode, FlexrayTpNode);
+impl IdentifiableAbstractionElement for FlexrayTpNode {}
 
 impl FlexrayTpNode {
     pub(crate) fn new(name: &str, parent: &Element) -> Result<Self, AutosarAbstractionError> {
@@ -659,7 +690,7 @@ mod test {
         connection.set_rx_pdu_pool(&fr_tp_pdu_pool_rx).unwrap();
         connection.set_multicast_address(Some(&tp_address_2)).unwrap();
         connection.set_reversed_tp_sdu(&reversed_tp_sdu).unwrap();
-        assert!(connection.receivers().count() == 1);
+        assert_eq!(connection.receivers().count(), 1);
         assert_eq!(connection.receivers().next(), Some(tp_node_2));
         assert_eq!(connection.tx_pdu_pool().unwrap(), fr_tp_pdu_pool_tx);
         assert_eq!(connection.rx_pdu_pool().unwrap(), fr_tp_pdu_pool_rx);
@@ -668,6 +699,10 @@ mod test {
         assert_eq!(connection.transmitter().unwrap(), tp_node_1);
         assert_eq!(connection.direct_tp_sdu().unwrap(), tp_sdu.clone().into());
         assert_eq!(connection.reversed_tp_sdu().unwrap(), reversed_tp_sdu.clone().into());
+
+        assert_eq!(connection.name(), None);
+        connection.set_name("Connection1").unwrap();
+        assert_eq!(connection.name(), Some("Connection1".to_string()));
 
         // add a FlexrayTpEcu to the FlexrayTpConfig
         let tp_ecu = FlexrayTpEcu {

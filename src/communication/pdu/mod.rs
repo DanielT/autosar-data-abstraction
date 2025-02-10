@@ -3,7 +3,7 @@ use crate::communication::{
 };
 use crate::{
     abstraction_element, make_unique_name, reflist_iterator, AbstractionElement, ArPackage, AutosarAbstractionError,
-    EcuInstance,
+    EcuInstance, IdentifiableAbstractionElement,
 };
 use autosar_data::{AutosarDataError, Element, ElementName, EnumItem};
 use std::str::FromStr;
@@ -56,6 +56,7 @@ pub trait AbstractIpdu: AbstractPdu {}
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NmPdu(Element);
 abstraction_element!(NmPdu, NmPdu);
+impl IdentifiableAbstractionElement for NmPdu {}
 
 impl NmPdu {
     pub(crate) fn new(name: &str, package: &ArPackage, length: u32) -> Result<Self, AutosarAbstractionError> {
@@ -83,6 +84,7 @@ impl From<NmPdu> for Pdu {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NPdu(Element);
 abstraction_element!(NPdu, NPdu);
+impl IdentifiableAbstractionElement for NPdu {}
 
 impl NPdu {
     pub(crate) fn new(name: &str, package: &ArPackage, length: u32) -> Result<Self, AutosarAbstractionError> {
@@ -112,6 +114,7 @@ impl From<NPdu> for Pdu {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DcmIPdu(Element);
 abstraction_element!(DcmIPdu, DcmIPdu);
+impl IdentifiableAbstractionElement for DcmIPdu {}
 
 impl DcmIPdu {
     pub(crate) fn new(name: &str, package: &ArPackage, length: u32) -> Result<Self, AutosarAbstractionError> {
@@ -141,6 +144,7 @@ impl From<DcmIPdu> for Pdu {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct GeneralPurposePdu(Element);
 abstraction_element!(GeneralPurposePdu, GeneralPurposePdu);
+impl IdentifiableAbstractionElement for GeneralPurposePdu {}
 
 impl GeneralPurposePdu {
     pub(crate) fn new(
@@ -228,6 +232,7 @@ impl std::str::FromStr for GeneralPurposePduCategory {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct GeneralPurposeIPdu(Element);
 abstraction_element!(GeneralPurposeIPdu, GeneralPurposeIPdu);
+impl IdentifiableAbstractionElement for GeneralPurposeIPdu {}
 
 impl GeneralPurposeIPdu {
     pub(crate) fn new(
@@ -317,6 +322,7 @@ impl std::str::FromStr for GeneralPurposeIPduCategory {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ContainerIPdu(Element);
 abstraction_element!(ContainerIPdu, ContainerIPdu);
+impl IdentifiableAbstractionElement for ContainerIPdu {}
 
 impl ContainerIPdu {
     pub(crate) fn new(name: &str, package: &ArPackage, length: u32) -> Result<Self, AutosarAbstractionError> {
@@ -346,6 +352,7 @@ impl From<ContainerIPdu> for Pdu {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SecuredIPdu(Element);
 abstraction_element!(SecuredIPdu, SecuredIPdu);
+impl IdentifiableAbstractionElement for SecuredIPdu {}
 
 impl SecuredIPdu {
     pub(crate) fn new(name: &str, package: &ArPackage, length: u32) -> Result<Self, AutosarAbstractionError> {
@@ -375,6 +382,7 @@ impl From<SecuredIPdu> for Pdu {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct MultiplexedIPdu(Element);
 abstraction_element!(MultiplexedIPdu, MultiplexedIPdu);
+impl IdentifiableAbstractionElement for MultiplexedIPdu {}
 
 impl MultiplexedIPdu {
     pub(crate) fn new(name: &str, package: &ArPackage, length: u32) -> Result<Self, AutosarAbstractionError> {
@@ -461,6 +469,7 @@ impl TryFrom<Element> for Pdu {
     }
 }
 
+impl IdentifiableAbstractionElement for Pdu {}
 impl AbstractPdu for Pdu {}
 
 //##################################################################
@@ -469,6 +478,7 @@ impl AbstractPdu for Pdu {}
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PduTriggering(Element);
 abstraction_element!(PduTriggering, PduTriggering);
+impl IdentifiableAbstractionElement for PduTriggering {}
 
 impl PduTriggering {
     pub(crate) fn new(pdu: &Pdu, channel: &PhysicalChannel) -> Result<Self, AutosarAbstractionError> {

@@ -1,4 +1,6 @@
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError};
+use crate::{
+    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
+};
 use autosar_data::{Element, ElementName, EnumItem};
 
 mod container;
@@ -276,6 +278,7 @@ pub trait EcucDefinitionElement: AbstractionElement {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucDefinitionCollection(Element);
 abstraction_element!(EcucDefinitionCollection, EcucDefinitionCollection);
+impl IdentifiableAbstractionElement for EcucDefinitionCollection {}
 
 impl EcucDefinitionCollection {
     pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
@@ -312,6 +315,7 @@ impl EcucDefinitionCollection {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucModuleDef(Element);
 abstraction_element!(EcucModuleDef, EcucModuleDef);
+impl IdentifiableAbstractionElement for EcucModuleDef {}
 impl EcucDefinitionElement for EcucModuleDef {}
 
 impl EcucModuleDef {
@@ -686,6 +690,7 @@ fn get_config_classes(
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucDestinationUriDefSet(Element);
 abstraction_element!(EcucDestinationUriDefSet, EcucDestinationUriDefSet);
+impl IdentifiableAbstractionElement for EcucDestinationUriDefSet {}
 
 impl EcucDestinationUriDefSet {
     pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
@@ -724,6 +729,7 @@ impl EcucDestinationUriDefSet {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucDestinationUriDef(Element);
 abstraction_element!(EcucDestinationUriDef, EcucDestinationUriDef);
+impl IdentifiableAbstractionElement for EcucDestinationUriDef {}
 
 impl EcucDestinationUriDef {
     /// create a new `EcucDestinationUriDef`

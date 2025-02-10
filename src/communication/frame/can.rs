@@ -4,7 +4,7 @@ use crate::communication::{
 };
 use crate::{
     abstraction_element, make_unique_name, reflist_iterator, AbstractionElement, ArPackage, AutosarAbstractionError,
-    ByteOrder, EcuInstance,
+    ByteOrder, EcuInstance, IdentifiableAbstractionElement,
 };
 use autosar_data::{AutosarDataError, Element, ElementName, EnumItem};
 
@@ -12,6 +12,7 @@ use autosar_data::{AutosarDataError, Element, ElementName, EnumItem};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CanFrame(Element);
 abstraction_element!(CanFrame, CanFrame);
+impl IdentifiableAbstractionElement for CanFrame {}
 
 impl CanFrame {
     pub(crate) fn new(name: &str, package: &ArPackage, byte_length: u64) -> Result<Self, AutosarAbstractionError> {
@@ -59,6 +60,7 @@ impl AbstractFrame for CanFrame {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CanFrameTriggering(Element);
 abstraction_element!(CanFrameTriggering, CanFrameTriggering);
+impl IdentifiableAbstractionElement for CanFrameTriggering {}
 
 impl CanFrameTriggering {
     pub(crate) fn new(

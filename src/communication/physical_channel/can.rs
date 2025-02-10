@@ -4,7 +4,7 @@ use crate::{
         AbstractPhysicalChannel, CanAddressingMode, CanCluster, CanCommunicationConnector, CanFrame,
         CanFrameTriggering, CanFrameType,
     },
-    AbstractionElement, AutosarAbstractionError,
+    AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement,
 };
 use autosar_data::{Element, ElementName};
 
@@ -12,6 +12,7 @@ use autosar_data::{Element, ElementName};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CanPhysicalChannel(Element);
 abstraction_element!(CanPhysicalChannel, CanPhysicalChannel);
+impl IdentifiableAbstractionElement for CanPhysicalChannel {}
 
 impl CanPhysicalChannel {
     /// get the cluster containing this physical channel

@@ -1,7 +1,7 @@
 use crate::{
     abstraction_element,
     ecu_configuration::{EcucCommonAttributes, EcucDefinitionElement},
-    AbstractionElement, AutosarAbstractionError,
+    AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement,
 };
 use autosar_data::{Element, ElementName};
 
@@ -19,6 +19,7 @@ pub trait AbstractEcucReferenceDef: AbstractionElement + EcucCommonAttributes + 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucForeignReferenceDef(Element);
 abstraction_element!(EcucForeignReferenceDef, EcucForeignReferenceDef);
+impl IdentifiableAbstractionElement for EcucForeignReferenceDef {}
 impl EcucCommonAttributes for EcucForeignReferenceDef {}
 impl EcucDefinitionElement for EcucForeignReferenceDef {}
 impl AbstractEcucReferenceDef for EcucForeignReferenceDef {}
@@ -62,6 +63,7 @@ impl EcucForeignReferenceDef {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucInstanceReferenceDef(Element);
 abstraction_element!(EcucInstanceReferenceDef, EcucInstanceReferenceDef);
+impl IdentifiableAbstractionElement for EcucInstanceReferenceDef {}
 impl EcucCommonAttributes for EcucInstanceReferenceDef {}
 impl EcucDefinitionElement for EcucInstanceReferenceDef {}
 impl AbstractEcucReferenceDef for EcucInstanceReferenceDef {}
@@ -132,6 +134,7 @@ impl EcucInstanceReferenceDef {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucChoiceReferenceDef(Element);
 abstraction_element!(EcucChoiceReferenceDef, EcucChoiceReferenceDef);
+impl IdentifiableAbstractionElement for EcucChoiceReferenceDef {}
 impl EcucCommonAttributes for EcucChoiceReferenceDef {}
 impl EcucDefinitionElement for EcucChoiceReferenceDef {}
 impl AbstractEcucReferenceDef for EcucChoiceReferenceDef {}
@@ -177,6 +180,7 @@ impl EcucChoiceReferenceDef {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucReferenceDef(Element);
 abstraction_element!(EcucReferenceDef, EcucReferenceDef);
+impl IdentifiableAbstractionElement for EcucReferenceDef {}
 impl EcucCommonAttributes for EcucReferenceDef {}
 impl EcucDefinitionElement for EcucReferenceDef {}
 impl AbstractEcucReferenceDef for EcucReferenceDef {}
@@ -221,6 +225,7 @@ impl EcucReferenceDef {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucUriReferenceDef(Element);
 abstraction_element!(EcucUriReferenceDef, EcucUriReferenceDef);
+impl IdentifiableAbstractionElement for EcucUriReferenceDef {}
 impl EcucCommonAttributes for EcucUriReferenceDef {}
 impl EcucDefinitionElement for EcucUriReferenceDef {}
 impl AbstractEcucReferenceDef for EcucUriReferenceDef {}
@@ -310,6 +315,7 @@ impl TryFrom<Element> for EcucAnyReferenceDef {
     }
 }
 
+impl IdentifiableAbstractionElement for EcucAnyReferenceDef {}
 impl EcucDefinitionElement for EcucAnyReferenceDef {}
 impl EcucCommonAttributes for EcucAnyReferenceDef {}
 impl AbstractEcucReferenceDef for EcucAnyReferenceDef {}

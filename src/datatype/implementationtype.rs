@@ -1,10 +1,13 @@
-use crate::{abstraction_element, datatype, AbstractionElement, ArPackage, AutosarAbstractionError, Element, EnumItem};
+use crate::{
+    abstraction_element, datatype, AbstractionElement, ArPackage, AutosarAbstractionError, Element, EnumItem,
+    IdentifiableAbstractionElement,
+};
 use autosar_data::ElementName;
 use datatype::{AbstractAutosarDataType, CompuMethod, DataConstr, SwBaseType};
 use std::fmt::Display;
 
 /// Interface for implementation data types, which provides default implementations for common operations
-pub trait AbstractImplementationDataType: AbstractionElement {
+pub trait AbstractImplementationDataType: IdentifiableAbstractionElement {
     /// get the category of this implementation data type
     fn category(&self) -> Option<ImplementationDataCategory> {
         self.element()
@@ -165,7 +168,7 @@ pub trait AbstractImplementationDataType: AbstractionElement {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ImplementationDataType(Element);
 abstraction_element!(ImplementationDataType, ImplementationDataType);
-
+impl IdentifiableAbstractionElement for ImplementationDataType {}
 impl AbstractAutosarDataType for ImplementationDataType {}
 impl AbstractImplementationDataType for ImplementationDataType {}
 
@@ -191,7 +194,7 @@ impl ImplementationDataType {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ImplementationDataTypeElement(Element);
 abstraction_element!(ImplementationDataTypeElement, ImplementationDataTypeElement);
-
+impl IdentifiableAbstractionElement for ImplementationDataTypeElement {}
 impl AbstractImplementationDataType for ImplementationDataTypeElement {}
 
 impl ImplementationDataTypeElement {

@@ -1,5 +1,7 @@
 use crate::communication::{AbstractIpdu, FlexrayCluster, FlexrayCommunicationConnector, NPdu, Pdu, TpAddress};
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError};
+use crate::{
+    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
+};
 use autosar_data::{Element, ElementName, EnumItem};
 
 //#########################################################
@@ -8,6 +10,7 @@ use autosar_data::{Element, ElementName, EnumItem};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlexrayArTpConfig(Element);
 abstraction_element!(FlexrayArTpConfig, FlexrayArTpConfig);
+impl IdentifiableAbstractionElement for FlexrayArTpConfig {}
 
 impl FlexrayArTpConfig {
     pub(crate) fn new(
@@ -298,6 +301,30 @@ impl From<MaximumMessageLengthType> for EnumItem {
 pub struct FlexrayArTpConnection(Element);
 abstraction_element!(FlexrayArTpConnection, FlexrayArTpConnection);
 
+impl IdentifiableAbstractionElement for FlexrayArTpConnection {
+    /// get the name of the connection
+    ///
+    /// In early versions of the Autosar standard, TpConnections were not identifiable.
+    /// This was fixed later by adding the Ident sub-element. This method returns the name
+    /// provied in the Ident element, if it exists.
+    #[must_use]
+    fn name(&self) -> Option<String> {
+        self.element()
+            .get_sub_element(ElementName::Ident)
+            .and_then(|elem| elem.item_name())
+    }
+
+    /// set the name of the connection
+    fn set_name(&self, name: &str) -> Result<(), AutosarAbstractionError> {
+        if let Some(ident_elem) = self.element().get_sub_element(ElementName::Ident) {
+            ident_elem.set_item_name(name)?;
+        } else {
+            self.element().create_named_sub_element(ElementName::Ident, name)?;
+        }
+        Ok(())
+    }
+}
+
 impl FlexrayArTpConnection {
     pub(crate) fn new(
         name: Option<&str>,
@@ -403,6 +430,7 @@ impl FlexrayArTpConnection {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlexrayArTpNode(Element);
 abstraction_element!(FlexrayArTpNode, FlexrayArTpNode);
+impl IdentifiableAbstractionElement for FlexrayArTpNode {}
 
 impl FlexrayArTpNode {
     pub(crate) fn new(name: &str, parent: &Element) -> Result<Self, AutosarAbstractionError> {
@@ -553,6 +581,10 @@ mod test {
         assert_eq!(flexray_ar_tp_connection.direct_tp_sdu(), Some(tp_sdu.into()));
         assert_eq!(flexray_ar_tp_connection.source(), Some(fr_ar_tp_node_source));
         assert_eq!(flexray_ar_tp_connection.targets().count(), 1);
+
+        assert_eq!(flexray_ar_tp_connection.name(), Some("conn".to_string()));
+        flexray_ar_tp_connection.set_name("new_name").unwrap();
+        assert_eq!(flexray_ar_tp_connection.name(), Some("new_name".to_string()));
 
         let reversed_tp_sdu = system.create_dcm_ipdu("reversed_tp_sdu", &package, 1024).unwrap();
         flexray_ar_tp_connection

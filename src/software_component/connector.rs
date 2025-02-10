@@ -1,4 +1,7 @@
-use crate::{abstraction_element, software_component, AbstractionElement, AutosarAbstractionError};
+use crate::{
+    abstraction_element, software_component, AbstractionElement, AutosarAbstractionError,
+    IdentifiableAbstractionElement,
+};
 use autosar_data::{Element, ElementName};
 use software_component::{PortInterface, PortPrototype, SwComponentPrototype};
 
@@ -8,6 +11,7 @@ use software_component::{PortInterface, PortPrototype, SwComponentPrototype};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DelegationSwConnector(Element);
 abstraction_element!(DelegationSwConnector, DelegationSwConnector);
+impl IdentifiableAbstractionElement for DelegationSwConnector {}
 
 impl DelegationSwConnector {
     /// Create a new `DelegationSwConnector`
@@ -94,6 +98,7 @@ impl DelegationSwConnector {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AssemblySwConnector(Element);
 abstraction_element!(AssemblySwConnector, AssemblySwConnector);
+impl IdentifiableAbstractionElement for AssemblySwConnector {}
 
 impl AssemblySwConnector {
     /// Create a new `AssemblySwConnector`
@@ -166,6 +171,7 @@ impl AssemblySwConnector {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PassThroughSwConnector(Element);
 abstraction_element!(PassThroughSwConnector, PassThroughSwConnector);
+impl IdentifiableAbstractionElement for PassThroughSwConnector {}
 
 impl PassThroughSwConnector {
     /// Create a new `PassThroughSwConnector`
@@ -242,6 +248,8 @@ impl TryFrom<Element> for SwConnector {
         }
     }
 }
+
+impl IdentifiableAbstractionElement for SwConnector {}
 
 //##################################################################
 

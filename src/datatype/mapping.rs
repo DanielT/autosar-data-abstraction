@@ -1,4 +1,7 @@
-use crate::{abstraction_element, datatype, AbstractionElement, ArPackage, AutosarAbstractionError, Element};
+use crate::{
+    abstraction_element, datatype, AbstractionElement, ArPackage, AutosarAbstractionError, Element,
+    IdentifiableAbstractionElement,
+};
 use autosar_data::ElementName;
 use datatype::{ApplicationDataType, ImplementationDataType};
 
@@ -8,6 +11,7 @@ use datatype::{ApplicationDataType, ImplementationDataType};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DataTypeMappingSet(Element);
 abstraction_element!(DataTypeMappingSet, DataTypeMappingSet);
+impl IdentifiableAbstractionElement for DataTypeMappingSet {}
 
 impl DataTypeMappingSet {
     /// Create a new `DataTypeMappingSet`

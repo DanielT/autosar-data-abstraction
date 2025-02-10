@@ -1,5 +1,6 @@
 use crate::{
     abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder, Element, EnumItem,
+    IdentifiableAbstractionElement,
 };
 use autosar_data::ElementName;
 use std::fmt::Display;
@@ -28,6 +29,7 @@ use std::fmt::Display;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SwBaseType(Element);
 abstraction_element!(SwBaseType, SwBaseType);
+impl IdentifiableAbstractionElement for SwBaseType {}
 
 impl SwBaseType {
     /// create a new `SwBaseType` in the given package

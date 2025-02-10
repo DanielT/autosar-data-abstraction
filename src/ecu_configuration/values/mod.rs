@@ -4,7 +4,7 @@ use crate::{
         AbstractEcucContainerDef, AbstractEcucReferenceDef, EcucContainerDef, EcucInstanceReferenceDef, EcucModuleDef,
         EcucNumericalParamDef, EcucTextualParamDef,
     },
-    AbstractionElement, ArPackage, AutosarAbstractionError, System,
+    AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, System,
 };
 use autosar_data::{Element, ElementName};
 
@@ -20,6 +20,7 @@ pub use reference::*;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucValueCollection(Element);
 abstraction_element!(EcucValueCollection, EcucValueCollection);
+impl IdentifiableAbstractionElement for EcucValueCollection {}
 
 impl EcucValueCollection {
     pub(crate) fn new(name: &str, package: &ArPackage) -> Result<Self, AutosarAbstractionError> {
@@ -83,6 +84,7 @@ impl EcucValueCollection {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucModuleConfigurationValues(Element);
 abstraction_element!(EcucModuleConfigurationValues, EcucModuleConfigurationValues);
+impl IdentifiableAbstractionElement for EcucModuleConfigurationValues {}
 
 impl EcucModuleConfigurationValues {
     pub(crate) fn new(
@@ -158,6 +160,7 @@ impl EcucModuleConfigurationValues {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucContainerValue(Element);
 abstraction_element!(EcucContainerValue, EcucContainerValue);
+impl IdentifiableAbstractionElement for EcucContainerValue {}
 
 impl EcucContainerValue {
     pub(crate) fn new<T: AbstractEcucContainerDef>(

@@ -1,7 +1,7 @@
 use crate::communication::{
     AbstractNmCluster, AbstractNmClusterCoupling, AbstractNmNode, FlexrayCluster, FlexrayCommunicationController, NmEcu,
 };
-use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError};
+use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement};
 use autosar_data::{Element, ElementName, EnumItem};
 
 //##################################################################
@@ -10,6 +10,7 @@ use autosar_data::{Element, ElementName, EnumItem};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlexrayNmCluster(Element);
 abstraction_element!(FlexrayNmCluster, FlexrayNmCluster);
+impl IdentifiableAbstractionElement for FlexrayNmCluster {}
 
 impl FlexrayNmCluster {
     pub(crate) fn new(
@@ -287,6 +288,7 @@ impl TryFrom<EnumItem> for FlexrayNmScheduleVariant {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlexrayNmNode(Element);
 abstraction_element!(FlexrayNmNode, FlexrayNmNode);
+impl IdentifiableAbstractionElement for FlexrayNmNode {}
 
 impl FlexrayNmNode {
     pub(crate) fn new(

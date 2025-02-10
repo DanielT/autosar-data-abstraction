@@ -2,7 +2,9 @@
 //!
 //! This module contains the implementation of the AUTOSAR data types, as well as supporting elements like compu methods and data constraints.
 
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError};
+use crate::{
+    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
+};
 use autosar_data::{Element, ElementName};
 
 mod applicationtype;
@@ -75,6 +77,8 @@ impl TryFrom<Element> for AutosarDataType {
     }
 }
 
+impl IdentifiableAbstractionElement for AutosarDataType {}
+
 //#########################################################
 
 /// `Unit` represents a unit of measurement.
@@ -83,6 +87,7 @@ impl TryFrom<Element> for AutosarDataType {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Unit(Element);
 abstraction_element!(Unit, Unit);
+impl IdentifiableAbstractionElement for Unit {}
 
 impl Unit {
     /// Create a new unit
@@ -109,6 +114,7 @@ impl Unit {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DataConstr(Element);
 abstraction_element!(DataConstr, DataConstr);
+impl IdentifiableAbstractionElement for DataConstr {}
 
 impl DataConstr {
     /// Create a new data constraint

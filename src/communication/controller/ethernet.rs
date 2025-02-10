@@ -1,13 +1,16 @@
 use crate::communication::{
     AbstractCommunicationConnector, AbstractCommunicationController, EthernetPhysicalChannel, EthernetVlanInfo,
 };
-use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError, EcuInstance};
+use crate::{
+    abstraction_element, AbstractionElement, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement,
+};
 use autosar_data::{AutosarDataError, AutosarModel, Element, ElementName, ElementsIterator, WeakElement};
 
 /// An `EcuInstance` needs an `EthernetCommunicationController` in order to connect to an ethernet cluster.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EthernetCommunicationController(Element);
 abstraction_element!(EthernetCommunicationController, EthernetCommunicationController);
+impl IdentifiableAbstractionElement for EthernetCommunicationController {}
 
 impl EthernetCommunicationController {
     // create an EthernetCommunicationController
@@ -185,6 +188,7 @@ impl AbstractCommunicationController for EthernetCommunicationController {}
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EthernetCommunicationConnector(Element);
 abstraction_element!(EthernetCommunicationConnector, EthernetCommunicationConnector);
+impl IdentifiableAbstractionElement for EthernetCommunicationConnector {}
 
 impl EthernetCommunicationConnector {
     pub(crate) fn new(

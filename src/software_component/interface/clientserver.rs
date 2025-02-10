@@ -2,7 +2,7 @@ use crate::{
     abstraction_element,
     datatype::{self, AbstractAutosarDataType},
     software_component::AbstractPortInterface,
-    AbstractionElement, ArPackage, AutosarAbstractionError, Element, EnumItem,
+    AbstractionElement, ArPackage, AutosarAbstractionError, Element, EnumItem, IdentifiableAbstractionElement,
 };
 use autosar_data::ElementName;
 use datatype::AutosarDataType;
@@ -15,7 +15,7 @@ use datatype::AutosarDataType;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ClientServerInterface(pub(crate) Element);
 abstraction_element!(ClientServerInterface, ClientServerInterface);
-
+impl IdentifiableAbstractionElement for ClientServerInterface {}
 impl AbstractPortInterface for ClientServerInterface {}
 
 impl ClientServerInterface {
@@ -68,6 +68,7 @@ impl ClientServerInterface {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ApplicationError(Element);
 abstraction_element!(ApplicationError, ApplicationError);
+impl IdentifiableAbstractionElement for ApplicationError {}
 
 impl ApplicationError {
     /// Create a new `ApplicationError`
@@ -94,6 +95,7 @@ impl ApplicationError {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ClientServerOperation(Element);
 abstraction_element!(ClientServerOperation, ClientServerOperation);
+impl IdentifiableAbstractionElement for ClientServerOperation {}
 
 impl ClientServerOperation {
     /// Create a new `ClientServerOperation`
@@ -203,6 +205,7 @@ impl From<ArgumentDirection> for EnumItem {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ArgumentDataPrototype(Element);
 abstraction_element!(ArgumentDataPrototype, ArgumentDataPrototype);
+impl IdentifiableAbstractionElement for ArgumentDataPrototype {}
 
 impl ArgumentDataPrototype {
     /// Create a new `ArgumentDataPrototype`

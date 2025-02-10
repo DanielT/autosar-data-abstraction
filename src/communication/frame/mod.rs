@@ -3,7 +3,7 @@ use crate::communication::{
 };
 use crate::{
     abstraction_element, make_unique_name, reflist_iterator, AbstractionElement, AutosarAbstractionError, ByteOrder,
-    EcuInstance,
+    EcuInstance, IdentifiableAbstractionElement,
 };
 
 mod can;
@@ -79,6 +79,8 @@ impl AbstractionElement for Frame {
         }
     }
 }
+
+impl IdentifiableAbstractionElement for Frame {}
 
 impl AbstractFrame for Frame {
     type FrameTriggeringType = FrameTriggering;
@@ -269,6 +271,8 @@ impl AbstractionElement for FrameTriggering {
     }
 }
 
+impl IdentifiableAbstractionElement for FrameTriggering {}
+
 impl AbstractFrameTriggering for FrameTriggering {
     type FrameType = Frame;
 }
@@ -365,6 +369,7 @@ impl FrameTriggering {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PduToFrameMapping(Element);
 abstraction_element!(PduToFrameMapping, PduToFrameMapping);
+impl IdentifiableAbstractionElement for PduToFrameMapping {}
 
 impl PduToFrameMapping {
     fn new(

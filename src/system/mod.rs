@@ -8,7 +8,10 @@ use crate::communication::{
 };
 use crate::datatype::SwBaseType;
 use crate::software_component::{CompositionSwComponentType, RootSwCompositionPrototype};
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance};
+use crate::{
+    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance,
+    IdentifiableAbstractionElement,
+};
 use autosar_data::{AutosarDataError, AutosarModel, Element, ElementName, WeakElement};
 use std::iter::FusedIterator;
 
@@ -23,6 +26,7 @@ pub use mapping::*;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct System(Element);
 abstraction_element!(System, System);
+impl IdentifiableAbstractionElement for System {}
 
 impl System {
     // find an existing \<SYSTEM\> in the model, if it exists
@@ -1124,7 +1128,7 @@ mod test {
         },
         software_component::CompositionSwComponentType,
         system::SystemCategory,
-        AbstractionElement, AutosarModelAbstraction, System,
+        AbstractionElement, AutosarModelAbstraction, IdentifiableAbstractionElement, System,
     };
     use autosar_data::{AutosarVersion, ElementName};
 
@@ -1143,6 +1147,11 @@ mod test {
         // find the newly created system
         let system_2 = model.find_system().unwrap();
         assert_eq!(system, system_2);
+
+        // name
+        assert_eq!(system.name().unwrap(), "System");
+        system.set_name("NewName").unwrap();
+        assert_eq!(system.name().unwrap(), "NewName");
 
         // category
         assert_eq!(system.category().unwrap(), SystemCategory::SystemExtract);

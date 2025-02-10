@@ -1,5 +1,5 @@
 use crate::communication::{SoAdRoutingGroup, SocketAddress};
-use crate::{AbstractionElement, AutosarAbstractionError};
+use crate::{AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement};
 use autosar_data::{Element, ElementName};
 
 //##################################################################
@@ -15,6 +15,8 @@ impl AbstractionElement for ProvidedServiceInstanceV1 {
         &self.0
     }
 }
+
+impl IdentifiableAbstractionElement for ProvidedServiceInstanceV1 {}
 
 impl TryFrom<Element> for ProvidedServiceInstanceV1 {
     type Error = AutosarAbstractionError;
@@ -220,6 +222,8 @@ impl AbstractionElement for EventHandlerV1 {
     }
 }
 
+impl IdentifiableAbstractionElement for EventHandlerV1 {}
+
 impl TryFrom<Element> for EventHandlerV1 {
     type Error = AutosarAbstractionError;
 
@@ -351,6 +355,8 @@ impl AbstractionElement for ConsumedServiceInstanceV1 {
         &self.0
     }
 }
+
+impl IdentifiableAbstractionElement for ConsumedServiceInstanceV1 {}
 
 impl TryFrom<Element> for ConsumedServiceInstanceV1 {
     type Error = AutosarAbstractionError;
@@ -524,6 +530,8 @@ impl AbstractionElement for ConsumedEventGroupV1 {
         &self.0
     }
 }
+
+impl IdentifiableAbstractionElement for ConsumedEventGroupV1 {}
 
 impl TryFrom<Element> for ConsumedEventGroupV1 {
     type Error = AutosarAbstractionError;

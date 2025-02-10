@@ -4,7 +4,7 @@ use crate::{
         AbstractPhysicalChannel, FlexrayCluster, FlexrayCommunicationConnector, FlexrayCommunicationCycle,
         FlexrayFrame, FlexrayFrameTriggering,
     },
-    AbstractionElement, AutosarAbstractionError,
+    AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement,
 };
 use autosar_data::{Element, ElementName, EnumItem};
 
@@ -12,6 +12,7 @@ use autosar_data::{Element, ElementName, EnumItem};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlexrayPhysicalChannel(Element);
 abstraction_element!(FlexrayPhysicalChannel, FlexrayPhysicalChannel);
+impl IdentifiableAbstractionElement for FlexrayPhysicalChannel {}
 
 impl FlexrayPhysicalChannel {
     /// get the channel name of a `FlexrayPhysicalChannel`

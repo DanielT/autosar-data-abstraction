@@ -1,11 +1,14 @@
 use crate::communication::{AbstractCommunicationConnector, AbstractCommunicationController, FlexrayPhysicalChannel};
-use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError, EcuInstance};
+use crate::{
+    abstraction_element, AbstractionElement, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement,
+};
 use autosar_data::{AutosarDataError, AutosarModel, Element, ElementName, ElementsIterator, WeakElement};
 
 /// An `EcuInstance` needs a `FlexrayCommunicationController` in order to connect to a Flexray cluster.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlexrayCommunicationController(Element);
 abstraction_element!(FlexrayCommunicationController, FlexrayCommunicationController);
+impl IdentifiableAbstractionElement for FlexrayCommunicationController {}
 
 impl FlexrayCommunicationController {
     // create a new FlexrayCommunicationController - called by EcuInstance::create_flexray_communication_controller
@@ -123,6 +126,7 @@ impl AbstractCommunicationController for FlexrayCommunicationController {}
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlexrayCommunicationConnector(Element);
 abstraction_element!(FlexrayCommunicationConnector, FlexrayCommunicationConnector);
+impl IdentifiableAbstractionElement for FlexrayCommunicationConnector {}
 
 impl FlexrayCommunicationConnector {
     pub(crate) fn new(

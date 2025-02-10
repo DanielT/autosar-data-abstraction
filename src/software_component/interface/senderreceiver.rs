@@ -1,6 +1,6 @@
 use crate::{
     abstraction_element, datatype::AbstractAutosarDataType, software_component::AbstractPortInterface,
-    AbstractionElement, ArPackage, AutosarAbstractionError, Element,
+    AbstractionElement, ArPackage, AutosarAbstractionError, Element, IdentifiableAbstractionElement,
 };
 use autosar_data::ElementName;
 
@@ -12,7 +12,7 @@ use autosar_data::ElementName;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SenderReceiverInterface(pub(crate) Element);
 abstraction_element!(SenderReceiverInterface, SenderReceiverInterface);
-
+impl IdentifiableAbstractionElement for SenderReceiverInterface {}
 impl AbstractPortInterface for SenderReceiverInterface {}
 
 impl SenderReceiverInterface {
@@ -51,6 +51,7 @@ impl SenderReceiverInterface {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct VariableDataPrototype(Element);
 abstraction_element!(VariableDataPrototype, VariableDataPrototype);
+impl IdentifiableAbstractionElement for VariableDataPrototype {}
 
 impl VariableDataPrototype {
     /// Create a new `VariableDataPrototype`

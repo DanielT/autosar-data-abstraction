@@ -1,4 +1,4 @@
-use crate::{AbstractionElement, AutosarAbstractionError, EcuInstance};
+use crate::{AbstractionElement, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement};
 use autosar_data::{AutosarDataError, Element, ElementName};
 
 mod can;
@@ -53,6 +53,7 @@ impl TryFrom<Element> for CommunicationController {
     }
 }
 
+impl IdentifiableAbstractionElement for CommunicationController {}
 impl AbstractCommunicationController for CommunicationController {}
 
 impl From<CanCommunicationController> for CommunicationController {
@@ -166,6 +167,8 @@ impl TryFrom<Element> for CommunicationConnector {
         }
     }
 }
+
+impl IdentifiableAbstractionElement for CommunicationConnector {}
 
 impl AbstractCommunicationConnector for CommunicationConnector {
     type CommunicationControllerType = CommunicationController;

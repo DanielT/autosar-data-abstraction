@@ -1,4 +1,7 @@
-use crate::{abstraction_element, software_component, AbstractionElement, AutosarAbstractionError};
+use crate::{
+    abstraction_element, software_component, AbstractionElement, AutosarAbstractionError,
+    IdentifiableAbstractionElement,
+};
 use autosar_data::{Element, ElementName};
 use software_component::{AbstractPortInterface, PortInterface, SwComponentType};
 
@@ -8,6 +11,7 @@ use software_component::{AbstractPortInterface, PortInterface, SwComponentType};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RPortPrototype(Element);
 abstraction_element!(RPortPrototype, RPortPrototype);
+impl IdentifiableAbstractionElement for RPortPrototype {}
 
 impl RPortPrototype {
     /// Create a new `RPortPrototype`
@@ -49,6 +53,7 @@ impl RPortPrototype {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PPortPrototype(Element);
 abstraction_element!(PPortPrototype, PPortPrototype);
+impl IdentifiableAbstractionElement for PPortPrototype {}
 
 impl PPortPrototype {
     /// Create a new `PPortPrototype`
@@ -90,6 +95,7 @@ impl PPortPrototype {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PRPortPrototype(Element);
 abstraction_element!(PRPortPrototype, PrPortPrototype);
+impl IdentifiableAbstractionElement for PRPortPrototype {}
 
 impl PRPortPrototype {
     /// Create a new `PRPortPrototype`
@@ -154,6 +160,8 @@ impl AbstractionElement for PortPrototype {
     }
 }
 
+impl IdentifiableAbstractionElement for PortPrototype {}
+
 impl From<RPortPrototype> for PortPrototype {
     fn from(port: RPortPrototype) -> Self {
         PortPrototype::R(port)
@@ -211,6 +219,7 @@ impl PortPrototype {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PortGroup(Element);
 abstraction_element!(PortGroup, PortGroup);
+impl IdentifiableAbstractionElement for PortGroup {}
 
 impl PortGroup {
     /// Create a new `PortGroup`

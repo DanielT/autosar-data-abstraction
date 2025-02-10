@@ -1,7 +1,7 @@
 use crate::{
     abstraction_element,
     communication::{AbstractCommunicationConnector, AbstractCommunicationController, CanPhysicalChannel},
-    AbstractionElement, AutosarAbstractionError, EcuInstance,
+    AbstractionElement, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement,
 };
 use autosar_data::{AutosarDataError, AutosarModel, Element, ElementName, ElementsIterator, WeakElement};
 
@@ -9,6 +9,7 @@ use autosar_data::{AutosarDataError, AutosarModel, Element, ElementName, Element
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CanCommunicationController(Element);
 abstraction_element!(CanCommunicationController, CanCommunicationController);
+impl IdentifiableAbstractionElement for CanCommunicationController {}
 
 impl CanCommunicationController {
     // create a new CanCommunicationController - called by EcuInstance::create_can_communication_controller
@@ -134,6 +135,7 @@ impl AbstractCommunicationController for CanCommunicationController {}
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CanCommunicationConnector(Element);
 abstraction_element!(CanCommunicationConnector, CanCommunicationConnector);
+impl IdentifiableAbstractionElement for CanCommunicationConnector {}
 
 impl CanCommunicationConnector {
     pub(crate) fn new(

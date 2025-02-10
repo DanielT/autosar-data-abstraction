@@ -3,6 +3,7 @@ use crate::communication::{
     PhysicalChannel, SomeIpTransformationISignalProps, TransformationISignalPropsConfig, TransformationTechnology,
 };
 use crate::datatype::{CompuMethod, DataConstr, SwBaseType, Unit};
+use crate::IdentifiableAbstractionElement;
 use crate::{
     abstraction_element, communication::ISignalToIPduMapping, make_unique_name, reflist_iterator, AbstractionElement,
     ArPackage, AutosarAbstractionError, EcuInstance,
@@ -13,6 +14,7 @@ use autosar_data::{AutosarDataError, Element, ElementName, EnumItem, WeakElement
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ISignal(Element);
 abstraction_element!(ISignal, ISignal);
+impl IdentifiableAbstractionElement for ISignal {}
 
 impl ISignal {
     pub(crate) fn new(
@@ -225,6 +227,7 @@ impl ISignal {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SystemSignal(Element);
 abstraction_element!(SystemSignal, SystemSignal);
+impl IdentifiableAbstractionElement for SystemSignal {}
 
 impl SystemSignal {
     /// Create a new system signal in the given package
@@ -333,6 +336,7 @@ impl SystemSignal {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ISignalGroup(Element);
 abstraction_element!(ISignalGroup, ISignalGroup);
+impl IdentifiableAbstractionElement for ISignalGroup {}
 
 impl ISignalGroup {
     pub(crate) fn new(
@@ -484,6 +488,7 @@ impl ISignalGroup {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SystemSignalGroup(Element);
 abstraction_element!(SystemSignalGroup, SystemSignalGroup);
+impl IdentifiableAbstractionElement for SystemSignalGroup {}
 
 impl SystemSignalGroup {
     /// Create a new system signal group
@@ -516,9 +521,13 @@ impl SystemSignalGroup {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ISignalTriggering(Element);
 abstraction_element!(ISignalTriggering, ISignalTriggering);
+impl IdentifiableAbstractionElement for ISignalTriggering {}
 
 impl ISignalTriggering {
-    pub(crate) fn new(signal: &ISignal, channel: &PhysicalChannel) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new<T: AbstractPhysicalChannel>(
+        signal: &ISignal,
+        channel: &T,
+    ) -> Result<Self, AutosarAbstractionError> {
         let model = channel.element().model()?;
         let base_path = channel.element().path()?;
         let signal_name = signal
@@ -908,9 +917,9 @@ mod tests {
             .create_can_cluster("cluster", &package, &CanClusterSettings::default())
             .unwrap();
         let channel = cluster.create_physical_channel("channel").unwrap();
-        let st = ISignalTriggering::new(&signal, &channel.clone().into()).unwrap();
+        let st = ISignalTriggering::new(&signal, &channel.clone()).unwrap();
 
-        assert_eq!(st.physical_channel().unwrap(), channel.clone().into());
+        assert_eq!(st.physical_channel().unwrap(), PhysicalChannel::Can(channel.clone()));
 
         let ecuinstance = system.create_ecu_instance("ecu", &package).unwrap();
         let controller = ecuinstance.create_can_communication_controller("controller").unwrap();

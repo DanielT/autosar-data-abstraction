@@ -2,7 +2,9 @@ use crate::communication::{
     Cluster, EventGroupControlType, GeneralPurposeIPduCategory, ISignalIPdu, Pdu, PduTriggering, SoConIPduIdentifier,
     SocketAddress, TpConfig,
 };
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError};
+use crate::{
+    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
+};
 use autosar_data::{Element, ElementName, EnumItem};
 
 //##################################################################
@@ -11,6 +13,7 @@ use autosar_data::{Element, ElementName, EnumItem};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ServiceInstanceCollectionSet(Element);
 abstraction_element!(ServiceInstanceCollectionSet, ServiceInstanceCollectionSet);
+impl IdentifiableAbstractionElement for ServiceInstanceCollectionSet {}
 
 impl ServiceInstanceCollectionSet {
     /// create a new `ServiceInstanceCollectionSet`
@@ -101,6 +104,8 @@ impl AbstractionElement for ServiceInstance {
     }
 }
 
+impl IdentifiableAbstractionElement for ServiceInstance {}
+
 impl TryFrom<Element> for ServiceInstance {
     type Error = AutosarAbstractionError;
 
@@ -126,6 +131,8 @@ impl AbstractionElement for ProvidedServiceInstance {
         &self.0
     }
 }
+
+impl IdentifiableAbstractionElement for ProvidedServiceInstance {}
 
 impl TryFrom<Element> for ProvidedServiceInstance {
     type Error = AutosarAbstractionError;
@@ -281,6 +288,8 @@ impl AbstractionElement for EventHandler {
     }
 }
 
+impl IdentifiableAbstractionElement for EventHandler {}
+
 impl TryFrom<Element> for EventHandler {
     type Error = AutosarAbstractionError;
 
@@ -388,6 +397,8 @@ impl AbstractionElement for ConsumedServiceInstance {
         &self.0
     }
 }
+
+impl IdentifiableAbstractionElement for ConsumedServiceInstance {}
 
 impl TryFrom<Element> for ConsumedServiceInstance {
     type Error = AutosarAbstractionError;
@@ -546,6 +557,8 @@ impl AbstractionElement for ConsumedEventGroup {
         &self.0
     }
 }
+
+impl IdentifiableAbstractionElement for ConsumedEventGroup {}
 
 impl TryFrom<Element> for ConsumedEventGroup {
     type Error = AutosarAbstractionError;
@@ -763,6 +776,7 @@ fn local_unicast_addresses_iter(element: &Element) -> impl Iterator<Item = Local
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PduActivationRoutingGroup(Element);
 abstraction_element!(PduActivationRoutingGroup, PduActivationRoutingGroup);
+impl IdentifiableAbstractionElement for PduActivationRoutingGroup {}
 
 impl PduActivationRoutingGroup {
     pub(crate) fn new(
@@ -843,6 +857,7 @@ impl PduActivationRoutingGroup {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SomeipSdServerServiceInstanceConfig(Element);
 abstraction_element!(SomeipSdServerServiceInstanceConfig, SomeipSdServerServiceInstanceConfig);
+impl IdentifiableAbstractionElement for SomeipSdServerServiceInstanceConfig {}
 
 impl SomeipSdServerServiceInstanceConfig {
     /// create a new `SomeipSdServerServiceInstanceConfig` in the given package
@@ -962,6 +977,7 @@ abstraction_element!(
     SomeipSdServerEventGroupTimingConfig,
     SomeipSdServerEventGroupTimingConfig
 );
+impl IdentifiableAbstractionElement for SomeipSdServerEventGroupTimingConfig {}
 
 impl SomeipSdServerEventGroupTimingConfig {
     /// create a new `SomeipSdServerEventGroupTimingConfig` in the given package
@@ -1008,6 +1024,7 @@ impl SomeipSdServerEventGroupTimingConfig {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SomeipSdClientServiceInstanceConfig(Element);
 abstraction_element!(SomeipSdClientServiceInstanceConfig, SomeipSdClientServiceInstanceConfig);
+impl IdentifiableAbstractionElement for SomeipSdClientServiceInstanceConfig {}
 
 impl SomeipSdClientServiceInstanceConfig {
     /// create a new `SomeipSdClientServiceInstanceConfig` in the given package
@@ -1071,6 +1088,7 @@ abstraction_element!(
     SomeipSdClientEventGroupTimingConfig,
     SomeipSdClientEventGroupTimingConfig
 );
+impl IdentifiableAbstractionElement for SomeipSdClientEventGroupTimingConfig {}
 
 impl SomeipSdClientEventGroupTimingConfig {
     /// create a new `SomeipSdClientEventGroupTimingConfig` in the given package
@@ -1265,6 +1283,7 @@ impl InitialSdDelayConfig {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SomeipTpConfig(Element);
 abstraction_element!(SomeipTpConfig, SomeipTpConfig);
+impl IdentifiableAbstractionElement for SomeipTpConfig {}
 
 impl SomeipTpConfig {
     pub(crate) fn new(name: &str, package: &ArPackage, cluster: &Cluster) -> Result<Self, AutosarAbstractionError> {
@@ -1435,6 +1454,7 @@ impl TryFrom<Element> for SomeipTpConnection {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SomeipTpChannel(Element);
 abstraction_element!(SomeipTpChannel, SomeipTpChannel);
+impl IdentifiableAbstractionElement for SomeipTpChannel {}
 
 impl SomeipTpChannel {
     pub(crate) fn new(name: &str, parent: &Element) -> Result<Self, AutosarAbstractionError> {

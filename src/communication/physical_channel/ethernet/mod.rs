@@ -2,7 +2,10 @@ use crate::communication::{
     AbstractPdu, AbstractPhysicalChannel, CommunicationDirection, EthernetCluster, EthernetCommunicationConnector,
     GeneralPurposePdu, Pdu, PduCollectionTrigger, PduTriggering,
 };
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance};
+use crate::{
+    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance,
+    IdentifiableAbstractionElement,
+};
 use autosar_data::{AutosarVersion, Element, ElementName, EnumItem};
 
 mod networkendpoint;
@@ -16,6 +19,8 @@ pub use soad_old::*;
 pub use socketaddress::*;
 pub use someip::*;
 pub use someip_old::*;
+
+use super::PhysicalChannel;
 
 //##################################################################
 
@@ -34,6 +39,7 @@ pub struct EthernetVlanInfo {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EthernetPhysicalChannel(Element);
 abstraction_element!(EthernetPhysicalChannel, EthernetPhysicalChannel);
+impl IdentifiableAbstractionElement for EthernetPhysicalChannel {}
 
 impl EthernetPhysicalChannel {
     /// Retrieves the VLAN information from a channel
@@ -870,6 +876,7 @@ pub struct CommonServiceDiscoveryConfig<'a> {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StaticSocketConnection(Element);
 abstraction_element!(StaticSocketConnection, StaticSocketConnection);
+impl IdentifiableAbstractionElement for StaticSocketConnection {}
 
 impl StaticSocketConnection {
     pub(crate) fn new(
@@ -985,6 +992,7 @@ impl StaticSocketConnection {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SocketConnectionIpduIdentifierSet(Element);
 abstraction_element!(SocketConnectionIpduIdentifierSet, SocketConnectionIpduIdentifierSet);
+impl IdentifiableAbstractionElement for SocketConnectionIpduIdentifierSet {}
 
 impl SocketConnectionIpduIdentifierSet {
     /// create a new `SocketConnectionIpduIdentifierSet`
@@ -1037,6 +1045,7 @@ impl SocketConnectionIpduIdentifierSet {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SoConIPduIdentifier(Element);
 abstraction_element!(SoConIPduIdentifier, SoConIPduIdentifier);
+impl IdentifiableAbstractionElement for SoConIPduIdentifier {}
 
 impl SoConIPduIdentifier {
     /// The PDU header id for SD messages must always be set to `0xFFFF_8100`
@@ -1096,7 +1105,7 @@ impl SoConIPduIdentifier {
                     .and_then(|pts| pts.remove_sub_element(pt_old.element().clone()).ok());
             }
         }
-        let pt_new = PduTriggering::new(pdu, &channel.clone().into())?;
+        let pt_new = PduTriggering::new(pdu, &PhysicalChannel::Ethernet(channel.clone()))?;
         self.element()
             .get_or_create_sub_element(ElementName::PduTriggeringRef)?
             .set_reference_target(pt_new.element())?;

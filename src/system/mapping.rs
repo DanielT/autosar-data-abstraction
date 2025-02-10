@@ -1,6 +1,6 @@
 use crate::{
     abstraction_element, communication, software_component, AbstractionElement, AutosarAbstractionError, EcuInstance,
-    Element, System,
+    Element, IdentifiableAbstractionElement, System,
 };
 use autosar_data::ElementName;
 use communication::SystemSignal;
@@ -17,6 +17,7 @@ use software_component::{
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SystemMapping(Element);
 abstraction_element!(SystemMapping, SystemMapping);
+impl IdentifiableAbstractionElement for SystemMapping {}
 
 impl SystemMapping {
     pub(crate) fn new(name: &str, system: &System) -> Result<Self, AutosarAbstractionError> {
@@ -197,6 +198,7 @@ impl SystemMapping {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SwcToEcuMapping(Element);
 abstraction_element!(SwcToEcuMapping, SwcToEcuMapping);
+impl IdentifiableAbstractionElement for SwcToEcuMapping {}
 
 impl SwcToEcuMapping {
     pub(crate) fn new(

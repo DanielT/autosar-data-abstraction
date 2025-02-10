@@ -1,4 +1,7 @@
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder};
+use crate::{
+    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder,
+    IdentifiableAbstractionElement,
+};
 use autosar_data::{AutosarVersion, Element, ElementName, EnumItem};
 
 /// A [`DataTransformationSet`] contains `DataTransformation`s and `TransformationTechnology`s used in communication
@@ -7,6 +10,7 @@ use autosar_data::{AutosarVersion, Element, ElementName, EnumItem};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DataTransformationSet(Element);
 abstraction_element!(DataTransformationSet, DataTransformationSet);
+impl IdentifiableAbstractionElement for DataTransformationSet {}
 
 impl DataTransformationSet {
     /// Create a new `DataTransformationSet`
@@ -73,6 +77,7 @@ impl DataTransformationSet {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DataTransformation(Element);
 abstraction_element!(DataTransformation, DataTransformation);
+impl IdentifiableAbstractionElement for DataTransformation {}
 
 impl DataTransformation {
     /// Create a new `DataTransformation`
@@ -184,6 +189,7 @@ impl DataTransformation {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TransformationTechnology(Element);
 abstraction_element!(TransformationTechnology, TransformationTechnology);
+impl IdentifiableAbstractionElement for TransformationTechnology {}
 
 impl TransformationTechnology {
     /// Create a new `TransformationTechnology`

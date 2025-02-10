@@ -1,4 +1,7 @@
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, Element};
+use crate::{
+    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, Element,
+    IdentifiableAbstractionElement,
+};
 use autosar_data::ElementName;
 
 mod clientserver;
@@ -15,7 +18,7 @@ pub use senderreceiver::*;
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ModeSwitchInterface(Element);
 abstraction_element!(ModeSwitchInterface, ModeSwitchInterface);
-
+impl IdentifiableAbstractionElement for ModeSwitchInterface {}
 impl AbstractPortInterface for ModeSwitchInterface {}
 
 impl ModeSwitchInterface {
@@ -36,7 +39,7 @@ impl ModeSwitchInterface {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ParameterInterface(Element);
 abstraction_element!(ParameterInterface, ParameterInterface);
-
+impl IdentifiableAbstractionElement for ParameterInterface {}
 impl AbstractPortInterface for ParameterInterface {}
 
 impl ParameterInterface {
@@ -57,7 +60,7 @@ impl ParameterInterface {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NvDataInterface(Element);
 abstraction_element!(NvDataInterface, NvDataInterface);
-
+impl IdentifiableAbstractionElement for NvDataInterface {}
 impl AbstractPortInterface for NvDataInterface {}
 
 impl NvDataInterface {
@@ -78,7 +81,7 @@ impl NvDataInterface {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TriggerInterface(Element);
 abstraction_element!(TriggerInterface, TriggerInterface);
-
+impl IdentifiableAbstractionElement for TriggerInterface {}
 impl AbstractPortInterface for TriggerInterface {}
 
 impl TriggerInterface {
@@ -128,6 +131,7 @@ impl AbstractionElement for PortInterface {
     }
 }
 
+impl IdentifiableAbstractionElement for PortInterface {}
 impl AbstractPortInterface for PortInterface {}
 
 impl TryFrom<Element> for PortInterface {
