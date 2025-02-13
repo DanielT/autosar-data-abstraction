@@ -669,13 +669,13 @@ impl EthernetPhysicalChannel {
             let conn = scb.create_bundled_connection(common_config.remote_socket)?;
             conn.set_client_ip_addr_from_connection_request(Some(true))?;
             conn.set_client_port_from_connection_request(Some(true))?;
-            let pt_tx = conn.trigger_pdu(
+            let (_, pt_tx) = conn.create_socket_connection_ipdu_identifier(
                 unicast_tx_pdu,
                 SocketConnection::SD_HEADER_ID,
                 None,
                 Some(PduCollectionTrigger::Always),
             )?;
-            let pt_rx = conn.trigger_pdu(
+            let (_, pt_rx) = conn.create_socket_connection_ipdu_identifier(
                 unicast_rx_pdu,
                 SocketConnection::SD_HEADER_ID,
                 None,
@@ -710,12 +710,13 @@ impl EthernetPhysicalChannel {
             conn.set_client_ip_addr_from_connection_request(Some(true))?;
             conn.set_client_port_from_connection_request(Some(true))?;
             // trigger the multicast PDU in the connection, which creates a PduTriggering
-            conn.trigger_pdu(
+            let (_, pt) = conn.create_socket_connection_ipdu_identifier(
                 common_config.multicast_rx_pdu,
                 SocketConnection::SD_HEADER_ID,
                 None,
                 Some(PduCollectionTrigger::Always),
-            )?
+            )?;
+            pt
         };
         // add a PduPort for the ecu to the PduTriggering
         scb_multicast_pt.create_pdu_port(ecu, CommunicationDirection::In)?;
@@ -889,20 +890,11 @@ impl StaticSocketConnection {
         let connections = parent.get_or_create_sub_element(ElementName::StaticSocketConnections)?;
         let ssc_elem = connections.create_named_sub_element(ElementName::StaticSocketConnection, name)?;
 
-        ssc_elem
-            .create_sub_element(ElementName::RemoteAddresss)?
-            .create_sub_element(ElementName::SocketAddressRefConditional)?
-            .create_sub_element(ElementName::SocketAddressRef)?
-            .set_reference_target(remote_address.element())?;
-
         let ssc = Self(ssc_elem);
-        if let Some(role) = tcp_role {
-            ssc.set_tcp_role(role)?;
-        }
 
-        if let Some(timeout) = tcp_connect_timeout {
-            ssc.set_tcp_connect_timeout(timeout)?;
-        }
+        ssc.set_remote_socket(remote_address)?;
+        ssc.set_tcp_role(tcp_role)?;
+        ssc.set_tcp_connect_timeout(tcp_connect_timeout)?;
 
         Ok(ssc)
     }
@@ -911,6 +903,16 @@ impl StaticSocketConnection {
     pub fn socket_address(&self) -> Result<SocketAddress, AutosarAbstractionError> {
         let sa = self.element().named_parent()?.unwrap();
         SocketAddress::try_from(sa)
+    }
+
+    /// set the remote socket of this connection
+    pub fn set_remote_socket(&self, remote_socket: &SocketAddress) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::RemoteAddresss)?
+            .get_or_create_sub_element(ElementName::SocketAddressRefConditional)?
+            .get_or_create_sub_element(ElementName::SocketAddressRef)?
+            .set_reference_target(remote_socket.element())?;
+        Ok(())
     }
 
     /// get the remote socket of this connection
@@ -951,10 +953,14 @@ impl StaticSocketConnection {
     }
 
     /// set the TCP role of this static socket connection
-    pub fn set_tcp_role(&self, role: TcpRole) -> Result<(), AutosarAbstractionError> {
-        self.element()
-            .get_or_create_sub_element(ElementName::TcpRole)?
-            .set_character_data::<EnumItem>(role.into())?;
+    pub fn set_tcp_role(&self, role: Option<TcpRole>) -> Result<(), AutosarAbstractionError> {
+        if let Some(role) = role {
+            self.element()
+                .get_or_create_sub_element(ElementName::TcpRole)?
+                .set_character_data::<EnumItem>(role.into())?;
+        } else {
+            let _ = self.element().remove_sub_element_kind(ElementName::TcpRole);
+        }
         Ok(())
     }
 
@@ -969,10 +975,14 @@ impl StaticSocketConnection {
     }
 
     /// set the TCP connect timeout of this static socket connection
-    pub fn set_tcp_connect_timeout(&self, timeout: f64) -> Result<(), AutosarAbstractionError> {
-        self.element()
-            .get_or_create_sub_element(ElementName::TcpConnectTimeout)?
-            .set_character_data(timeout)?;
+    pub fn set_tcp_connect_timeout(&self, timeout: Option<f64>) -> Result<(), AutosarAbstractionError> {
+        if let Some(timeout) = timeout {
+            self.element()
+                .get_or_create_sub_element(ElementName::TcpConnectTimeout)?
+                .set_character_data(timeout)?;
+        } else {
+            let _ = self.element().remove_sub_element_kind(ElementName::TcpConnectTimeout);
+        }
         Ok(())
     }
 
@@ -1719,9 +1729,9 @@ mod test {
             .unwrap();
         assert_eq!(ssc.remote_socket().unwrap(), remote_socket);
         assert_eq!(ssc.tcp_role(), None);
-        ssc.set_tcp_role(TcpRole::Connect).unwrap();
+        ssc.set_tcp_role(Some(TcpRole::Connect)).unwrap();
         assert_eq!(ssc.tcp_role().unwrap(), TcpRole::Connect);
-        ssc.set_tcp_connect_timeout(0.3333).unwrap();
+        ssc.set_tcp_connect_timeout(Some(0.3333)).unwrap();
         assert_eq!(ssc.tcp_connect_timeout().unwrap(), 0.3333);
 
         // add an IPduIdentifier to the static socket connection

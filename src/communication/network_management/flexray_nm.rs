@@ -161,28 +161,28 @@ impl AbstractNmCluster for FlexrayNmCluster {
 
 //##################################################################
 
-/// Mandatory settings for a `FlexRayNmCluster`
+/// Mandatory settings for a `FlexrayNmCluster`
 ///
-/// These settings must be provided when creating a new `FlexRayNmCluster`.
-/// Additional optional settings can be set using `FlexRayNmCluster` methods.
+/// These settings must be provided when creating a new `FlexrayNmCluster`.
+/// Additional optional settings can be set using `FlexrayNmCluster` methods.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FlexrayNmClusterSettings {
-    /// nmDataCycle: Number of `FlexRay` Communication Cycles needed to transmit the Nm Data PDUs of all `FlexRay` Nm Ecus of this `FlexRayNmCluster`.
+    /// nmDataCycle: Number of `FlexRay` Communication Cycles needed to transmit the Nm Data PDUs of all `FlexRay` Nm Ecus of this `FlexrayNmCluster`.
     pub nm_data_cycle: u32,
     /// nmRemoteSleepIndicationTime: Timeout for Remote Sleep Indication in seconds.
     pub nm_remote_sleep_indication_time: f64,
     /// nmRepeatMessageTime: Timeout for Repeat Message State in seconds.
     pub nm_repeat_message_time: f64,
     /// nmRepetitionCycle: Number of `FlexRay` Communication Cycles used to repeat the transmission of the Nm vote Pdus of all
-    /// `FlexRay` `NmEcus` of this `FlexRayNmCluster`. This value shall be an integral multiple of nmVotingCycle.
+    /// `FlexRay` `NmEcus` of this `FlexrayNmCluster`. This value shall be an integral multiple of nmVotingCycle.
     pub nm_repetition_cycle: u32,
-    /// nmVotingCycle: The number of `FlexRay` Communication Cycles used to transmit the Nm Vote PDUs of all `FlexRay` Nm Ecus of this `FlexRayNmCluster`.
+    /// nmVotingCycle: The number of `FlexRay` Communication Cycles used to transmit the Nm Vote PDUs of all `FlexRay` Nm Ecus of this `FlexrayNmCluster`.
     pub nm_voting_cycle: u32,
 }
 
 //##################################################################
 
-/// A `FlexRayNmClusterCoupling` `couples multiple `FlexRayNmCluster`s.
+/// A `FlexRayNmClusterCoupling` `couples multiple `FlexrayNmCluster`s.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlexrayNmClusterCoupling(Element);
 abstraction_element!(FlexrayNmClusterCoupling, FlexrayNmClusterCoupling);

@@ -167,36 +167,57 @@ impl ProvidedServiceInstance {
         major_version: u32,
         minor_version: u32,
     ) -> Result<Self, AutosarAbstractionError> {
-        let elem = parent.create_named_sub_element(ElementName::ProvidedServiceInstance, name)?;
+        let psi_elem = parent.create_named_sub_element(ElementName::ProvidedServiceInstance, name)?;
+        let psi = Self(psi_elem);
 
-        elem.create_sub_element(ElementName::ServiceIdentifier)?
+        psi.set_service_identifier(service_identifier)?;
+        psi.set_instance_identifier(instance_identifier)?;
+        psi.set_major_version(major_version)?;
+        psi.set_minor_version(minor_version)?;
+
+        Ok(psi)
+    }
+
+    /// set the service identifier of this `ProvidedServiceInstance`
+    pub fn set_service_identifier(&self, service_identifier: u16) -> Result<(), AutosarAbstractionError> {
+        self.0
+            .get_or_create_sub_element(ElementName::ServiceIdentifier)?
             .set_character_data(u64::from(service_identifier))?;
-        elem.create_sub_element(ElementName::InstanceIdentifier)?
-            .set_character_data(u64::from(instance_identifier))?;
-        elem.create_sub_element(ElementName::MajorVersion)?
-            .set_character_data(u64::from(major_version))?;
-        elem.create_sub_element(ElementName::MinorVersion)?
-            .set_character_data(u64::from(minor_version))?;
-
-        Ok(Self(elem))
+        Ok(())
     }
 
     /// get the service identifier of this `ProvidedServiceInstance`
     #[must_use]
-    pub fn service_identifier(&self) -> Option<u32> {
+    pub fn service_identifier(&self) -> Option<u16> {
         self.0
             .get_sub_element(ElementName::ServiceIdentifier)
             .and_then(|si| si.character_data())
             .and_then(|cdata| cdata.parse_integer())
     }
 
+    /// set the instance identifier of this `ProvidedServiceInstance`
+    pub fn set_instance_identifier(&self, instance_identifier: u16) -> Result<(), AutosarAbstractionError> {
+        self.0
+            .get_or_create_sub_element(ElementName::InstanceIdentifier)?
+            .set_character_data(u64::from(instance_identifier))?;
+        Ok(())
+    }
+
     /// get the instance identifier of this `ProvidedServiceInstance`
     #[must_use]
-    pub fn instance_identifier(&self) -> Option<u32> {
+    pub fn instance_identifier(&self) -> Option<u16> {
         self.0
             .get_sub_element(ElementName::InstanceIdentifier)
             .and_then(|ii| ii.character_data())
             .and_then(|cdata| cdata.parse_integer())
+    }
+
+    /// set the major version of this `ProvidedServiceInstance`
+    pub fn set_major_version(&self, major_version: u32) -> Result<(), AutosarAbstractionError> {
+        self.0
+            .get_or_create_sub_element(ElementName::MajorVersion)?
+            .set_character_data(u64::from(major_version))?;
+        Ok(())
     }
 
     /// get the major version of this `ProvidedServiceInstance`
@@ -206,6 +227,14 @@ impl ProvidedServiceInstance {
             .get_sub_element(ElementName::MajorVersion)
             .and_then(|mv| mv.character_data())
             .and_then(|cdata| cdata.parse_integer())
+    }
+
+    /// set the minor version of this `ProvidedServiceInstance`
+    pub fn set_minor_version(&self, minor_version: u32) -> Result<(), AutosarAbstractionError> {
+        self.0
+            .get_or_create_sub_element(ElementName::MinorVersion)?
+            .set_character_data(u64::from(minor_version))?;
+        Ok(())
     }
 
     /// get the minor version of this `ProvidedServiceInstance`
@@ -323,10 +352,20 @@ impl EventHandler {
         parent: &Element,
         event_group_identifier: u32,
     ) -> Result<Self, AutosarAbstractionError> {
-        let elem = parent.create_named_sub_element(ElementName::EventHandler, name)?;
-        elem.create_sub_element(ElementName::EventGroupIdentifier)?
+        let evgrp_elem = parent.create_named_sub_element(ElementName::EventHandler, name)?;
+        let evgrp = Self(evgrp_elem);
+
+        evgrp.set_event_group_identifier(event_group_identifier)?;
+
+        Ok(evgrp)
+    }
+
+    /// set the event group identifier of this `EventHandler`
+    pub fn set_event_group_identifier(&self, event_group_identifier: u32) -> Result<(), AutosarAbstractionError> {
+        self.0
+            .get_or_create_sub_element(ElementName::EventGroupIdentifier)?
             .set_character_data(u64::from(event_group_identifier))?;
-        Ok(Self(elem))
+        Ok(())
     }
 
     /// get the event group identifier of this `EventHandler`
@@ -433,36 +472,57 @@ impl ConsumedServiceInstance {
         major_version: u32,
         minor_version: &str,
     ) -> Result<Self, AutosarAbstractionError> {
-        let elem = parent.create_named_sub_element(ElementName::ConsumedServiceInstance, name)?;
+        let csi_elem = parent.create_named_sub_element(ElementName::ConsumedServiceInstance, name)?;
+        let csi = Self(csi_elem);
 
-        elem.create_sub_element(ElementName::ServiceIdentifier)?
+        csi.set_service_identifier(service_identifier)?;
+        csi.set_instance_identifier(instance_identifier)?;
+        csi.set_major_version(major_version)?;
+        csi.set_minor_version(minor_version)?;
+
+        Ok(csi)
+    }
+
+    /// set the service identifier of this `ConsumedServiceInstance`
+    pub fn set_service_identifier(&self, service_identifier: u16) -> Result<(), AutosarAbstractionError> {
+        self.0
+            .get_or_create_sub_element(ElementName::ServiceIdentifier)?
             .set_character_data(u64::from(service_identifier))?;
-        elem.create_sub_element(ElementName::InstanceIdentifier)?
-            .set_character_data(u64::from(instance_identifier))?;
-        elem.create_sub_element(ElementName::MajorVersion)?
-            .set_character_data(u64::from(major_version))?;
-        elem.create_sub_element(ElementName::MinorVersion)?
-            .set_character_data(minor_version)?;
-
-        Ok(Self(elem))
+        Ok(())
     }
 
     /// get the service identifier of this `ConsumedServiceInstance`
     #[must_use]
-    pub fn service_identifier(&self) -> Option<u32> {
+    pub fn service_identifier(&self) -> Option<u16> {
         self.0
             .get_sub_element(ElementName::ServiceIdentifier)
             .and_then(|si| si.character_data())
             .and_then(|cdata| cdata.parse_integer())
     }
 
+    /// set the instance identifier of this `ConsumedServiceInstance`
+    pub fn set_instance_identifier(&self, instance_identifier: u16) -> Result<(), AutosarAbstractionError> {
+        self.0
+            .get_or_create_sub_element(ElementName::InstanceIdentifier)?
+            .set_character_data(u64::from(instance_identifier))?;
+        Ok(())
+    }
+
     /// get the instance identifier of this `ConsumedServiceInstance`
     #[must_use]
-    pub fn instance_identifier(&self) -> Option<u32> {
+    pub fn instance_identifier(&self) -> Option<u16> {
         self.0
             .get_sub_element(ElementName::InstanceIdentifier)
             .and_then(|ii| ii.character_data())
             .and_then(|cdata| cdata.parse_integer())
+    }
+
+    /// set the major version of this `ConsumedServiceInstance`
+    pub fn set_major_version(&self, major_version: u32) -> Result<(), AutosarAbstractionError> {
+        self.0
+            .get_or_create_sub_element(ElementName::MajorVersion)?
+            .set_character_data(u64::from(major_version))?;
+        Ok(())
     }
 
     /// get the major version of this `ConsumedServiceInstance`
@@ -474,7 +534,19 @@ impl ConsumedServiceInstance {
             .and_then(|cdata| cdata.parse_integer())
     }
 
+    /// set the minor version of this `ConsumedServiceInstance`
+    ///
+    /// The minor version can be a number or the String "ANY".
+    pub fn set_minor_version(&self, minor_version: &str) -> Result<(), AutosarAbstractionError> {
+        self.0
+            .get_or_create_sub_element(ElementName::MinorVersion)?
+            .set_character_data(minor_version)?;
+        Ok(())
+    }
+
     /// get the minor version of this `ConsumedServiceInstance`
+    ///
+    /// The minor version can be a number or the String "ANY".
     #[must_use]
     pub fn minor_version(&self) -> Option<String> {
         self.0
@@ -508,7 +580,7 @@ impl ConsumedServiceInstance {
     ///
     /// The CSI may use two local unicast addresses, one each for UDP and TCP.
     /// If the consumed service instance does not specify a local unicast address
-    /// because it only receives multicast messages, the the `ConsumedEventGroup`
+    /// because it only receives multicast messages, then the `ConsumedEventGroup`
     /// must have an eventMulticastAddress.
     pub fn set_local_unicast_address(&self, address: &SocketAddress) -> Result<(), AutosarAbstractionError> {
         set_local_unicast_address(self.element(), address)
@@ -593,11 +665,19 @@ impl ConsumedEventGroup {
         parent: &Element,
         event_group_identifier: u32,
     ) -> Result<Self, AutosarAbstractionError> {
-        let elem = parent.create_named_sub_element(ElementName::ConsumedEventGroup, name)?;
-        elem.create_sub_element(ElementName::EventGroupIdentifier)?
-            .set_character_data(u64::from(event_group_identifier))?;
+        let ceg_elem = parent.create_named_sub_element(ElementName::ConsumedEventGroup, name)?;
+        let ceg = Self(ceg_elem);
+        ceg.set_event_group_identifier(event_group_identifier)?;
 
-        Ok(Self(elem))
+        Ok(ceg)
+    }
+
+    /// set the event group identifier of this `ConsumedEventGroup`
+    pub fn set_event_group_identifier(&self, event_group_identifier: u32) -> Result<(), AutosarAbstractionError> {
+        self.0
+            .get_or_create_sub_element(ElementName::EventGroupIdentifier)?
+            .set_character_data(u64::from(event_group_identifier))?;
+        Ok(())
     }
 
     /// get the event group identifier of this `ConsumedEventGroup`
@@ -619,6 +699,15 @@ impl ConsumedEventGroup {
             .element()
             .get_or_create_sub_element(ElementName::PduActivationRoutingGroups)?;
         PduActivationRoutingGroup::new(name, &parent, event_group_control_type)
+    }
+
+    /// iterate over the `PduActivationRoutingGroup`s in this `ConsumedEventGroup`
+    pub fn pdu_activation_routing_groups(&self) -> impl Iterator<Item = PduActivationRoutingGroup> + Send + 'static {
+        self.element()
+            .get_sub_element(ElementName::PduActivationRoutingGroups)
+            .into_iter()
+            .flat_map(|pargs| pargs.sub_elements())
+            .filter_map(|parg| PduActivationRoutingGroup::try_from(parg).ok())
     }
 
     /// add an event multicast address to this `ConsumedEventGroup`
@@ -1327,61 +1416,12 @@ impl SomeipTpConfig {
     /// returns the `PduTriggering` that is created for the `TpSdu`
     pub fn create_someip_tp_connection(
         &self,
-        tp_config: SomeipTpConnection,
-    ) -> Result<PduTriggering, AutosarAbstractionError> {
+        tp_sdu: &ISignalIPdu,
+        transport_pdu_triggering: &PduTriggering,
+        tp_channel: Option<SomeipTpChannel>,
+    ) -> Result<SomeipTpConnection, AutosarAbstractionError> {
         let connections = self.element().get_or_create_sub_element(ElementName::TpConnections)?;
-        let conn = connections.create_sub_element(ElementName::SomeipTpConnection)?;
-
-        // check if the transport PDU is a GeneralPurposeIPdu
-        let Some(Pdu::GeneralPurposeIPdu(gp_ipdu)) = tp_config.transport_pdu_triggering.pdu() else {
-            return Err(AutosarAbstractionError::InvalidParameter(
-                "Invalid transport PDU for the SomeIpTpConnection: it must be a GeneralPurposeIPdu".to_string(),
-            ));
-        };
-
-        // check the category of the GeneralPurposeIPdu: according to the AUTOSAR standard, it must be SOMEIP_SEGMENTED_IPDU
-        if gp_ipdu.category() != Some(GeneralPurposeIPduCategory::SomeipSegmentedIpdu) {
-            return Err(AutosarAbstractionError::InvalidParameter(
-                "Invalid transport PDU for the SomeIpTpConnection: it must be a segmented IPDU".to_string(),
-            ));
-        }
-
-        // get the physical channel of the transport PDU; this is currently the only link to the channel
-        let channel = tp_config.transport_pdu_triggering.physical_channel()?;
-        // get the cluster of the physical channel and check if it matches the cluster of the SomeIpTpConfig
-        let Some(channel_cluster) = channel
-            .element()
-            .named_parent()?
-            .and_then(|p| Cluster::try_from(p).ok())
-        else {
-            return Err(AutosarAbstractionError::InvalidParameter(
-                "Invalid physical channel or cluster of the transport PDU".to_string(),
-            ));
-        };
-        let Some(cluster) = self.cluster() else {
-            return Err(AutosarAbstractionError::InvalidParameter(
-                "Invalid SomeIpTpConfig: missing cluster reference".to_string(),
-            ));
-        };
-        if channel_cluster != cluster {
-            return Err(AutosarAbstractionError::InvalidParameter(
-                "The transport PDU must be in the same cluster as the SomeIpTpConfig".to_string(),
-            ));
-        }
-
-        // create the PduTriggering for the TpSdu in the same cluster as the transport PDU
-        let pt_tp_sdu = PduTriggering::new(&tp_config.tp_sdu.clone().into(), &channel)?;
-
-        conn.create_sub_element(ElementName::TpSduRef)?
-            .set_reference_target(pt_tp_sdu.element())?;
-        conn.create_sub_element(ElementName::TransportPduRef)?
-            .set_reference_target(tp_config.transport_pdu_triggering.element())?;
-        if let Some(tp_channel) = tp_config.tp_channel {
-            conn.create_sub_element(ElementName::TpChannelRef)?
-                .set_reference_target(tp_channel.element())?;
-        }
-
-        Ok(pt_tp_sdu)
+        SomeipTpConnection::new(&connections, tp_sdu, transport_pdu_triggering, tp_channel)
     }
 
     /// get all `SomeipTpConnection`s in this `SomeipTpConfig`
@@ -1398,51 +1438,143 @@ impl SomeipTpConfig {
 
 /// A `SomeipTpConnection` contains the configuration of a single `SomeIp` TP connection
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SomeipTpConnection {
-    /// the `TpSdu` of this connection
-    pub tp_sdu: ISignalIPdu,
-    /// the `PduTriggering` for the transport PDU
-    pub transport_pdu_triggering: PduTriggering,
-    /// the TP channel of this connection
-    pub tp_channel: Option<SomeipTpChannel>,
-}
+pub struct SomeipTpConnection(Element);
+abstraction_element!(SomeipTpConnection, SomeipTpConnection);
 
-impl TryFrom<Element> for SomeipTpConnection {
-    type Error = AutosarAbstractionError;
+impl SomeipTpConnection {
+    pub(crate) fn new(
+        parent: &Element,
+        tp_sdu: &ISignalIPdu,
+        transport_pdu_triggering: &PduTriggering,
+        tp_channel: Option<SomeipTpChannel>,
+    ) -> Result<Self, AutosarAbstractionError> {
+        let conn_elem = parent.create_sub_element(ElementName::SomeipTpConnection)?;
+        let conn = Self(conn_elem);
 
-    fn try_from(element: Element) -> Result<Self, Self::Error> {
-        let opt_tp_sdu_triggering = element
-            .get_sub_element(ElementName::TpSduRef)
-            .and_then(|ref_elem| ref_elem.get_reference_target().ok());
+        conn.set_transport_pdu_triggering(transport_pdu_triggering)?;
+        conn.set_tp_sdu(tp_sdu)?;
+        conn.set_tp_channel(tp_channel)?;
 
-        let opt_transport_pdu_triggering = element
-            .get_sub_element(ElementName::TransportPduRef)
-            .and_then(|ref_elem| ref_elem.get_reference_target().ok());
+        Ok(conn)
+    }
 
-        let (Some(tp_sdu_triggering), Some(transport_pdu)) = (opt_tp_sdu_triggering, opt_transport_pdu_triggering)
+    /// get the `SomeipTpConfig` that contains this `SomeipTpConnection`
+    pub fn someip_tp_config(&self) -> Result<SomeipTpConfig, AutosarAbstractionError> {
+        let parent = self.element().named_parent()?.unwrap();
+        SomeipTpConfig::try_from(parent)
+    }
+
+    /// set the `PduTriggering` for the transport PDU of this `SomeipTpConnection`
+    pub fn set_transport_pdu_triggering(
+        &self,
+        transport_pdu_triggering: &PduTriggering,
+    ) -> Result<(), AutosarAbstractionError> {
+        // check if the transport PDU is a GeneralPurposeIPdu
+        let Some(Pdu::GeneralPurposeIPdu(gp_ipdu)) = transport_pdu_triggering.pdu() else {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "Invalid transport PDU for the SomeIpTpConnection: it must be a GeneralPurposeIPdu".to_string(),
+            ));
+        };
+
+        // check the category of the GeneralPurposeIPdu: according to the AUTOSAR standard, it must be SOMEIP_SEGMENTED_IPDU
+        if gp_ipdu.category() != Some(GeneralPurposeIPduCategory::SomeipSegmentedIpdu) {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "Invalid transport PDU for the SomeIpTpConnection: it must be a segmented IPDU".to_string(),
+            ));
+        }
+
+        // get the physical channel of the transport PDU; this is currently the only link to the channel
+        let channel = transport_pdu_triggering.physical_channel()?;
+        // get the cluster of the physical channel and check if it matches the cluster of the SomeIpTpConfig
+        let Some(channel_cluster) = channel
+            .element()
+            .named_parent()?
+            .and_then(|p| Cluster::try_from(p).ok())
         else {
             return Err(AutosarAbstractionError::InvalidParameter(
-                "A SomeipTpConnection must have a TpSduRef and a TransportPduRef".to_string(),
+                "Invalid physical channel or cluster of the transport PDU".to_string(),
             ));
         };
-
-        let tp_sdu_triggering = PduTriggering::try_from(tp_sdu_triggering)?;
-        let Some(Pdu::ISignalIPdu(tp_sdu)) = tp_sdu_triggering.pdu() else {
+        let Some(cluster) = self.someip_tp_config()?.cluster() else {
             return Err(AutosarAbstractionError::InvalidParameter(
-                "The TpSdu of a SomeipTpConnection must be an ISignalIPdu".to_string(),
+                "Invalid SomeIpTpConfig: missing cluster reference".to_string(),
             ));
         };
+        if channel_cluster != cluster {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "The transport PDU must be in the same cluster as the SomeIpTpConfig".to_string(),
+            ));
+        }
 
-        let tp_channel = element
+        self.element()
+            .create_sub_element(ElementName::TransportPduRef)?
+            .set_reference_target(transport_pdu_triggering.element())?;
+        Ok(())
+    }
+
+    /// get the `PduTriggering` for the transport PDU of this `SomeipTpConnection`
+    #[must_use]
+    pub fn transport_pdu_triggering(&self) -> Option<PduTriggering> {
+        self.element()
+            .get_sub_element(ElementName::TransportPduRef)
+            .and_then(|ref_elem| ref_elem.get_reference_target().ok())
+            .and_then(|target| PduTriggering::try_from(target).ok())
+    }
+
+    /// set the `TpSdu` of this `SomeipTpConnection`
+    pub fn set_tp_sdu(&self, tp_sdu: &ISignalIPdu) -> Result<(), AutosarAbstractionError> {
+        let Some(transport_pdu_triggering) = self.transport_pdu_triggering() else {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "The transport PDU of the SomeipTpConnection is missing, so the TP-SDU can't be created".to_string(),
+            ));
+        };
+        let channel = transport_pdu_triggering.physical_channel()?;
+
+        // create the PduTriggering for the TpSdu in the same cluster as the transport PDU
+        let pt_tp_sdu = PduTriggering::new(&tp_sdu.clone().into(), &channel)?;
+
+        self.element()
+            .create_sub_element(ElementName::TpSduRef)?
+            .set_reference_target(pt_tp_sdu.element())?;
+        Ok(())
+    }
+
+    /// get the `TpSdu` of this `SomeipTpConnection`
+    #[must_use]
+    pub fn tp_sdu(&self) -> Option<ISignalIPdu> {
+        let tp_sdu_triggering_elem = self
+            .element()
+            .get_sub_element(ElementName::TpSduRef)?
+            .get_reference_target()
+            .ok()?;
+        let tp_sdu_triggering = PduTriggering::try_from(tp_sdu_triggering_elem).ok()?;
+
+        if let Some(Pdu::ISignalIPdu(tp_sdu)) = tp_sdu_triggering.pdu() {
+            Some(tp_sdu)
+        } else {
+            None
+        }
+    }
+
+    /// set the `TpChannel` of this `SomeipTpConnection`
+    pub fn set_tp_channel(&self, tp_channel: Option<SomeipTpChannel>) -> Result<(), AutosarAbstractionError> {
+        if let Some(tp_channel) = tp_channel {
+            self.element()
+                .get_or_create_sub_element(ElementName::TpChannelRef)?
+                .set_reference_target(tp_channel.element())?;
+        } else {
+            let _ = self.element().remove_sub_element_kind(ElementName::TpChannelRef);
+        }
+        Ok(())
+    }
+
+    /// get the `TpChannel` of this `SomeipTpConnection`
+    #[must_use]
+    pub fn tp_channel(&self) -> Option<SomeipTpChannel> {
+        self.element()
             .get_sub_element(ElementName::TpChannelRef)
             .and_then(|ref_elem| ref_elem.get_reference_target().ok())
-            .and_then(|elem| SomeipTpChannel::try_from(elem).ok());
-
-        Ok(Self {
-            tp_sdu,
-            transport_pdu_triggering: PduTriggering::try_from(transport_pdu)?,
-            tp_channel,
-        })
+            .and_then(|target| SomeipTpChannel::try_from(target).ok())
     }
 }
 
@@ -1783,6 +1915,18 @@ mod test {
         ceg.add_event_multicast_address(&socket).unwrap();
         assert_eq!(ceg.event_multicast_addresses().next().unwrap(), socket);
 
+        let prg = ceg
+            .create_pdu_activation_routing_group(
+                "PduActivationRoutingGroup",
+                EventGroupControlType::ActivationMulticast,
+            )
+            .unwrap();
+        assert_eq!(ceg.pdu_activation_routing_groups().count(), 1);
+        assert_eq!(
+            prg.event_group_control_type().unwrap(),
+            EventGroupControlType::ActivationMulticast
+        );
+
         let sd_config_package = model.get_or_create_package("/SomeipSdTimingConfigs").unwrap();
         let client_event_group_timing_config =
             SomeipSdClientEventGroupTimingConfig::new("cegtc", &sd_config_package, 10).unwrap();
@@ -2113,16 +2257,14 @@ mod test {
         tp_channel.set_separation_time(0.44).unwrap();
         assert_eq!(tp_channel.separation_time().unwrap(), 0.44);
 
-        tp_config
-            .create_someip_tp_connection(SomeipTpConnection {
-                tp_sdu: isignal_ipdu.clone(),
-                transport_pdu_triggering,
-                tp_channel: Some(tp_channel.clone()),
-            })
+        let tp_conn = tp_config
+            .create_someip_tp_connection(&isignal_ipdu, &transport_pdu_triggering, Some(tp_channel.clone()))
             .unwrap();
         assert_eq!(tp_config.someip_tp_connections().count(), 1);
-        let conn = tp_config.someip_tp_connections().next().unwrap();
-        assert_eq!(conn.tp_sdu, isignal_ipdu);
-        assert_eq!(conn.tp_channel, Some(tp_channel));
+        assert_eq!(tp_config.someip_tp_connections().next().unwrap(), tp_conn);
+        assert_eq!(tp_conn.tp_sdu(), Some(isignal_ipdu));
+        assert_eq!(tp_conn.tp_channel(), Some(tp_channel));
+        assert_eq!(tp_conn.transport_pdu_triggering(), Some(transport_pdu_triggering));
+        assert_eq!(tp_conn.someip_tp_config().unwrap(), tp_config);
     }
 }

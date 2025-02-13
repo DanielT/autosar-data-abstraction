@@ -393,8 +393,7 @@ impl ISignalToIPduMapping {
         Ok(())
     }
 
-    /// Bit position of the update bit for the mapped signal. Not all signals use an update bit.
-    /// This is never used for signal groups
+    /// Get the transfer property of the mapped signal
     #[must_use]
     pub fn transfer_property(&self) -> Option<TransferProperty> {
         self.element()

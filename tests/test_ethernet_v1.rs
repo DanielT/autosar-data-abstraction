@@ -6,7 +6,7 @@ mod test {
             CommonServiceDiscoveryConfig, CommunicationDirection, CyclicTiming, E2EProfile, E2EProfileBehavior,
             E2ETransformationTechnologyConfig, EthernetVlanInfo, EventControlledTiming, EventGroupControlType,
             GeneralPurposePduCategory, IPv4AddressSource, IpduTiming, NetworkEndpointAddress, PduCollectionTrigger,
-            SdConfig, SocketAddressType, SomeIpMessageType, SomeIpTransformationISignalPropsConfig,
+            SdConfig, SdEventConfig, SocketAddressType, SomeIpMessageType, SomeIpTransformationISignalPropsConfig,
             SomeIpTransformationTechnologyConfig, TpConfig, TransferProperty, TransformationISignalPropsConfig,
             TransformationTechnologyConfig, TransmissionModeTiming,
         },
@@ -137,7 +137,8 @@ mod test {
         )?;
 
         // mapping the PDU to the ECU gives us a PduTriggering, on which a PduPort can be created
-        let pdu_triggering = connection.trigger_pdu(&static_pdu, 0x1000, None, None)?;
+        let (_, pdu_triggering) =
+            connection.create_socket_connection_ipdu_identifier(&static_pdu, 0x1000, None, None)?;
         assert_eq!(pdu_triggering, connection.pdu_triggerings().next().unwrap());
 
         pdu_triggering.create_pdu_port(&ecu_instance_a, CommunicationDirection::Out)?;
@@ -476,9 +477,13 @@ mod test {
         // the lower 16 bits are the method id (0x0 - 0x7fff) or event id (0x8000 - 0xffff)
         let method_id = 0x8001u32;
         let pdu_header_id = u32::from(service_identifier) << 16 | method_id;
-        let pdu_triggering =
-            connection.trigger_pdu(&someip_pdu, pdu_header_id, None, Some(PduCollectionTrigger::Always))?;
-        connection.add_routing_group(&pdu_triggering, &someip_routing_group)?;
+        let (scii, _) = connection.create_socket_connection_ipdu_identifier(
+            &someip_pdu,
+            pdu_header_id,
+            None,
+            Some(PduCollectionTrigger::Always),
+        )?;
+        scii.add_routing_group(&someip_routing_group)?;
 
         // configure service discovery parameters for the SomeIp connection
         let sd_config = SdConfig {
@@ -497,8 +502,14 @@ mod test {
         csi_remote.set_sd_client_config(&sd_config)?;
 
         // set SD-specific parameters for the service events
-        psi_ecu_a_eh.set_sd_server_config(0.1, 0.25, 10)?;
-        csi_remote_ceg.set_sd_client_config(0.1, 0.25, 10)?;
+        let config = SdEventConfig {
+            request_response_delay_max_value: 0.25,
+            request_response_delay_min_value: 0.1,
+            ttl: 10,
+        };
+        psi_ecu_a_eh.set_sd_server_config(&config)?;
+        csi_remote_ceg.set_sd_client_config(&config)?;
+        assert_eq!(csi_remote_ceg.sd_client_config().unwrap(), config);
 
         println!("{}", model.files().next().unwrap().serialize()?);
         model.write()?;

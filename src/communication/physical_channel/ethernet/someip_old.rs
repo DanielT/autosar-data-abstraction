@@ -49,14 +49,21 @@ impl ProvidedServiceInstanceV1 {
         service_identifier: u16,
         instance_identifier: u16,
     ) -> Result<Self, AutosarAbstractionError> {
-        let elem = parent.create_named_sub_element(ElementName::ProvidedServiceInstance, name)?;
+        let psi_elem = parent.create_named_sub_element(ElementName::ProvidedServiceInstance, name)?;
+        let psi = Self(psi_elem);
 
-        elem.create_sub_element(ElementName::ServiceIdentifier)?
+        psi.set_service_identifier(u32::from(service_identifier))?;
+        psi.set_instance_identifier(u32::from(instance_identifier))?;
+
+        Ok(psi)
+    }
+
+    /// set the service identifier of this `ProvidedServiceInstance`
+    pub fn set_service_identifier(&self, service_identifier: u32) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::ServiceIdentifier)?
             .set_character_data(u64::from(service_identifier))?;
-        elem.create_sub_element(ElementName::InstanceIdentifier)?
-            .set_character_data(u64::from(instance_identifier))?;
-
-        Ok(Self(elem))
+        Ok(())
     }
 
     /// get the service identifier of this `ProvidedServiceInstance`
@@ -66,6 +73,14 @@ impl ProvidedServiceInstanceV1 {
             .get_sub_element(ElementName::ServiceIdentifier)
             .and_then(|si| si.character_data())
             .and_then(|cdata| cdata.parse_integer())
+    }
+
+    /// set the instance identifier of this `ProvidedServiceInstance`
+    pub fn set_instance_identifier(&self, instance_identifier: u32) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::InstanceIdentifier)?
+            .set_character_data(u64::from(instance_identifier))?;
+        Ok(())
     }
 
     /// get the instance identifier of this `ProvidedServiceInstance`
@@ -278,12 +293,7 @@ impl EventHandlerV1 {
     }
 
     /// set the SD server configuration for this `EventHandler`
-    pub fn set_sd_server_config(
-        &self,
-        request_response_delay_min: f64,
-        request_response_delay_max: f64,
-        ttl: u32,
-    ) -> Result<(), AutosarAbstractionError> {
+    pub fn set_sd_server_config(&self, server_config: &SdEventConfig) -> Result<(), AutosarAbstractionError> {
         // remove any existing SdServerConfig, so that we can start fresh
         if let Some(config_elem) = self.element().get_sub_element(ElementName::SdServerConfig) {
             self.element().remove_sub_element(config_elem)?;
@@ -292,15 +302,15 @@ impl EventHandlerV1 {
         let sd_config_elem = self.element().create_sub_element(ElementName::SdServerConfig)?;
         sd_config_elem
             .create_sub_element(ElementName::Ttl)?
-            .set_character_data(u64::from(ttl))?;
+            .set_character_data(u64::from(server_config.ttl))?;
 
         let req_resp_delay_elem = sd_config_elem.create_sub_element(ElementName::RequestResponseDelay)?;
         req_resp_delay_elem
             .create_sub_element(ElementName::MinValue)?
-            .set_character_data(request_response_delay_min)?;
+            .set_character_data(server_config.request_response_delay_min_value)?;
         req_resp_delay_elem
             .create_sub_element(ElementName::MaxValue)?
-            .set_character_data(request_response_delay_max)?;
+            .set_character_data(server_config.request_response_delay_max_value)?;
 
         Ok(())
     }
@@ -567,19 +577,23 @@ impl ConsumedEventGroupV1 {
         event_group_identifier: u32,
         event_handler: &EventHandlerV1,
     ) -> Result<Self, AutosarAbstractionError> {
-        let elem = parent.create_named_sub_element(ElementName::ConsumedEventGroup, name)?;
-        elem.create_sub_element(ElementName::EventGroupIdentifier)?
-            .set_character_data(u64::from(event_group_identifier))?;
+        let ceg_elem = parent.create_named_sub_element(ElementName::ConsumedEventGroup, name)?;
+
+        // go back up the chain to find the ApplicationEndpoint
         let ae = parent.named_parent()?.unwrap().named_parent()?.unwrap();
-        elem.create_sub_element(ElementName::ApplicationEndpointRef)?
+        ceg_elem
+            .create_sub_element(ElementName::ApplicationEndpointRef)?
             .set_reference_target(&ae)?;
         event_handler
             .element()
             .get_or_create_sub_element(ElementName::ConsumedEventGroupRefs)?
             .create_sub_element(ElementName::ConsumedEventGroupRef)?
-            .set_reference_target(&elem)?;
+            .set_reference_target(&ceg_elem)?;
 
-        Ok(Self(elem))
+        let ceg = Self(ceg_elem);
+        ceg.set_event_group_identifier(event_group_identifier)?;
+
+        Ok(ceg)
     }
 
     /// set the `SocketAddress` that receives events from this `ConsumedEventGroup`
@@ -608,6 +622,14 @@ impl ConsumedEventGroupV1 {
             .and_then(|aeref| aeref.get_reference_target().ok())
             .and_then(|ae: Element| ae.parent().ok().flatten())
             .and_then(|sa| SocketAddress::try_from(sa).ok())
+    }
+
+    /// set the event group identifier of this `ConsumedEventGroup`
+    pub fn set_event_group_identifier(&self, event_group_identifier: u32) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::EventGroupIdentifier)?
+            .set_character_data(u64::from(event_group_identifier))?;
+        Ok(())
     }
 
     /// get the event group identifier of this `ConsumedEventGroup`
@@ -640,12 +662,7 @@ impl ConsumedEventGroupV1 {
     }
 
     /// set the SD client configuration for this `ConsumedEventGroup`
-    pub fn set_sd_client_config(
-        &self,
-        request_response_delay_min: f64,
-        request_response_delay_max: f64,
-        ttl: u32,
-    ) -> Result<(), AutosarAbstractionError> {
+    pub fn set_sd_client_config(&self, sd_client_config: &SdEventConfig) -> Result<(), AutosarAbstractionError> {
         // remove any existing SdClientConfig, so that we can start fresh
         if let Some(sd_config_elem) = self.element().get_sub_element(ElementName::SdClientConfig) {
             self.element().remove_sub_element(sd_config_elem)?;
@@ -654,15 +671,15 @@ impl ConsumedEventGroupV1 {
         let sd_config_elem = self.element().create_sub_element(ElementName::SdClientConfig)?;
         sd_config_elem
             .create_sub_element(ElementName::Ttl)?
-            .set_character_data(u64::from(ttl))?;
+            .set_character_data(u64::from(sd_client_config.ttl))?;
 
         let req_resp_delay_elem = sd_config_elem.create_sub_element(ElementName::RequestResponseDelay)?;
         req_resp_delay_elem
             .create_sub_element(ElementName::MinValue)?
-            .set_character_data(request_response_delay_min)?;
+            .set_character_data(sd_client_config.request_response_delay_min_value)?;
         req_resp_delay_elem
             .create_sub_element(ElementName::MaxValue)?
-            .set_character_data(request_response_delay_max)?;
+            .set_character_data(sd_client_config.request_response_delay_max_value)?;
 
         Ok(())
     }
@@ -834,7 +851,12 @@ mod test {
         assert_eq!(psi.event_handlers().count(), 0);
         let eh = psi.create_event_handler("event").unwrap();
         assert_eq!(psi.event_handlers().count(), 1);
-        eh.set_sd_server_config(0.0, 0.99, 22).unwrap();
+        let config = SdEventConfig {
+            request_response_delay_max_value: 0.99,
+            request_response_delay_min_value: 0.0,
+            ttl: 22,
+        };
+        eh.set_sd_server_config(&config).unwrap();
         assert_eq!(eh.sd_server_config().unwrap().ttl, 22);
         assert_eq!(eh.sd_server_config().unwrap().request_response_delay_max_value, 0.99);
         assert_eq!(eh.sd_server_config().unwrap().request_response_delay_min_value, 0.0);
@@ -890,7 +912,12 @@ mod test {
         // when the consumed event group is created, it is automatically added to the event handler
         assert_eq!(eh.consumed_event_groups().count(), 1);
 
-        ceg.set_sd_client_config(0.0, 0.99, 22).unwrap();
+        let config = SdEventConfig {
+            request_response_delay_max_value: 0.99,
+            request_response_delay_min_value: 0.0,
+            ttl: 22,
+        };
+        ceg.set_sd_client_config(&config).unwrap();
         assert_eq!(ceg.sd_client_config().unwrap().ttl, 22);
         assert_eq!(ceg.sd_client_config().unwrap().request_response_delay_max_value, 0.99);
         assert_eq!(ceg.sd_client_config().unwrap().request_response_delay_min_value, 0.0);

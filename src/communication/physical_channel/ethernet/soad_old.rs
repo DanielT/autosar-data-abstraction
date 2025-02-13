@@ -22,12 +22,12 @@ impl SocketConnectionBundle {
         server_port: &SocketAddress,
         connections_elem: &Element,
     ) -> Result<Self, AutosarAbstractionError> {
-        let scb = connections_elem.create_named_sub_element(ElementName::SocketConnectionBundle, name)?;
+        let scb_elem = connections_elem.create_named_sub_element(ElementName::SocketConnectionBundle, name)?;
+        let scb = Self(scb_elem);
 
-        scb.create_sub_element(ElementName::ServerPortRef)?
-            .set_reference_target(server_port.element())?;
+        scb.set_server_port(server_port)?;
 
-        Ok(Self(scb))
+        Ok(scb)
     }
 
     /// get the physical channel containing this socket connection bundle
@@ -65,6 +65,14 @@ impl SocketConnectionBundle {
     pub fn physical_channel(&self) -> Result<EthernetPhysicalChannel, AutosarAbstractionError> {
         let channel = self.element().named_parent()?.unwrap();
         EthernetPhysicalChannel::try_from(channel)
+    }
+
+    ///set the server port of this socket connection bundle
+    pub fn set_server_port(&self, server_port: &SocketAddress) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::ServerPortRef)?
+            .set_reference_target(server_port.element())?;
+        Ok(())
     }
 
     /// get the server port of this socket connection bundle
@@ -129,10 +137,10 @@ impl SocketConnection {
 
     // create a new SocketConnection (internal)
     pub(crate) fn new(conn: Element, client_port: &SocketAddress) -> Result<Self, AutosarAbstractionError> {
-        conn.create_sub_element(ElementName::ClientPortRef)?
-            .set_reference_target(client_port.element())?;
+        let conn = Self(conn);
+        conn.set_client_port(client_port)?;
 
-        Ok(Self(conn))
+        Ok(conn)
     }
 
     /// get the socket connection bundle containing this socket connection
@@ -173,6 +181,14 @@ impl SocketConnection {
         SocketConnectionBundle::try_from(bundle)
     }
 
+    /// set the client port of this socket connection
+    pub fn set_client_port(&self, client_port: &SocketAddress) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::ClientPortRef)?
+            .set_reference_target(client_port.element())?;
+        Ok(())
+    }
+
     /// get the client port of this socket connection
     #[must_use]
     pub fn client_port(&self) -> Option<SocketAddress> {
@@ -182,208 +198,36 @@ impl SocketConnection {
             .and_then(|cp| SocketAddress::try_from(cp).ok())
     }
 
-    /// add a PDU to the socket connection, returning a `PduTriggering`
-    pub fn trigger_pdu<T: AbstractPdu>(
+    /// Create a new `SocketConnectionIpduIdentifier` in this socket connection
+    ///
+    /// The SocketConnectionIpduIdentifier is used to trigger a PDU, and contains associated settings
+    /// The function returns a tuple of the new `SocketConnectionIpduIdentifier` and the associated `PduTriggering`
+    /// since most callers only need the `PduTriggering`.
+    pub fn create_socket_connection_ipdu_identifier<T: AbstractPdu>(
         &self,
         pdu: &T,
         header_id: u32,
         timeout: Option<f64>,
         collection_trigger: Option<PduCollectionTrigger>,
-    ) -> Result<PduTriggering, AutosarAbstractionError> {
-        let pdu: Pdu = pdu.clone().into();
-        self.trigger_pdu_internal(&pdu, header_id, timeout, collection_trigger)
+    ) -> Result<(SocketConnectionIpduIdentifier, PduTriggering), AutosarAbstractionError> {
+        SocketConnectionIpduIdentifier::new(
+            self.element(),
+            &pdu.clone().into(),
+            header_id,
+            timeout,
+            collection_trigger,
+        )
     }
 
-    /// add a PDU to the socket connection, returning a `PduTriggering`
-    /// Split off an internal function to keep the binary size down, since the rust compiler duplicates the generic functions for each type
-    fn trigger_pdu_internal(
+    /// create an iterator over all `SocketConnectionIpduIdentifiers` in this socket connection
+    pub fn socket_connection_ipdu_identifiers(
         &self,
-        pdu: &Pdu,
-        header_id: u32,
-        timeout: Option<f64>,
-        collection_trigger: Option<PduCollectionTrigger>,
-    ) -> Result<PduTriggering, AutosarAbstractionError> {
-        let scii = self
-            .0
-            .get_or_create_sub_element(ElementName::Pdus)?
-            .create_sub_element(ElementName::SocketConnectionIpduIdentifier)?;
-        scii.create_sub_element(ElementName::HeaderId)?
-            .set_character_data(header_id.to_string())?;
-        if let Some(timeout) = timeout {
-            scii.create_sub_element(ElementName::PduCollectionPduTimeout)?
-                .set_character_data(timeout)?;
-        }
-        if let Some(collection_trigger) = collection_trigger {
-            scii.create_sub_element(ElementName::PduCollectionTrigger)?
-                .set_character_data::<EnumItem>(collection_trigger.into())?;
-        }
-
-        let pt = PduTriggering::new(
-            pdu,
-            &PhysicalChannel::Ethernet(self.socket_connection_bundle()?.physical_channel()?),
-        )?;
-        scii.create_sub_element(ElementName::PduTriggeringRef)?
-            .set_reference_target(pt.element())?;
-
-        Ok(pt)
-    }
-
-    /// set the header id for a PDU in this socket connection
-    pub fn set_header_id(&self, pdu_triggering: &PduTriggering, header_id: u64) -> Result<(), AutosarAbstractionError> {
-        for scii in self
-            .element()
-            .get_or_create_sub_element(ElementName::Pdus)?
-            .sub_elements()
-        {
-            if let Some(pt_ref) = scii
-                .get_sub_element(ElementName::PduTriggeringRef)
-                .and_then(|ptref| ptref.get_reference_target().ok())
-                .and_then(|pt| PduTriggering::try_from(pt).ok())
-            {
-                if pt_ref == *pdu_triggering {
-                    scii.get_or_create_sub_element(ElementName::HeaderId)?
-                        .set_character_data(header_id)?;
-                }
-            }
-        }
-        Ok(())
-    }
-
-    /// get the header id for a PDU in this socket connection
-    #[must_use]
-    pub fn header_id(&self, pdu_triggering: &PduTriggering) -> Option<u64> {
-        for scii in self.element().get_sub_element(ElementName::Pdus)?.sub_elements() {
-            if let Some(pt_ref) = scii
-                .get_sub_element(ElementName::PduTriggeringRef)
-                .and_then(|ptref| ptref.get_reference_target().ok())
-                .and_then(|pt| PduTriggering::try_from(pt).ok())
-            {
-                if pt_ref == *pdu_triggering {
-                    return scii
-                        .get_sub_element(ElementName::HeaderId)?
-                        .character_data()?
-                        .parse_integer();
-                }
-            }
-        }
-        None
-    }
-
-    /// set the timeout for a PDU in this socket connection
-    pub fn set_timeout(&self, pdu_triggering: &PduTriggering, timeout: f64) -> Result<(), AutosarAbstractionError> {
-        for scii in self
-            .element()
-            .get_or_create_sub_element(ElementName::Pdus)?
-            .sub_elements()
-        {
-            if let Some(pt_ref) = scii
-                .get_sub_element(ElementName::PduTriggeringRef)
-                .and_then(|ptref| ptref.get_reference_target().ok())
-                .and_then(|pt| PduTriggering::try_from(pt).ok())
-            {
-                if pt_ref == *pdu_triggering {
-                    scii.get_or_create_sub_element(ElementName::PduCollectionPduTimeout)?
-                        .set_character_data(timeout)?;
-                }
-            }
-        }
-        Ok(())
-    }
-
-    /// get the timeout for a PDU in this socket connection
-    #[must_use]
-    pub fn timeout(&self, pdu_triggering: &PduTriggering) -> Option<f64> {
-        for scii in self.element().get_sub_element(ElementName::Pdus)?.sub_elements() {
-            if let Some(pt_ref) = scii
-                .get_sub_element(ElementName::PduTriggeringRef)
-                .and_then(|ptref| ptref.get_reference_target().ok())
-                .and_then(|pt| PduTriggering::try_from(pt).ok())
-            {
-                if pt_ref == *pdu_triggering {
-                    return scii
-                        .get_sub_element(ElementName::PduCollectionPduTimeout)?
-                        .character_data()?
-                        .float_value();
-                }
-            }
-        }
-        None
-    }
-
-    /// set the collection trigger for a PDU in this socket connection
-    pub fn set_collection_trigger(
-        &self,
-        pdu_triggering: &PduTriggering,
-        trigger: PduCollectionTrigger,
-    ) -> Result<(), AutosarAbstractionError> {
-        for scii in self
-            .element()
-            .get_or_create_sub_element(ElementName::Pdus)?
-            .sub_elements()
-        {
-            if let Some(pt_ref) = scii
-                .get_sub_element(ElementName::PduTriggeringRef)
-                .and_then(|ptref| ptref.get_reference_target().ok())
-                .and_then(|pt| PduTriggering::try_from(pt).ok())
-            {
-                if pt_ref == *pdu_triggering {
-                    scii.get_or_create_sub_element(ElementName::PduCollectionTrigger)?
-                        .set_character_data::<EnumItem>(trigger.into())?;
-                }
-            }
-        }
-        Ok(())
-    }
-
-    /// get the collection trigger for a PDU in this socket connection
-    #[must_use]
-    pub fn collection_trigger(&self, pdu_triggering: &PduTriggering) -> Option<PduCollectionTrigger> {
-        for scii in self.element().get_sub_element(ElementName::Pdus)?.sub_elements() {
-            if let Some(pt_ref) = scii
-                .get_sub_element(ElementName::PduTriggeringRef)
-                .and_then(|ptref| ptref.get_reference_target().ok())
-                .and_then(|pt| PduTriggering::try_from(pt).ok())
-            {
-                if pt_ref == *pdu_triggering {
-                    return scii
-                        .get_sub_element(ElementName::PduCollectionTrigger)?
-                        .character_data()?
-                        .enum_value()?
-                        .try_into()
-                        .ok();
-                }
-            }
-        }
-        None
-    }
-
-    /// add a `SoAdRoutingGroup` for a PDU in this socket connection
-    pub fn add_routing_group(
-        &self,
-        pdu_triggering: &PduTriggering,
-        routing_group: &SoAdRoutingGroup,
-    ) -> Result<(), AutosarAbstractionError> {
-        let Some(scii) = self
-            .element()
-            .get_or_create_sub_element(ElementName::Pdus)?
-            .sub_elements()
-            .find(|scii| {
-                scii.get_sub_element(ElementName::PduTriggeringRef)
-                    .and_then(|ptref| ptref.get_reference_target().ok())
-                    .and_then(|pt| PduTriggering::try_from(pt).ok())
-                    .is_some_and(|pt| pt == *pdu_triggering)
-            })
-        else {
-            return Err(AutosarAbstractionError::InvalidParameter(
-                "Could not add SoAdRoutingGroup - PduTriggering not found".to_string(),
-            ));
-        };
-
-        scii.get_or_create_sub_element(ElementName::RoutingGroupRefs)?
-            .create_sub_element(ElementName::RoutingGroupRef)?
-            .set_reference_target(routing_group.element())?;
-
-        Ok(())
+    ) -> impl Iterator<Item = SocketConnectionIpduIdentifier> + Send + 'static {
+        self.element()
+            .get_sub_element(ElementName::Pdus)
+            .into_iter()
+            .flat_map(|pdus| pdus.sub_elements())
+            .filter_map(|elem| SocketConnectionIpduIdentifier::try_from(elem).ok())
     }
 
     /// create an iterator over all PDU triggerings in this socket connection
@@ -499,6 +343,162 @@ impl SocketConnection {
             .and_then(|elem| elem.character_data())
             .and_then(|cdata| cdata.enum_value());
         enum_value == Some(EnumItem::Sd)
+    }
+}
+
+//##################################################################
+
+/// A `SocketConnectionIpduIdentifier` is used to trigger a PDU in a `SocketConnection`.
+///
+/// In addition to the Pdu Triggering, it also contains associated settings like the
+/// header id, timeout and collection trigger.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SocketConnectionIpduIdentifier(Element);
+abstraction_element!(SocketConnectionIpduIdentifier, SocketConnectionIpduIdentifier);
+
+impl SocketConnectionIpduIdentifier {
+    pub(crate) fn new<T: AbstractPdu>(
+        parent: &Element,
+        pdu: &T,
+        header_id: u32,
+        timeout: Option<f64>,
+        collection_trigger: Option<PduCollectionTrigger>,
+    ) -> Result<(Self, PduTriggering), AutosarAbstractionError> {
+        let scii_elem = parent
+            .get_or_create_sub_element(ElementName::Pdus)?
+            .create_sub_element(ElementName::SocketConnectionIpduIdentifier)?;
+        let scii = Self(scii_elem);
+        let pt = scii.trigger_pdu(&pdu.clone().into())?;
+        scii.set_header_id(header_id)?;
+        scii.set_timeout(timeout)?;
+        scii.set_collection_trigger(collection_trigger)?;
+
+        Ok((scii, pt))
+    }
+
+    /// get the SocketConnection containing this `SocketConnectionIpduIdentifier`
+    #[must_use]
+    pub fn socket_connection(&self) -> Result<SocketConnection, AutosarAbstractionError> {
+        // SOCKET-CONNECTION > PDUS > SOCKET-CONNECTION-IPDU-IDENTIFIER
+        let socket_connection_elem = self.element().parent()?.unwrap().parent()?.unwrap();
+        SocketConnection::try_from(socket_connection_elem)
+    }
+
+    /// trigger a PDU in this `SocketConnectionIpduIdentifier`, creating a `PduTriggering`
+    pub fn trigger_pdu(&self, pdu: &Pdu) -> Result<PduTriggering, AutosarAbstractionError> {
+        if let Some(old_pt) = self.pdu_triggering() {
+            // there is already a PduTriggering in this SocketConnectionIpduIdentifier
+            // remove it first -- ideally this should be old_pt.remove() but that doesn't exist yet
+            if let Ok(Some(parent)) = old_pt.element().parent() {
+                parent.remove_sub_element(old_pt.element().clone())?;
+            }
+        }
+        let channel = self
+            .socket_connection()?
+            .socket_connection_bundle()?
+            .physical_channel()?;
+        let pt = PduTriggering::new(pdu, &PhysicalChannel::Ethernet(channel))?;
+
+        self.element()
+            .get_or_create_sub_element(ElementName::PduTriggeringRef)?
+            .set_reference_target(pt.element())?;
+        Ok(pt)
+    }
+
+    /// get the `PduTriggering` associated with this `SocketConnectionIpduIdentifier`
+    #[must_use]
+    pub fn pdu_triggering(&self) -> Option<PduTriggering> {
+        self.element()
+            .get_sub_element(ElementName::PduTriggeringRef)
+            .and_then(|elem| elem.get_reference_target().ok())
+            .and_then(|pt| PduTriggering::try_from(pt).ok())
+    }
+
+    /// set the header id for this `SocketConnectionIpduIdentifier`
+    pub fn set_header_id(&self, header_id: u32) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::HeaderId)?
+            .set_character_data(header_id.to_string())?;
+        Ok(())
+    }
+
+    /// get the header id for this `SocketConnectionIpduIdentifier`
+    #[must_use]
+    pub fn header_id(&self) -> Option<u64> {
+        self.element()
+            .get_sub_element(ElementName::HeaderId)
+            .and_then(|elem| elem.character_data())
+            .and_then(|cdata| cdata.parse_integer())
+    }
+
+    /// set the timeout for this `SocketConnectionIpduIdentifier`
+    pub fn set_timeout(&self, timeout: Option<f64>) -> Result<(), AutosarAbstractionError> {
+        if let Some(timeout) = timeout {
+            self.element()
+                .get_or_create_sub_element(ElementName::PduCollectionPduTimeout)?
+                .set_character_data(timeout)?;
+        } else {
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::PduCollectionPduTimeout);
+        }
+        Ok(())
+    }
+
+    /// get the timeout for this `SocketConnectionIpduIdentifier`
+    #[must_use]
+    pub fn timeout(&self) -> Option<f64> {
+        self.element()
+            .get_sub_element(ElementName::PduCollectionPduTimeout)
+            .and_then(|elem| elem.character_data())
+            .and_then(|cdata| cdata.float_value())
+    }
+
+    /// set the collection trigger for this `SocketConnectionIpduIdentifier`
+    pub fn set_collection_trigger(&self, trigger: Option<PduCollectionTrigger>) -> Result<(), AutosarAbstractionError> {
+        if let Some(trigger) = trigger {
+            self.element()
+                .get_or_create_sub_element(ElementName::PduCollectionTrigger)?
+                .set_character_data::<EnumItem>(trigger.into())?;
+        } else {
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::PduCollectionTrigger);
+        }
+        Ok(())
+    }
+
+    /// get the collection trigger for this `SocketConnectionIpduIdentifier`
+    #[must_use]
+    pub fn collection_trigger(&self) -> Option<PduCollectionTrigger> {
+        self.element()
+            .get_sub_element(ElementName::PduCollectionTrigger)
+            .and_then(|elem| elem.character_data())
+            .and_then(|cdata| cdata.enum_value())
+            .and_then(|eval| eval.try_into().ok())
+    }
+
+    /// add a reference to a `SoAdRoutingGroup` to this `SocketConnectionIpduIdentifier`
+    pub fn add_routing_group(&self, routing_group: &SoAdRoutingGroup) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::RoutingGroupRefs)?
+            .create_sub_element(ElementName::RoutingGroupRef)?
+            .set_reference_target(routing_group.element())?;
+        Ok(())
+    }
+
+    /// create an iterator over all `SoAdRoutingGroups` referenced by this `SocketConnectionIpduIdentifier`
+    pub fn routing_groups(&self) -> impl Iterator<Item = SoAdRoutingGroup> + Send + 'static {
+        self.element()
+            .get_sub_element(ElementName::RoutingGroupRefs)
+            .into_iter()
+            .flat_map(|rgr| rgr.sub_elements())
+            .filter_map(|ref_elem| {
+                ref_elem
+                    .get_reference_target()
+                    .ok()
+                    .and_then(|elem| SoAdRoutingGroup::try_from(elem).ok())
+            })
     }
 }
 
@@ -630,22 +630,22 @@ mod test {
         let connection = bundle.create_bundled_connection(&client_socket).unwrap();
 
         let pdu = system.create_isignal_ipdu("Pdu", &package, 8).unwrap();
-        let pt = connection
-            .trigger_pdu(&pdu, 0x1234, Some(0.5), Some(PduCollectionTrigger::Always))
+        let (scii, pt) = connection
+            .create_socket_connection_ipdu_identifier(&pdu, 0x1234, Some(0.5), Some(PduCollectionTrigger::Always))
             .unwrap();
+        assert_eq!(connection.socket_connection_ipdu_identifiers().count(), 1);
+        assert_eq!(pt, scii.pdu_triggering().unwrap());
         assert_eq!(Some(pt.clone()), connection.pdu_triggerings().next());
-        assert_eq!(Some(0x1234), connection.header_id(&pt));
-        assert_eq!(Some(0.5), connection.timeout(&pt));
-        assert_eq!(Some(PduCollectionTrigger::Always), connection.collection_trigger(&pt));
+        assert_eq!(Some(0x1234), scii.header_id());
+        assert_eq!(Some(0.5), scii.timeout());
+        assert_eq!(Some(PduCollectionTrigger::Always), scii.collection_trigger());
 
-        connection.set_header_id(&pt, 0x5678).unwrap();
-        assert_eq!(Some(0x5678), connection.header_id(&pt));
-        connection.set_timeout(&pt, 1.5).unwrap();
-        assert_eq!(Some(1.5), connection.timeout(&pt));
-        connection
-            .set_collection_trigger(&pt, PduCollectionTrigger::Never)
-            .unwrap();
-        assert_eq!(Some(PduCollectionTrigger::Never), connection.collection_trigger(&pt));
+        scii.set_header_id(0x5678).unwrap();
+        assert_eq!(Some(0x5678), scii.header_id());
+        scii.set_timeout(Some(1.5)).unwrap();
+        assert_eq!(Some(1.5), scii.timeout());
+        scii.set_collection_trigger(Some(PduCollectionTrigger::Never)).unwrap();
+        assert_eq!(Some(PduCollectionTrigger::Never), scii.collection_trigger());
         connection
             .set_client_ip_addr_from_connection_request(Some(true))
             .unwrap();
@@ -666,7 +666,9 @@ mod test {
         let routing_group = system
             .create_so_ad_routing_group("RoutingGroup", &package, None)
             .unwrap();
-        connection.add_routing_group(&pt, &routing_group).unwrap();
+        scii.add_routing_group(&routing_group).unwrap();
+        assert_eq!(scii.routing_groups().next(), Some(routing_group.clone()));
+        assert_eq!(scii.routing_groups().count(), 1);
 
         assert_eq!(routing_group.control_type(), None);
         routing_group

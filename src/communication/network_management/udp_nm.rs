@@ -240,6 +240,8 @@ impl AbstractNmCluster for UdpNmCluster {
     type NmNodeType = UdpNmNode;
 }
 
+//##################################################################
+
 /// `UdpNmClusterSettings` encapsulates the mandatory settings for a `UdpNmCluster`
 #[derive(Debug, Clone, PartialEq)]
 pub struct UdpNmClusterSettings {

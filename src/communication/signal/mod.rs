@@ -641,7 +641,7 @@ impl ISignalTriggering {
 
 //##################################################################
 
-/// The `IPduPort` allows an ECU to send or receive a PDU
+/// The `ISignalPort` allows an ECU to send or receive a Signal
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ISignalPort(Element);
 abstraction_element!(ISignalPort, ISignalPort);
