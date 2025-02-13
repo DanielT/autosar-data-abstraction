@@ -380,35 +380,18 @@ impl PduToFrameMapping {
         byte_order: ByteOrder,
         update_bit: Option<u32>,
     ) -> Result<Self, AutosarAbstractionError> {
-        if byte_order == ByteOrder::Opaque {
-            return Err(AutosarAbstractionError::InvalidParameter(
-                "Byte order: opaque is not allowed for PDUs".to_string(),
-            ));
-        }
-        if (byte_order == ByteOrder::MostSignificantByteFirst && (start_position % 8 != 7))
-            || (byte_order == ByteOrder::MostSignificantByteLast && (start_position % 8 != 0))
-        {
-            return Err(AutosarAbstractionError::InvalidParameter(
-                "PDUs must be byte-alinged".to_string(),
-            ));
-        }
-        let pdumapping = mappings.create_named_sub_element(ElementName::PduToFrameMapping, name)?;
-        pdumapping
+        let pdumapping_elem = mappings.create_named_sub_element(ElementName::PduToFrameMapping, name)?;
+        pdumapping_elem
             .create_sub_element(ElementName::PduRef)?
             .set_reference_target(pdu.element())?;
-        pdumapping
-            .create_sub_element(ElementName::PackingByteOrder)?
-            .set_character_data::<EnumItem>(byte_order.into())?;
-        pdumapping
-            .create_sub_element(ElementName::StartPosition)?
-            .set_character_data(u64::from(start_position))?;
-        if let Some(update_bit_pos) = update_bit {
-            pdumapping
-                .create_sub_element(ElementName::UpdateIndicationBitPosition)?
-                .set_character_data(u64::from(update_bit_pos))?;
-        }
 
-        Ok(Self(pdumapping))
+        let pdumapping = Self(pdumapping_elem);
+
+        pdumapping.set_byte_order(byte_order)?;
+        pdumapping.set_start_position(start_position)?;
+        pdumapping.set_update_bit(update_bit)?;
+
+        Ok(pdumapping)
     }
 
     /// Reference to the PDU that is mapped into the frame. The PDU reference is mandatory.
@@ -420,10 +403,28 @@ impl PduToFrameMapping {
             .and_then(|pdu_elem| Pdu::try_from(pdu_elem).ok())
     }
 
-    /// Byte order of the data in the PDU.
+    /// set the byte order of the data in the PDU.
     ///
     /// All `PduToFrameMappings` within a frame must have the same byte order.
-    /// PDUs my not use the byte order value `Opaque`.
+    /// PDUs may not use the byte order value `Opaque`.
+    ///
+    /// Note: If the byte order is swapped, then the start position must be adjusted accordingly.
+    pub fn set_byte_order(&self, byte_order: ByteOrder) -> Result<(), AutosarAbstractionError> {
+        if byte_order == ByteOrder::Opaque {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "Byte order: opaque is not allowed for PDUs".to_string(),
+            ));
+        }
+        self.element()
+            .get_or_create_sub_element(ElementName::PackingByteOrder)?
+            .set_character_data::<EnumItem>(byte_order.into())?;
+        Ok(())
+    }
+
+    /// get the byte order of the data in the PDU.
+    ///
+    /// All `PduToFrameMappings` within a frame must have the same byte order.
+    /// PDUs may not use the byte order value `Opaque`.
     #[must_use]
     pub fn byte_order(&self) -> Option<ByteOrder> {
         self.element()
@@ -431,6 +432,28 @@ impl PduToFrameMapping {
             .and_then(|pbo| pbo.character_data())
             .and_then(|cdata| cdata.enum_value())
             .and_then(|enumval| enumval.try_into().ok())
+    }
+
+    /// set the start position of the PDU data within the frame (bit position).
+    ///
+    /// PDUs are byte aligned.
+    /// For little-endian data the values 0, 8, 16, ... are allowed;
+    /// for big-endian data the value 7, 15, 23, ... are allowed.
+    ///
+    /// Note: if you intend to change both the byte order and the start position, then you should change the byte order first.
+    /// New values set here must match the configured byte order.
+    pub fn set_start_position(&self, start_position: u32) -> Result<(), AutosarAbstractionError> {
+        if (self.byte_order() == Some(ByteOrder::MostSignificantByteFirst) && (start_position % 8 != 7))
+            || (self.byte_order() == Some(ByteOrder::MostSignificantByteLast) && (start_position % 8 != 0))
+        {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "PDUs must be byte-aligned".to_string(),
+            ));
+        }
+        self.element()
+            .get_or_create_sub_element(ElementName::StartPosition)?
+            .set_character_data(u64::from(start_position))?;
+        Ok(())
     }
 
     /// Start position of the PDU data within the frame (bit position). The start position is mandatory.
@@ -444,6 +467,20 @@ impl PduToFrameMapping {
             .get_sub_element(ElementName::StartPosition)
             .and_then(|pbo| pbo.character_data())
             .and_then(|cdata| cdata.parse_integer())
+    }
+
+    /// set or clear the bit position of the update bit for the mapped PDU.
+    pub fn set_update_bit(&self, update_bit: Option<u32>) -> Result<(), AutosarAbstractionError> {
+        if let Some(update_bit) = update_bit {
+            self.element()
+                .get_or_create_sub_element(ElementName::UpdateIndicationBitPosition)?
+                .set_character_data(u64::from(update_bit))?;
+        } else {
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::UpdateIndicationBitPosition);
+        }
+        Ok(())
     }
 
     /// Bit position of the update bit for the mapped PDU. Not all PDUs use an update bit.

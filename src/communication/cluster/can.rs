@@ -1,5 +1,7 @@
 use crate::communication::{AbstractCluster, CanPhysicalChannel};
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement};
+use crate::{
+    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
+};
 use autosar_data::{Element, ElementName};
 
 /// A `CanCluster` contains all configuration items associated with a CAN network.

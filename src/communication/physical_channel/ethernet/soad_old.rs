@@ -377,7 +377,6 @@ impl SocketConnectionIpduIdentifier {
     }
 
     /// get the SocketConnection containing this `SocketConnectionIpduIdentifier`
-    #[must_use]
     pub fn socket_connection(&self) -> Result<SocketConnection, AutosarAbstractionError> {
         // SOCKET-CONNECTION > PDUS > SOCKET-CONNECTION-IPDU-IDENTIFIER
         let socket_connection_elem = self.element().parent()?.unwrap().parent()?.unwrap();

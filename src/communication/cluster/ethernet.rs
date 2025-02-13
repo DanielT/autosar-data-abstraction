@@ -1,5 +1,7 @@
 use crate::communication::{AbstractCluster, EthernetPhysicalChannel, EthernetVlanInfo};
-use crate::{abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement};
+use crate::{
+    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
+};
 use autosar_data::{Element, ElementName};
 
 /// An `EthernetCluster` contains all configuration items associated with an ethernet network.
