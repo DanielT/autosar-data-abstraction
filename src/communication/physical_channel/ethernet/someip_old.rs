@@ -110,12 +110,9 @@ impl ProvidedServiceInstanceV1 {
     /// set the SD server configuration for this `ProvidedServiceInstance`
     pub fn set_sd_server_config(&self, sd_server_config: &SdConfig) -> Result<(), AutosarAbstractionError> {
         // remove any existing SdServerConfig, so that we can start fresh
-        if let Some(config_elem) = self.element().get_sub_element(ElementName::SdServerConfig) {
-            self.element().remove_sub_element(config_elem)?;
-        }
+        let _ = self.element().remove_sub_element_kind(ElementName::SdServerConfig);
 
         let config_elem = self.element().get_or_create_sub_element(ElementName::SdServerConfig)?;
-
         config_elem
             .create_sub_element(ElementName::ServerServiceMajorVersion)?
             .set_character_data(u64::from(sd_server_config.service_major_version))?;
@@ -295,9 +292,7 @@ impl EventHandlerV1 {
     /// set the SD server configuration for this `EventHandler`
     pub fn set_sd_server_config(&self, server_config: &SdEventConfig) -> Result<(), AutosarAbstractionError> {
         // remove any existing SdServerConfig, so that we can start fresh
-        if let Some(config_elem) = self.element().get_sub_element(ElementName::SdServerConfig) {
-            self.element().remove_sub_element(config_elem)?;
-        }
+        let _ = self.element().remove_sub_element_kind(ElementName::SdServerConfig);
 
         let sd_config_elem = self.element().create_sub_element(ElementName::SdServerConfig)?;
         sd_config_elem
@@ -440,12 +435,9 @@ impl ConsumedServiceInstanceV1 {
     /// set the SD client configuration for this `ConsumedServiceInstanceV1`
     pub fn set_sd_client_config(&self, sd_client_config: &SdConfig) -> Result<(), AutosarAbstractionError> {
         // remove any existing SdClientConfig, so that we can start fresh
-        if let Some(config_elem) = self.element().get_sub_element(ElementName::SdClientConfig) {
-            self.element().remove_sub_element(config_elem)?;
-        }
+        let _ = self.element().remove_sub_element_kind(ElementName::SdClientConfig);
 
         let config_elem = self.element().get_or_create_sub_element(ElementName::SdClientConfig)?;
-
         config_elem
             .create_sub_element(ElementName::ClientServiceMajorVersion)?
             .set_character_data(u64::from(sd_client_config.service_major_version))?;
@@ -664,9 +656,7 @@ impl ConsumedEventGroupV1 {
     /// set the SD client configuration for this `ConsumedEventGroup`
     pub fn set_sd_client_config(&self, sd_client_config: &SdEventConfig) -> Result<(), AutosarAbstractionError> {
         // remove any existing SdClientConfig, so that we can start fresh
-        if let Some(sd_config_elem) = self.element().get_sub_element(ElementName::SdClientConfig) {
-            self.element().remove_sub_element(sd_config_elem)?;
-        }
+        let _ = self.element().remove_sub_element_kind(ElementName::SdClientConfig);
 
         let sd_config_elem = self.element().create_sub_element(ElementName::SdClientConfig)?;
         sd_config_elem

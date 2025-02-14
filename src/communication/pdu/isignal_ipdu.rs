@@ -141,9 +141,7 @@ impl ISignalIPdu {
 
     /// set the transmission timing of the PDU
     pub fn set_timing(&self, timing_spec: &IpduTiming) -> Result<(), AutosarAbstractionError> {
-        if let Some(timing_elem) = self.element().get_sub_element(ElementName::IPduTimingSpecifications) {
-            self.element().remove_sub_element(timing_elem)?;
-        }
+        let _ = self.element().remove_sub_element_kind(ElementName::IPduTimingSpecifications);
 
         let timing_elem = self
             .element()

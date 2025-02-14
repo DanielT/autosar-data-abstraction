@@ -156,7 +156,7 @@ impl UdpNmCluster {
                 .get_or_create_sub_element(ElementName::VlanRef)?
                 .set_reference_target(vlan.element())?;
         } else {
-            self.element().remove_sub_element_kind(ElementName::VlanRef)?;
+            let _ = self.element().remove_sub_element_kind(ElementName::VlanRef);
         }
         Ok(())
     }
@@ -177,8 +177,9 @@ impl UdpNmCluster {
                 .get_or_create_sub_element(ElementName::NmImmediateNmTransmissions)?
                 .set_character_data(u64::from(value))?;
         } else {
-            self.element()
-                .remove_sub_element_kind(ElementName::NmImmediateNmTransmissions)?;
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::NmImmediateNmTransmissions);
         }
         Ok(())
     }
@@ -199,7 +200,7 @@ impl UdpNmCluster {
                 .get_or_create_sub_element(ElementName::NmCbvPosition)?
                 .set_character_data(u64::from(value))?;
         } else {
-            self.element().remove_sub_element_kind(ElementName::NmCbvPosition)?;
+            let _ = self.element().remove_sub_element_kind(ElementName::NmCbvPosition);
         }
         Ok(())
     }
@@ -220,7 +221,7 @@ impl UdpNmCluster {
                 .get_or_create_sub_element(ElementName::NmNidPosition)?
                 .set_character_data(u64::from(value))?;
         } else {
-            self.element().remove_sub_element_kind(ElementName::NmNidPosition)?;
+            let _ = self.element().remove_sub_element_kind(ElementName::NmNidPosition);
         }
         Ok(())
     }
@@ -284,8 +285,8 @@ impl UdpNmClusterCoupling {
                 .get_or_create_sub_element(ElementName::NmImmediateRestartEnabled)?
                 .set_character_data(enabled)?;
         } else {
-            self.element()
-                .remove_sub_element_kind(ElementName::NmImmediateRestartEnabled)?;
+            let _ = self.element()
+                .remove_sub_element_kind(ElementName::NmImmediateRestartEnabled);
         }
         Ok(())
     }
@@ -355,8 +356,8 @@ impl UdpNmNode {
                 .get_or_create_sub_element(ElementName::AllNmMessagesKeepAwake)?
                 .set_character_data(enabled)?;
         } else {
-            self.element()
-                .remove_sub_element_kind(ElementName::AllNmMessagesKeepAwake)?;
+            let _ = self.element()
+                .remove_sub_element_kind(ElementName::AllNmMessagesKeepAwake);
         }
         Ok(())
     }

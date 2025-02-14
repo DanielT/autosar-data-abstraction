@@ -185,11 +185,12 @@ pub trait AbstractNmCluster: AbstractionElement {
     fn set_channel_sleep_master(&self, value: Option<bool>) -> Result<(), AutosarAbstractionError> {
         if let Some(value) = value {
             self.element()
-                .create_sub_element(ElementName::NmChannelSleepMaster)?
+                .get_or_create_sub_element(ElementName::NmChannelSleepMaster)?
                 .set_character_data(value)?;
         } else {
-            self.element()
-                .remove_sub_element_kind(ElementName::NmChannelSleepMaster)?;
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::NmChannelSleepMaster);
         }
         Ok(())
     }
@@ -206,11 +207,12 @@ pub trait AbstractNmCluster: AbstractionElement {
     fn set_node_detection_enabled(&self, value: Option<bool>) -> Result<(), AutosarAbstractionError> {
         if let Some(value) = value {
             self.element()
-                .create_sub_element(ElementName::NmNodeDetectionEnabled)?
+                .get_or_create_sub_element(ElementName::NmNodeDetectionEnabled)?
                 .set_character_data(value)?;
         } else {
-            self.element()
-                .remove_sub_element_kind(ElementName::NmNodeDetectionEnabled)?;
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::NmNodeDetectionEnabled);
         }
         Ok(())
     }
@@ -227,10 +229,10 @@ pub trait AbstractNmCluster: AbstractionElement {
     fn set_node_id_enabled(&self, value: Option<bool>) -> Result<(), AutosarAbstractionError> {
         if let Some(value) = value {
             self.element()
-                .create_sub_element(ElementName::NmNodeIdEnabled)?
+                .get_or_create_sub_element(ElementName::NmNodeIdEnabled)?
                 .set_character_data(value)?;
         } else {
-            self.element().remove_sub_element_kind(ElementName::NmNodeIdEnabled)?;
+            let _ = self.element().remove_sub_element_kind(ElementName::NmNodeIdEnabled);
         }
         Ok(())
     }
@@ -247,11 +249,10 @@ pub trait AbstractNmCluster: AbstractionElement {
     fn set_pnc_participation(&self, value: Option<bool>) -> Result<(), AutosarAbstractionError> {
         if let Some(value) = value {
             self.element()
-                .create_sub_element(ElementName::NmPncParticipation)?
+                .get_or_create_sub_element(ElementName::NmPncParticipation)?
                 .set_character_data(value)?;
         } else {
-            self.element()
-                .remove_sub_element_kind(ElementName::NmPncParticipation)?;
+            let _ = self.element().remove_sub_element_kind(ElementName::NmPncParticipation);
         }
         Ok(())
     }
@@ -268,11 +269,12 @@ pub trait AbstractNmCluster: AbstractionElement {
     fn set_repeat_msg_ind_enabled(&self, value: Option<bool>) -> Result<(), AutosarAbstractionError> {
         if let Some(value) = value {
             self.element()
-                .create_sub_element(ElementName::NmRepeatMsgIndEnabled)?
+                .get_or_create_sub_element(ElementName::NmRepeatMsgIndEnabled)?
                 .set_character_data(value)?;
         } else {
-            self.element()
-                .remove_sub_element_kind(ElementName::NmRepeatMsgIndEnabled)?;
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::NmRepeatMsgIndEnabled);
         }
         Ok(())
     }
@@ -289,11 +291,12 @@ pub trait AbstractNmCluster: AbstractionElement {
     fn set_synchronizing_network(&self, value: Option<bool>) -> Result<(), AutosarAbstractionError> {
         if let Some(value) = value {
             self.element()
-                .create_sub_element(ElementName::NmSynchronizingNetwork)?
+                .get_or_create_sub_element(ElementName::NmSynchronizingNetwork)?
                 .set_character_data(value)?;
         } else {
-            self.element()
-                .remove_sub_element_kind(ElementName::NmSynchronizingNetwork)?;
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::NmSynchronizingNetwork);
         }
         Ok(())
     }
@@ -310,11 +313,12 @@ pub trait AbstractNmCluster: AbstractionElement {
     fn set_pnc_cluster_vector_length(&self, value: Option<u8>) -> Result<(), AutosarAbstractionError> {
         if let Some(value) = value {
             self.element()
-                .create_sub_element(ElementName::PncClusterVectorLength)?
+                .get_or_create_sub_element(ElementName::PncClusterVectorLength)?
                 .set_character_data(u64::from(value))?;
         } else {
-            self.element()
-                .remove_sub_element_kind(ElementName::PncClusterVectorLength)?;
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::PncClusterVectorLength);
         }
         Ok(())
     }
@@ -486,11 +490,12 @@ impl NmEcu {
     pub fn set_nm_bus_synchronization_enabled(&self, value: Option<bool>) -> Result<(), AutosarAbstractionError> {
         if let Some(value) = value {
             self.element()
-                .create_sub_element(ElementName::NmBusSynchronizationEnabled)?
+                .get_or_create_sub_element(ElementName::NmBusSynchronizationEnabled)?
                 .set_character_data(value)?;
         } else {
-            self.element()
-                .remove_sub_element_kind(ElementName::NmBusSynchronizationEnabled)?;
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::NmBusSynchronizationEnabled);
         }
         Ok(())
     }
@@ -510,11 +515,10 @@ impl NmEcu {
     pub fn set_nm_com_control_enabled(&self, value: Option<bool>) -> Result<(), AutosarAbstractionError> {
         if let Some(value) = value {
             self.element()
-                .create_sub_element(ElementName::NmComControlEnabled)?
+                .get_or_create_sub_element(ElementName::NmComControlEnabled)?
                 .set_character_data(value)?;
         } else {
-            self.element()
-                .remove_sub_element_kind(ElementName::NmComControlEnabled)?;
+            let _ = self.element().remove_sub_element_kind(ElementName::NmComControlEnabled);
         }
         Ok(())
     }
@@ -534,11 +538,12 @@ impl NmEcu {
     pub fn set_cycle_time_main_function(&self, value: Option<f64>) -> Result<(), AutosarAbstractionError> {
         if let Some(value) = value {
             self.element()
-                .create_sub_element(ElementName::NmCycletimeMainFunction)?
+                .get_or_create_sub_element(ElementName::NmCycletimeMainFunction)?
                 .set_character_data(value)?;
         } else {
-            self.element()
-                .remove_sub_element_kind(ElementName::NmCycletimeMainFunction)?;
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::NmCycletimeMainFunction);
         }
         Ok(())
     }
@@ -603,10 +608,10 @@ pub trait AbstractNmNode: AbstractionElement {
     fn set_node_id(&self, value: Option<u32>) -> Result<(), AutosarAbstractionError> {
         if let Some(value) = value {
             self.element()
-                .create_sub_element(ElementName::NmNodeId)?
+                .get_or_create_sub_element(ElementName::NmNodeId)?
                 .set_character_data(u64::from(value))?;
         } else {
-            self.element().remove_sub_element_kind(ElementName::NmNodeId)?;
+            let _ = self.element().remove_sub_element_kind(ElementName::NmNodeId);
         }
         Ok(())
     }
@@ -625,11 +630,12 @@ pub trait AbstractNmNode: AbstractionElement {
     fn set_passive_mode(&self, value: Option<bool>) -> Result<(), AutosarAbstractionError> {
         if let Some(value) = value {
             self.element()
-                .create_sub_element(ElementName::NmPassiveModeEnabled)?
+                .get_or_create_sub_element(ElementName::NmPassiveModeEnabled)?
                 .set_character_data(value)?;
         } else {
-            self.element()
-                .remove_sub_element_kind(ElementName::NmPassiveModeEnabled)?;
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::NmPassiveModeEnabled);
         }
         Ok(())
     }

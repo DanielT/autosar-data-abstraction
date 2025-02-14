@@ -61,7 +61,7 @@ impl EcucValueCollection {
     /// Set the ecu extract reference, which links a `System` to the ECU configuration
     pub fn set_ecu_extract_reference(&self, system: &System) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::EcuExtractRef)?
+            .get_or_create_sub_element(ElementName::EcuExtractRef)?
             .set_reference_target(system.element())?;
 
         Ok(())

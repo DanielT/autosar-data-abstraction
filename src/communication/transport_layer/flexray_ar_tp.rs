@@ -444,10 +444,10 @@ impl FlexrayArTpNode {
     pub fn set_tp_address(&self, tp_address: Option<&TpAddress>) -> Result<(), AutosarAbstractionError> {
         if let Some(tp_address) = tp_address {
             self.element()
-                .create_sub_element(ElementName::TpAddressRef)?
+                .get_or_create_sub_element(ElementName::TpAddressRef)?
                 .set_reference_target(tp_address.element())?;
-        } else if let Some(tp_address_elem) = self.element().get_sub_element(ElementName::TpAddressRef) {
-            self.element().remove_sub_element(tp_address_elem)?;
+        } else {
+            let _ = self.element().remove_sub_element_kind(ElementName::TpAddressRef);
         }
         Ok(())
     }

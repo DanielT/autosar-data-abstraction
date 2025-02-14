@@ -100,7 +100,7 @@ impl System {
                 .get_or_create_sub_element(ElementName::PncVectorLength)?
                 .set_character_data(length as u64)?;
         } else {
-            self.0.remove_sub_element_kind(ElementName::PncVectorLength)?;
+            let _ = self.0.remove_sub_element_kind(ElementName::PncVectorLength);
         }
         Ok(())
     }
@@ -120,7 +120,7 @@ impl System {
                 .get_or_create_sub_element(ElementName::PncVectorOffset)?
                 .set_character_data(offset as u64)?;
         } else {
-            self.0.remove_sub_element_kind(ElementName::PncVectorOffset)?;
+            let _ = self.0.remove_sub_element_kind(ElementName::PncVectorOffset);
         }
         Ok(())
     }
@@ -982,7 +982,8 @@ impl System {
 
     /// set the root software composition of the system
     ///
-    /// This function will remove any existing root software composition
+    /// When the root software composition is set, a root sw composition prototype is created for it.
+    /// This function will remove any existing root sw composition prototype
     pub fn set_root_sw_composition(
         &self,
         name: &str,
@@ -1000,7 +1001,7 @@ impl System {
 
     /// get the root software composition of the system
     #[must_use]
-    pub fn root_composition(&self) -> Option<RootSwCompositionPrototype> {
+    pub fn root_sw_composition(&self) -> Option<RootSwCompositionPrototype> {
         let root_compositions = self.element().get_sub_element(ElementName::RootSoftwareCompositions)?;
         let root_composition = root_compositions.get_sub_element(ElementName::RootSwCompositionPrototype)?;
         RootSwCompositionPrototype::try_from(root_composition).ok()
@@ -1419,7 +1420,7 @@ mod test {
         let _root_proto = system
             .set_root_sw_composition("RootComposition", &root_composition)
             .unwrap();
-        assert_eq!(system.root_composition().unwrap(), _root_proto);
+        assert_eq!(system.root_sw_composition().unwrap(), _root_proto);
 
         let context_proto = root_composition
             .create_component("ContextComposition", &context_composition.clone())

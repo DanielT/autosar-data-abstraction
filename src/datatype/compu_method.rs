@@ -726,6 +726,10 @@ impl CompuScale {
 
     /// Set the content of the `CompuScale`
     pub fn set_content(&self, content: CompuScaleContent) -> Result<(), AutosarAbstractionError> {
+        // remove existing content which may conflict with the new content
+        let _ = self.element().remove_sub_element_kind(ElementName::CompuConst);
+        let _ = self.element().remove_sub_element_kind(ElementName::CompuRationalCoeffs);
+
         match content {
             CompuScaleContent::TextConstant(value) => {
                 self.element()

@@ -1507,7 +1507,7 @@ impl SomeipTpConnection {
         }
 
         self.element()
-            .create_sub_element(ElementName::TransportPduRef)?
+            .get_or_create_sub_element(ElementName::TransportPduRef)?
             .set_reference_target(transport_pdu_triggering.element())?;
         Ok(())
     }
@@ -1534,7 +1534,7 @@ impl SomeipTpConnection {
         let pt_tp_sdu = PduTriggering::new(&tp_sdu.clone().into(), &channel)?;
 
         self.element()
-            .create_sub_element(ElementName::TpSduRef)?
+            .get_or_create_sub_element(ElementName::TpSduRef)?
             .set_reference_target(pt_tp_sdu.element())?;
         Ok(())
     }

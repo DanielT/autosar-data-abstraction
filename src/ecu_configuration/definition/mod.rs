@@ -74,8 +74,9 @@ pub trait EcucCommonAttributes: EcucDefinitionElement {
                 .get_or_create_sub_element(ElementName::PostBuildVariantMultiplicity)?
                 .set_character_data(post_build_variant_multiplicity)?;
         } else {
-            self.element()
-                .remove_sub_element_kind(ElementName::PostBuildVariantMultiplicity)?;
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::PostBuildVariantMultiplicity);
         }
 
         Ok(())
@@ -106,8 +107,9 @@ pub trait EcucCommonAttributes: EcucDefinitionElement {
                 .get_or_create_sub_element(ElementName::PostBuildVariantValue)?
                 .set_character_data(post_build_variant_value)?;
         } else {
-            self.element()
-                .remove_sub_element_kind(ElementName::PostBuildVariantValue)?;
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::PostBuildVariantValue);
         }
 
         Ok(())
@@ -132,7 +134,7 @@ pub trait EcucCommonAttributes: EcucDefinitionElement {
                 .get_or_create_sub_element(ElementName::RequiresIndex)?
                 .set_character_data(requires_index)?;
         } else {
-            self.element().remove_sub_element_kind(ElementName::RequiresIndex)?;
+            let _ = self.element().remove_sub_element_kind(ElementName::RequiresIndex);
         }
 
         Ok(())
@@ -183,7 +185,7 @@ pub trait EcucCommonAttributes: EcucDefinitionElement {
                 .get_or_create_sub_element(ElementName::WithAuto)?
                 .set_character_data(with_auto)?;
         } else {
-            self.element().remove_sub_element_kind(ElementName::WithAuto)?;
+            let _ = self.element().remove_sub_element_kind(ElementName::WithAuto);
         }
 
         Ok(())
@@ -207,7 +209,7 @@ pub trait EcucDefinitionElement: AbstractionElement {
                 .get_or_create_sub_element(ElementName::LowerMultiplicity)?
                 .set_character_data(lower_multiplicity as u64)?;
         } else {
-            self.element().remove_sub_element_kind(ElementName::LowerMultiplicity)?;
+            let _ = self.element().remove_sub_element_kind(ElementName::LowerMultiplicity);
         }
 
         Ok(())
@@ -229,7 +231,7 @@ pub trait EcucDefinitionElement: AbstractionElement {
                 .get_or_create_sub_element(ElementName::UpperMultiplicity)?
                 .set_character_data(upper_multiplicity as u64)?;
         } else {
-            self.element().remove_sub_element_kind(ElementName::UpperMultiplicity)?;
+            let _ = self.element().remove_sub_element_kind(ElementName::UpperMultiplicity);
         }
 
         Ok(())
@@ -255,8 +257,9 @@ pub trait EcucDefinitionElement: AbstractionElement {
                 .get_or_create_sub_element(ElementName::UpperMultiplicityInfinite)?
                 .set_character_data(infinite)?;
         } else {
-            self.element()
-                .remove_sub_element_kind(ElementName::UpperMultiplicityInfinite)?;
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::UpperMultiplicityInfinite);
         }
 
         Ok(())
@@ -360,7 +363,7 @@ impl EcucModuleDef {
                 .get_or_create_sub_element(ElementName::ApiServicePrefix)?
                 .set_character_data(prefix)?;
         } else {
-            self.element().remove_sub_element_kind(ElementName::ApiServicePrefix)?;
+            let _ = self.element().remove_sub_element_kind(ElementName::ApiServicePrefix);
         }
 
         Ok(())
@@ -426,8 +429,9 @@ impl EcucModuleDef {
                 .get_or_create_sub_element(ElementName::PostBuildVariantSupport)?
                 .set_character_data(support)?;
         } else {
-            self.element()
-                .remove_sub_element_kind(ElementName::PostBuildVariantSupport)?;
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::PostBuildVariantSupport);
         }
 
         Ok(())
@@ -449,7 +453,7 @@ impl EcucModuleDef {
                 .get_or_create_sub_element(ElementName::Category)?
                 .set_character_data(category.to_string())?;
         } else {
-            self.element().remove_sub_element_kind(ElementName::Category)?;
+            let _ = self.element().remove_sub_element_kind(ElementName::Category);
         }
 
         Ok(())
@@ -477,8 +481,7 @@ impl EcucModuleDef {
                 .get_or_create_sub_element(ElementName::RefinedModuleDefRef)?
                 .set_reference_target(refined_module_def.element())?;
         } else {
-            self.element()
-                .remove_sub_element_kind(ElementName::RefinedModuleDefRef)?;
+            let _ = self.element().remove_sub_element_kind(ElementName::RefinedModuleDefRef);
         }
 
         Ok(())

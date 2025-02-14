@@ -44,7 +44,7 @@ impl SystemMapping {
     ) -> Result<SwcToEcuMapping, AutosarAbstractionError> {
         let root_composition_prototype =
             self.system()?
-                .root_composition()
+                .root_sw_composition()
                 .ok_or(AutosarAbstractionError::InvalidParameter(
                     "The root compositon must be set before mapping any swc".to_string(),
                 ))?;

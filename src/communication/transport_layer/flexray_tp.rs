@@ -344,9 +344,7 @@ impl FlexrayTpConnection {
                 .set_reference_target(multicast_address.element())?;
         } else {
             // remove the multicast address
-            if let Some(multicast_elem) = self.element().get_sub_element(ElementName::MulticastRef) {
-                self.element().remove_sub_element(multicast_elem)?;
-            }
+            let _ = self.element().remove_sub_element_kind(ElementName::MulticastRef);
         }
         Ok(())
     }
@@ -378,7 +376,7 @@ impl FlexrayTpConnectionControl {
     /// set the maxFcWait value
     pub fn set_max_fc_wait(&self, max_fc_wait: u32) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::MaxFcWait)?
+            .get_or_create_sub_element(ElementName::MaxFcWait)?
             .set_character_data(u64::from(max_fc_wait))?;
         Ok(())
     }
@@ -398,7 +396,7 @@ impl FlexrayTpConnectionControl {
         max_number_of_npdu_per_cycle: u32,
     ) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::MaxNumberOfNpduPerCycle)?
+            .get_or_create_sub_element(ElementName::MaxNumberOfNpduPerCycle)?
             .set_character_data(u64::from(max_number_of_npdu_per_cycle))?;
         Ok(())
     }
@@ -415,7 +413,7 @@ impl FlexrayTpConnectionControl {
     /// set the maxRetries value
     pub fn set_max_retries(&self, max_retries: u32) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::MaxRetries)?
+            .get_or_create_sub_element(ElementName::MaxRetries)?
             .set_character_data(u64::from(max_retries))?;
         Ok(())
     }
@@ -432,7 +430,7 @@ impl FlexrayTpConnectionControl {
     /// set the separationCycleExponent value
     pub fn set_separation_cycle_exponent(&self, separation_cycle_exponent: u32) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::SeparationCycleExponent)?
+            .get_or_create_sub_element(ElementName::SeparationCycleExponent)?
             .set_character_data(u64::from(separation_cycle_exponent))?;
         Ok(())
     }
