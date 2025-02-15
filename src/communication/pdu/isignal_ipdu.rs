@@ -1,4 +1,4 @@
-use crate::communication::{AbstractIpdu, AbstractPdu, ISignal, ISignalGroup, Pdu, TransferProperty};
+use crate::communication::{AbstractIpdu, AbstractPdu, IPdu, ISignal, ISignalGroup, Pdu, TransferProperty};
 use crate::{
     abstraction_element, make_unique_name, AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder,
     IdentifiableAbstractionElement,
@@ -141,7 +141,9 @@ impl ISignalIPdu {
 
     /// set the transmission timing of the PDU
     pub fn set_timing(&self, timing_spec: &IpduTiming) -> Result<(), AutosarAbstractionError> {
-        let _ = self.element().remove_sub_element_kind(ElementName::IPduTimingSpecifications);
+        let _ = self
+            .element()
+            .remove_sub_element_kind(ElementName::IPduTimingSpecifications);
 
         let timing_elem = self
             .element()
@@ -279,6 +281,12 @@ impl AbstractIpdu for ISignalIPdu {}
 impl From<ISignalIPdu> for Pdu {
     fn from(value: ISignalIPdu) -> Self {
         Pdu::ISignalIPdu(value)
+    }
+}
+
+impl From<ISignalIPdu> for IPdu {
+    fn from(value: ISignalIPdu) -> Self {
+        IPdu::ISignalIPdu(value)
     }
 }
 

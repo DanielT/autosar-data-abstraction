@@ -48,7 +48,7 @@ pub trait AbstractPdu: AbstractionElement + Into<Pdu> {
 //##################################################################
 
 /// for now this is a marker trait to identify `IPdus`
-pub trait AbstractIpdu: AbstractPdu {}
+pub trait AbstractIpdu: AbstractPdu + Into<IPdu> {}
 
 //##################################################################
 
@@ -108,6 +108,12 @@ impl From<NPdu> for Pdu {
     }
 }
 
+impl From<NPdu> for IPdu {
+    fn from(value: NPdu) -> Self {
+        IPdu::NPdu(value)
+    }
+}
+
 //##################################################################
 
 /// Represents the `IPdus` handled by Dcm
@@ -135,6 +141,12 @@ impl AbstractIpdu for DcmIPdu {}
 impl From<DcmIPdu> for Pdu {
     fn from(value: DcmIPdu) -> Self {
         Pdu::DcmIPdu(value)
+    }
+}
+
+impl From<DcmIPdu> for IPdu {
+    fn from(value: DcmIPdu) -> Self {
+        IPdu::DcmIPdu(value)
     }
 }
 
@@ -275,6 +287,12 @@ impl From<GeneralPurposeIPdu> for Pdu {
     }
 }
 
+impl From<GeneralPurposeIPdu> for IPdu {
+    fn from(value: GeneralPurposeIPdu) -> Self {
+        IPdu::GeneralPurposeIPdu(value)
+    }
+}
+
 //##################################################################
 
 /// The category of a `GeneralPurposeIPdu`
@@ -346,6 +364,12 @@ impl From<ContainerIPdu> for Pdu {
     }
 }
 
+impl From<ContainerIPdu> for IPdu {
+    fn from(value: ContainerIPdu) -> Self {
+        IPdu::ContainerIPdu(value)
+    }
+}
+
 //##################################################################
 
 /// Wraps an `IPdu` to protect it from unauthorized manipulation
@@ -376,6 +400,12 @@ impl From<SecuredIPdu> for Pdu {
     }
 }
 
+impl From<SecuredIPdu> for IPdu {
+    fn from(value: SecuredIPdu) -> Self {
+        IPdu::SecuredIPdu(value)
+    }
+}
+
 //##################################################################
 
 /// The multiplexed pdu contains one of serveral signal pdus
@@ -403,6 +433,12 @@ impl AbstractIpdu for MultiplexedIPdu {}
 impl From<MultiplexedIPdu> for Pdu {
     fn from(value: MultiplexedIPdu) -> Self {
         Pdu::MultiplexedIPdu(value)
+    }
+}
+
+impl From<MultiplexedIPdu> for IPdu {
+    fn from(value: MultiplexedIPdu) -> Self {
+        IPdu::MultiplexedIPdu(value)
     }
 }
 
@@ -471,6 +507,79 @@ impl TryFrom<Element> for Pdu {
 
 impl IdentifiableAbstractionElement for Pdu {}
 impl AbstractPdu for Pdu {}
+
+//##################################################################
+
+/// Wrapper for all Pdu types. It is used as a return value for functions that can return any Pdu type
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum IPdu {
+    /// The IPdu is an `ISignalIPdu`
+    ISignalIPdu(ISignalIPdu),
+    /// The Pdu is a Transport Layer Pdu
+    NPdu(NPdu),
+    /// The IPdu is a Diagnostic Communication Management Pdu
+    DcmIPdu(DcmIPdu),
+    /// The IPdu is a General Purpose Pdu
+    GeneralPurposeIPdu(GeneralPurposeIPdu),
+    /// The IPdu is a Container `IPdu`
+    ContainerIPdu(ContainerIPdu),
+    /// The IPdu is a Secured `IPdu`
+    SecuredIPdu(SecuredIPdu),
+    /// The IPdu is a Multiplexed `IPdu`
+    MultiplexedIPdu(MultiplexedIPdu),
+}
+
+impl AbstractionElement for IPdu {
+    fn element(&self) -> &Element {
+        match self {
+            IPdu::ISignalIPdu(pdu) => pdu.element(),
+            IPdu::NPdu(pdu) => pdu.element(),
+            IPdu::DcmIPdu(pdu) => pdu.element(),
+            IPdu::GeneralPurposeIPdu(pdu) => pdu.element(),
+            IPdu::ContainerIPdu(pdu) => pdu.element(),
+            IPdu::SecuredIPdu(pdu) => pdu.element(),
+            IPdu::MultiplexedIPdu(pdu) => pdu.element(),
+        }
+    }
+}
+
+impl TryFrom<Element> for IPdu {
+    type Error = AutosarAbstractionError;
+
+    fn try_from(element: Element) -> Result<Self, Self::Error> {
+        match element.element_name() {
+            ElementName::ISignalIPdu => Ok(IPdu::ISignalIPdu(ISignalIPdu::try_from(element)?)),
+            ElementName::NPdu => Ok(IPdu::NPdu(NPdu::try_from(element)?)),
+            ElementName::DcmIPdu => Ok(IPdu::DcmIPdu(DcmIPdu::try_from(element)?)),
+            ElementName::GeneralPurposeIPdu => Ok(IPdu::GeneralPurposeIPdu(GeneralPurposeIPdu::try_from(element)?)),
+            ElementName::ContainerIPdu => Ok(IPdu::ContainerIPdu(ContainerIPdu::try_from(element)?)),
+            ElementName::SecuredIPdu => Ok(IPdu::SecuredIPdu(SecuredIPdu::try_from(element)?)),
+            ElementName::MultiplexedIPdu => Ok(IPdu::MultiplexedIPdu(MultiplexedIPdu::try_from(element)?)),
+            _ => Err(AutosarAbstractionError::ConversionError {
+                element,
+                dest: "IPdu".to_string(),
+            }),
+        }
+    }
+}
+
+impl From<IPdu> for Pdu {
+    fn from(value: IPdu) -> Self {
+        match value {
+            IPdu::ISignalIPdu(pdu) => Pdu::ISignalIPdu(pdu),
+            IPdu::NPdu(pdu) => Pdu::NPdu(pdu),
+            IPdu::DcmIPdu(pdu) => Pdu::DcmIPdu(pdu),
+            IPdu::GeneralPurposeIPdu(pdu) => Pdu::GeneralPurposeIPdu(pdu),
+            IPdu::ContainerIPdu(pdu) => Pdu::ContainerIPdu(pdu),
+            IPdu::SecuredIPdu(pdu) => Pdu::SecuredIPdu(pdu),
+            IPdu::MultiplexedIPdu(pdu) => Pdu::MultiplexedIPdu(pdu),
+        }
+    }
+}
+
+impl IdentifiableAbstractionElement for IPdu {}
+impl AbstractPdu for IPdu {}
+impl AbstractIpdu for IPdu {}
 
 //##################################################################
 
@@ -955,5 +1064,62 @@ mod test {
             GeneralPurposeIPduCategory::Dlt
         );
         assert!(GeneralPurposeIPduCategory::from_str("invalid").is_err());
+    }
+
+    #[test]
+    fn ipdu() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+        let package = model.get_or_create_package("/pkg").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
+
+        let isignal_ipdu = system.create_isignal_ipdu("isignal_ipdu", &package, 1).unwrap();
+        let n_pdu = system.create_n_pdu("n_pdu", &package, 1).unwrap();
+        let dcm_ipdu = system.create_dcm_ipdu("dcm_ipdu", &package, 1).unwrap();
+        let gp_ipdu = system
+            .create_general_purpose_ipdu("gp_ipdu", &package, 1, GeneralPurposeIPduCategory::Xcp)
+            .unwrap();
+        let container_ipdu = system.create_container_ipdu("container_ipdu", &package, 1).unwrap();
+        let secured_ipdu = system.create_secured_ipdu("secured_ipdu", &package, 1).unwrap();
+        let multiplexed_ipdu = system.create_multiplexed_ipdu("multiplexed_ipdu", &package, 1).unwrap();
+
+        let ipdu: IPdu = isignal_ipdu.clone().into();
+        assert_eq!(ipdu.element(), isignal_ipdu.element());
+        assert!(matches!(ipdu, IPdu::ISignalIPdu(_)));
+
+        // NmPdu is not an ipdu
+
+        let ipdu: IPdu = n_pdu.clone().into();
+        assert_eq!(ipdu.element(), n_pdu.element());
+        assert!(matches!(ipdu, IPdu::NPdu(_)));
+
+        let ipdu: IPdu = dcm_ipdu.clone().into();
+        assert_eq!(ipdu.element(), dcm_ipdu.element());
+        assert!(matches!(ipdu, IPdu::DcmIPdu(_)));
+
+        let ipdu: IPdu = n_pdu.clone().into();
+        assert_eq!(ipdu.element(), n_pdu.element());
+        assert!(matches!(ipdu, IPdu::NPdu(_)));
+
+        // GeneralPurposePdu is not an ipdu
+
+        let ipdu: IPdu = gp_ipdu.clone().into();
+        assert_eq!(ipdu.element(), gp_ipdu.element());
+        assert!(matches!(ipdu, IPdu::GeneralPurposeIPdu(_)));
+
+        let ipdu: IPdu = container_ipdu.clone().into();
+        assert_eq!(ipdu.element(), container_ipdu.element());
+        assert!(matches!(ipdu, IPdu::ContainerIPdu(_)));
+
+        let ipdu: IPdu = secured_ipdu.clone().into();
+        assert_eq!(ipdu.element(), secured_ipdu.element());
+        assert!(matches!(ipdu, IPdu::SecuredIPdu(_)));
+
+        let ipdu: IPdu = multiplexed_ipdu.clone().into();
+        assert_eq!(ipdu.element(), multiplexed_ipdu.element());
+        assert!(matches!(ipdu, IPdu::MultiplexedIPdu(_)));
+
+        // any Ipdu can be converted to a Pdu
+        let pdu: Pdu = ipdu.clone().into();
+        assert_eq!(pdu.element(), ipdu.element());
     }
 }
