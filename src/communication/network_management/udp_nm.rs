@@ -285,7 +285,8 @@ impl UdpNmClusterCoupling {
                 .get_or_create_sub_element(ElementName::NmImmediateRestartEnabled)?
                 .set_character_data(enabled)?;
         } else {
-            let _ = self.element()
+            let _ = self
+                .element()
                 .remove_sub_element_kind(ElementName::NmImmediateRestartEnabled);
         }
         Ok(())
@@ -356,7 +357,8 @@ impl UdpNmNode {
                 .get_or_create_sub_element(ElementName::AllNmMessagesKeepAwake)?
                 .set_character_data(enabled)?;
         } else {
-            let _ = self.element()
+            let _ = self
+                .element()
                 .remove_sub_element_kind(ElementName::AllNmMessagesKeepAwake);
         }
         Ok(())

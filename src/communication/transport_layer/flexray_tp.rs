@@ -1,4 +1,4 @@
-use crate::communication::{AbstractIpdu, FlexrayCluster, FlexrayCommunicationConnector, NPdu, Pdu, TpAddress};
+use crate::communication::{AbstractIpdu, FlexrayCluster, FlexrayCommunicationConnector, IPdu, NPdu, TpAddress};
 use crate::{
     abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance,
     IdentifiableAbstractionElement,
@@ -20,11 +20,27 @@ impl FlexrayTpConfig {
         let pkg_elem = package.element().get_or_create_sub_element(ElementName::Elements)?;
 
         let tp_config_elem = pkg_elem.create_named_sub_element(ElementName::FlexrayTpConfig, name)?;
-        tp_config_elem
-            .create_sub_element(ElementName::CommunicationClusterRef)?
-            .set_reference_target(cluster.element())?;
+        let tp_config = Self(tp_config_elem);
+        tp_config.set_cluster(cluster)?;
 
-        Ok(Self(tp_config_elem))
+        Ok(tp_config)
+    }
+
+    /// set the `FlexrayCluster` of the `FlexrayTpConfig`
+    pub fn set_cluster(&self, cluster: &FlexrayCluster) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::CommunicationClusterRef)?
+            .set_reference_target(cluster.element())?;
+        Ok(())
+    }
+
+    /// get the `FlexrayCluster` of the `FlexrayTpConfig`
+    #[must_use]
+    pub fn cluster(&self) -> Option<FlexrayCluster> {
+        self.element()
+            .get_sub_element(ElementName::CommunicationClusterRef)
+            .and_then(|elem| elem.get_reference_target().ok())
+            .and_then(|elem| elem.try_into().ok())
     }
 
     /// create a new `FlexrayTpPduPool`
@@ -104,12 +120,14 @@ impl FlexrayTpConfig {
             .map(FlexrayTpConnectionControl)
     }
 
-    /// add a `FlexrayTpEcu` to the `FlexrayTpConfig`
-    pub fn add_flexray_tp_ecu(&self, flexray_tp_ecu: &FlexrayTpEcu) -> Result<(), AutosarAbstractionError> {
+    /// create a `FlexrayTpEcu` in the `FlexrayTpConfig`
+    pub fn create_flexray_tp_ecu(
+        &self,
+        ecu_instance: &EcuInstance,
+        full_duplex_enabled: bool,
+    ) -> Result<FlexrayTpEcu, AutosarAbstractionError> {
         let ecu_collection = self.element().get_or_create_sub_element(ElementName::TpEcus)?;
-        let ecu_elem = ecu_collection.create_sub_element(ElementName::FlexrayTpEcu)?;
-        flexray_tp_ecu.set(&ecu_elem)?;
-        Ok(())
+        FlexrayTpEcu::new(&ecu_collection, ecu_instance, full_duplex_enabled)
     }
 
     /// iterate over all `FlexrayTpEcus`
@@ -118,7 +136,7 @@ impl FlexrayTpConfig {
             .get_sub_element(ElementName::TpEcus)
             .into_iter()
             .flat_map(|elem| elem.sub_elements())
-            .filter_map(FlexrayTpEcu::get)
+            .filter_map(|elem| FlexrayTpEcu::try_from(elem).ok())
     }
 
     /// create a new `FlexrayTpNode`
@@ -211,23 +229,27 @@ impl FlexrayTpConnection {
         name: Option<&str>,
         parent: &Element,
         transmitter: &FlexrayTpNode,
-        direct_tp_sdu: &Pdu,
+        direct_tp_sdu: &IPdu,
         connection_control: &FlexrayTpConnectionControl,
     ) -> Result<Self, AutosarAbstractionError> {
-        let connection_elem = parent.create_sub_element(ElementName::FlexrayTpConnection)?;
+        let tp_connection_elem = parent.create_sub_element(ElementName::FlexrayTpConnection)?;
         if let Some(name) = name {
-            connection_elem.create_named_sub_element(ElementName::Ident, name)?;
+            tp_connection_elem.create_named_sub_element(ElementName::Ident, name)?;
         }
-        connection_elem
-            .create_sub_element(ElementName::TransmitterRef)?
+        let tp_connection = Self(tp_connection_elem);
+        tp_connection.set_transmitter(transmitter)?;
+        tp_connection.set_direct_tp_sdu(direct_tp_sdu)?;
+        tp_connection.set_connection_control(connection_control)?;
+
+        Ok(tp_connection)
+    }
+
+    /// set the transmitter of the connection
+    pub fn set_transmitter(&self, transmitter: &FlexrayTpNode) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::TransmitterRef)?
             .set_reference_target(transmitter.element())?;
-        connection_elem
-            .create_sub_element(ElementName::DirectTpSduRef)?
-            .set_reference_target(direct_tp_sdu.element())?;
-        connection_elem
-            .create_sub_element(ElementName::TpConnectionControlRef)?
-            .set_reference_target(connection_control.element())?;
-        Ok(Self(connection_elem))
+        Ok(())
     }
 
     /// get the transmitter of the connection
@@ -239,13 +261,32 @@ impl FlexrayTpConnection {
             .and_then(|elem| elem.try_into().ok())
     }
 
+    /// set the direct TP SDU of the connection
+    pub fn set_direct_tp_sdu<T: AbstractIpdu>(&self, direct_tp_sdu: &T) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::DirectTpSduRef)?
+            .set_reference_target(direct_tp_sdu.element())?;
+        Ok(())
+    }
+
     /// get the direct TP SDU of the connection
     #[must_use]
-    pub fn direct_tp_sdu(&self) -> Option<Pdu> {
+    pub fn direct_tp_sdu(&self) -> Option<IPdu> {
         self.element()
             .get_sub_element(ElementName::DirectTpSduRef)
             .and_then(|elem| elem.get_reference_target().ok())
             .and_then(|elem| elem.try_into().ok())
+    }
+
+    /// set the connection control of the connection
+    pub fn set_connection_control(
+        &self,
+        connection_control: &FlexrayTpConnectionControl,
+    ) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::TpConnectionControlRef)?
+            .set_reference_target(connection_control.element())?;
+        Ok(())
     }
 
     /// get the connection control of the connection
@@ -293,7 +334,7 @@ impl FlexrayTpConnection {
 
     /// get the reversed TP SDU of the connection
     #[must_use]
-    pub fn reversed_tp_sdu(&self) -> Option<Pdu> {
+    pub fn reversed_tp_sdu(&self) -> Option<IPdu> {
         self.element()
             .get_sub_element(ElementName::ReversedTpSduRef)
             .and_then(|elem| elem.get_reference_target().ok())
@@ -449,66 +490,103 @@ impl FlexrayTpConnectionControl {
 
 /// A `FlexrayTpEcu` represents an ECU within the `FlexrayTpConfig`
 #[derive(Debug, Clone, PartialEq)]
-pub struct FlexrayTpEcu {
-    /// The ECU instance backing the `FlexrayTpEcu`
-    ecu_instance: EcuInstance,
-    /// Full duplex is enabled if this attribute is set to true, otherwise half duplex is used
-    full_duplex_enabled: bool,
-    /// The cycle time of the TP main function in seconds
-    cycle_time_main_function: Option<f64>,
-    /// Rx and Tx cancellation is enabled if this attribute is set to true
-    cancellation: Option<bool>,
-}
+pub struct FlexrayTpEcu(Element);
+abstraction_element!(FlexrayTpEcu, FlexrayTpEcu);
 
 impl FlexrayTpEcu {
-    pub(crate) fn get(element: Element) -> Option<Self> {
-        let ecu_instance = element
-            .get_sub_element(ElementName::EcuInstanceRef)?
-            .get_reference_target()
-            .ok()?
-            .try_into()
-            .ok()?;
-        let full_duplex_enabled = element
-            .get_sub_element(ElementName::FullDuplexEnabled)?
-            .character_data()?
-            .parse_bool()?;
-        let cycle_time_main_function = element
-            .get_sub_element(ElementName::CycleTimeMainFunction)
-            .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.parse_float());
-        let cancellation = element
-            .get_sub_element(ElementName::Cancellation)
-            .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.parse_bool());
+    pub(crate) fn new(
+        parent: &Element,
+        ecu_instance: &EcuInstance,
+        full_duplex_enabled: bool,
+    ) -> Result<Self, AutosarAbstractionError> {
+        let tp_ecu_elem = parent.create_sub_element(ElementName::FlexrayTpEcu)?;
+        let tp_ecu = Self(tp_ecu_elem);
 
-        Some(Self {
-            ecu_instance,
-            full_duplex_enabled,
-            cycle_time_main_function,
-            cancellation,
-        })
+        tp_ecu.set_ecu_instance(ecu_instance)?;
+        tp_ecu.set_full_duplex_enabled(full_duplex_enabled)?;
+
+        Ok(tp_ecu)
     }
 
-    pub(crate) fn set(&self, ecu_elem: &Element) -> Result<(), AutosarAbstractionError> {
-        ecu_elem
-            .create_sub_element(ElementName::EcuInstanceRef)?
-            .set_reference_target(self.ecu_instance.element())?;
-        ecu_elem
-            .create_sub_element(ElementName::FullDuplexEnabled)?
-            .set_character_data(self.full_duplex_enabled)?;
-
-        if let Some(cycle_time_main_function) = self.cycle_time_main_function {
-            ecu_elem
-                .create_sub_element(ElementName::CycleTimeMainFunction)?
-                .set_character_data(cycle_time_main_function)?;
-        }
-        if let Some(cancellation) = self.cancellation {
-            ecu_elem
-                .create_sub_element(ElementName::Cancellation)?
-                .set_character_data(cancellation)?;
-        }
-
+    /// set the ECU instance of the `FlexrayTpEcu`
+    pub fn set_ecu_instance(&self, ecu_instance: &EcuInstance) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::EcuInstanceRef)?
+            .set_reference_target(ecu_instance.element())?;
         Ok(())
+    }
+
+    /// get the ECU instance of the `FlexrayTpEcu`
+    #[must_use]
+    pub fn ecu_instance(&self) -> Option<EcuInstance> {
+        self.element()
+            .get_sub_element(ElementName::EcuInstanceRef)
+            .and_then(|elem| elem.get_reference_target().ok())
+            .and_then(|elem| EcuInstance::try_from(elem).ok())
+    }
+
+    /// set the full duplex enabled status of the `FlexrayTpEcu`
+    pub fn set_full_duplex_enabled(&self, full_duplex_enabled: bool) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::FullDuplexEnabled)?
+            .set_character_data(full_duplex_enabled)?;
+        Ok(())
+    }
+
+    /// get the full duplex enabled status of the `FlexrayTpEcu`
+    #[must_use]
+    pub fn full_duplex_enabled(&self) -> Option<bool> {
+        self.element()
+            .get_sub_element(ElementName::FullDuplexEnabled)
+            .and_then(|elem| elem.character_data())
+            .and_then(|cdata| cdata.parse_bool())
+    }
+
+    /// set the cycle time of the TP main function in seconds
+    pub fn set_cycle_time_main_function(
+        &self,
+        cycle_time_main_function: Option<f64>,
+    ) -> Result<(), AutosarAbstractionError> {
+        if let Some(cycle_time_main_function) = cycle_time_main_function {
+            self.element()
+                .get_or_create_sub_element(ElementName::CycleTimeMainFunction)?
+                .set_character_data(cycle_time_main_function)?;
+        } else {
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::CycleTimeMainFunction);
+        }
+        Ok(())
+    }
+
+    /// get the cycle time of the TP main function in seconds
+    #[must_use]
+    pub fn cycle_time_main_function(&self) -> Option<f64> {
+        self.element()
+            .get_sub_element(ElementName::CycleTimeMainFunction)
+            .and_then(|elem| elem.character_data())
+            .and_then(|cdata| cdata.parse_float())
+    }
+
+    /// set the cancellation status of the `FlexrayTpEcu`
+    pub fn set_cancellation(&self, cancellation: Option<bool>) -> Result<(), AutosarAbstractionError> {
+        if let Some(cancellation) = cancellation {
+            self.element()
+                .get_or_create_sub_element(ElementName::Cancellation)?
+                .set_character_data(cancellation)?;
+        } else {
+            let _ = self.element().remove_sub_element_kind(ElementName::Cancellation);
+        }
+        Ok(())
+    }
+
+    /// get the cancellation status of the `FlexrayTpEcu`
+    #[must_use]
+    pub fn cancellation(&self) -> Option<bool> {
+        self.element()
+            .get_sub_element(ElementName::Cancellation)
+            .and_then(|elem| elem.character_data())
+            .and_then(|cdata| cdata.parse_bool())
     }
 }
 
@@ -556,7 +634,10 @@ impl FlexrayTpNode {
     /// add a `FlexrayCommunicationConnector` to the node
     /// The node can be associated with up to 2 connectors.
     /// In a system description this reference is mandatory.
-    pub fn add_connector(&self, connector: &FlexrayCommunicationConnector) -> Result<(), AutosarAbstractionError> {
+    pub fn add_communication_connector(
+        &self,
+        connector: &FlexrayCommunicationConnector,
+    ) -> Result<(), AutosarAbstractionError> {
         let connector_refs = self.element().get_or_create_sub_element(ElementName::ConnectorRefs)?;
 
         if connector_refs.sub_elements().count() >= 2 {
@@ -571,7 +652,7 @@ impl FlexrayTpNode {
     }
 
     /// iterate over all `FlexrayCommunicationConnectors` of the node
-    pub fn connectors(&self) -> impl Iterator<Item = FlexrayCommunicationConnector> + Send + 'static {
+    pub fn communication_connectors(&self) -> impl Iterator<Item = FlexrayCommunicationConnector> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ConnectorRefs)
             .into_iter()
@@ -629,6 +710,7 @@ mod test {
         let fr_tp_config = system
             .create_flexray_tp_config("FrTpConfig", &package, &flexray_cluster)
             .unwrap();
+        assert_eq!(fr_tp_config.cluster().unwrap(), flexray_cluster);
 
         // create a FlexrayTpPduPool
         let fr_tp_pdu_pool_tx = fr_tp_config.create_flexray_tp_pdu_pool("FrTpPduPool_Tx").unwrap();
@@ -643,6 +725,7 @@ mod test {
         // create a FlexrayTpAddress
         let tp_address_1 = fr_tp_config.create_tp_address("TpAddress1", 0x1234).unwrap();
         assert_eq!(fr_tp_config.tp_addresses().next(), Some(tp_address_1.clone()));
+        assert_eq!(tp_address_1.address().unwrap(), 0x1234);
         let tp_address_2 = fr_tp_config.create_tp_address("TpAddress2", 0x5678).unwrap();
         assert_eq!(fr_tp_config.tp_addresses().count(), 2);
 
@@ -650,8 +733,8 @@ mod test {
         let tp_node_1 = fr_tp_config.create_flexray_tp_node("TpNode1").unwrap();
         tp_node_1.set_tp_address(Some(&tp_address_1)).unwrap();
         assert_eq!(tp_node_1.tp_address().unwrap(), tp_address_1);
-        tp_node_1.add_connector(&connector).unwrap();
-        assert_eq!(tp_node_1.connectors().next(), Some(connector));
+        tp_node_1.add_communication_connector(&connector).unwrap();
+        assert_eq!(tp_node_1.communication_connectors().next(), Some(connector));
         let tp_node_2 = fr_tp_config.create_flexray_tp_node("TpNode2").unwrap();
         tp_node_2.set_tp_address(Some(&tp_address_2)).unwrap();
 
@@ -703,14 +786,14 @@ mod test {
         assert_eq!(connection.name(), Some("Connection1".to_string()));
 
         // add a FlexrayTpEcu to the FlexrayTpConfig
-        let tp_ecu = FlexrayTpEcu {
-            ecu_instance: ecu_instance.clone(),
-            full_duplex_enabled: true,
-            cycle_time_main_function: Some(0.01),
-            cancellation: Some(true),
-        };
-        fr_tp_config.add_flexray_tp_ecu(&tp_ecu).unwrap();
+        let fr_tp_ecu = fr_tp_config.create_flexray_tp_ecu(&ecu_instance, true).unwrap();
+        fr_tp_ecu.set_cycle_time_main_function(Some(0.01)).unwrap();
+        fr_tp_ecu.set_cancellation(Some(true)).unwrap();
         assert_eq!(fr_tp_config.flexray_tp_ecus().count(), 1);
-        assert_eq!(fr_tp_config.flexray_tp_ecus().next().unwrap(), tp_ecu);
+        assert_eq!(fr_tp_config.flexray_tp_ecus().next().unwrap(), fr_tp_ecu);
+        assert_eq!(fr_tp_ecu.ecu_instance().unwrap(), ecu_instance);
+        assert_eq!(fr_tp_ecu.full_duplex_enabled().unwrap(), true);
+        assert_eq!(fr_tp_ecu.cycle_time_main_function().unwrap(), 0.01);
+        assert_eq!(fr_tp_ecu.cancellation().unwrap(), true);
     }
 }

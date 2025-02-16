@@ -24,9 +24,25 @@ impl IdentifiableAbstractionElement for TpAddress {}
 impl TpAddress {
     pub(crate) fn new(name: &str, parent: &Element, address: u32) -> Result<Self, AutosarAbstractionError> {
         let tp_address_elem = parent.create_named_sub_element(ElementName::TpAddress, name)?;
-        tp_address_elem
-            .create_sub_element(ElementName::TpAddress)?
+        let tp_address = Self(tp_address_elem);
+        tp_address.set_address(address)?;
+
+        Ok(tp_address)
+    }
+
+    /// set the value of the address
+    pub fn set_address(&self, address: u32) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::TpAddress)?
             .set_character_data(u64::from(address))?;
-        Ok(Self(tp_address_elem))
+        Ok(())
+    }
+
+    /// get the value of the address
+    pub fn address(&self) -> Option<u32> {
+        self.element()
+            .get_sub_element(ElementName::TpAddress)?
+            .character_data()?
+            .parse_integer()
     }
 }

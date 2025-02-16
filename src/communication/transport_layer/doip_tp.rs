@@ -19,11 +19,28 @@ impl DoIpTpConfig {
         let pkg_elem = package.element().get_or_create_sub_element(ElementName::Elements)?;
 
         let tp_config_elem = pkg_elem.create_named_sub_element(ElementName::DoIpTpConfig, name)?;
-        tp_config_elem
-            .create_sub_element(ElementName::CommunicationClusterRef)?
-            .set_reference_target(cluster.element())?;
+        let tp_config = Self(tp_config_elem);
 
-        Ok(Self(tp_config_elem))
+        tp_config.set_cluster(cluster)?;
+
+        Ok(tp_config)
+    }
+
+    /// set the reference to the `EthernetCluster` for this `DoIpTpConfig`
+    pub fn set_cluster(&self, cluster: &EthernetCluster) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::CommunicationClusterRef)?
+            .set_reference_target(cluster.element())?;
+        Ok(())
+    }
+
+    /// get the `EthernetCluster` for this `DoIpTpConfig`
+    #[must_use]
+    pub fn cluster(&self) -> Option<EthernetCluster> {
+        self.element()
+            .get_sub_element(ElementName::CommunicationClusterRef)
+            .and_then(|elem| elem.get_reference_target().ok())
+            .and_then(|elem| EthernetCluster::try_from(elem).ok())
     }
 
     /// create a new `DoIpLogicAddress`
@@ -80,10 +97,18 @@ impl IdentifiableAbstractionElement for DoIpLogicAddress {}
 impl DoIpLogicAddress {
     pub(crate) fn new(name: &str, parent: &Element, address: u32) -> Result<Self, AutosarAbstractionError> {
         let logic_address_elem = parent.create_named_sub_element(ElementName::DoIpLogicAddress, name)?;
-        logic_address_elem
-            .create_sub_element(ElementName::Address)?
+        let logic_address = Self(logic_address_elem);
+        logic_address.set_address(address)?;
+
+        Ok(logic_address)
+    }
+
+    /// set the address of this `DoIpLogicAddress`
+    pub fn set_address(&self, address: u32) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::Address)?
             .set_character_data(u64::from(address))?;
-        Ok(Self(logic_address_elem))
+        Ok(())
     }
 
     /// get the address of this `DoIpLogicAddress`
@@ -139,16 +164,20 @@ impl DoIpTpConnection {
         if let Some(name) = name {
             tp_connection_elem.create_named_sub_element(ElementName::Ident, name)?;
         }
-        tp_connection_elem
-            .create_sub_element(ElementName::DoIpSourceAddressRef)?
+        let tp_connection = Self(tp_connection_elem);
+        tp_connection.set_source(source)?;
+        tp_connection.set_target(target)?;
+        tp_connection.set_tp_sdu_triggering(tp_sdu_triggering)?;
+
+        Ok(tp_connection)
+    }
+
+    /// set the source `DoIpLogicAddress`
+    pub fn set_source(&self, source: &DoIpLogicAddress) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::DoIpSourceAddressRef)?
             .set_reference_target(source.element())?;
-        tp_connection_elem
-            .create_sub_element(ElementName::DoIpTargetAddressRef)?
-            .set_reference_target(target.element())?;
-        tp_connection_elem
-            .create_sub_element(ElementName::TpSduRef)?
-            .set_reference_target(tp_sdu_triggering.element())?;
-        Ok(Self(tp_connection_elem))
+        Ok(())
     }
 
     /// get the source `DoIpLogicAddress`
@@ -160,6 +189,14 @@ impl DoIpTpConnection {
             .and_then(|elem| DoIpLogicAddress::try_from(elem).ok())
     }
 
+    /// set the target `DoIpLogicAddress`
+    pub fn set_target(&self, target: &DoIpLogicAddress) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::DoIpTargetAddressRef)?
+            .set_reference_target(target.element())?;
+        Ok(())
+    }
+
     /// get the target `DoIpLogicAddress`
     #[must_use]
     pub fn target(&self) -> Option<DoIpLogicAddress> {
@@ -167,6 +204,14 @@ impl DoIpTpConnection {
             .get_sub_element(ElementName::DoIpTargetAddressRef)
             .and_then(|elem| elem.get_reference_target().ok())
             .and_then(|elem| DoIpLogicAddress::try_from(elem).ok())
+    }
+
+    /// set the `PduTriggering` for this connection
+    pub fn set_tp_sdu_triggering(&self, tp_sdu_triggering: &PduTriggering) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::TpSduRef)?
+            .set_reference_target(tp_sdu_triggering.element())?;
+        Ok(())
     }
 
     /// get the `PduTriggering` for this connection
@@ -292,6 +337,7 @@ mod test {
         let doip_tp_config = system
             .create_doip_tp_config("doip_tp_config", &package, &eth_cluster)
             .unwrap();
+        assert_eq!(doip_tp_config.cluster(), Some(eth_cluster.clone()));
 
         let doip_logic_address_source = doip_tp_config.create_doip_logic_address("addr_source", 1).unwrap();
         assert_eq!(doip_logic_address_source.address(), Some(1));

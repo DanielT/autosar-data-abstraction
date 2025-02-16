@@ -1,4 +1,4 @@
-use crate::communication::{AbstractIpdu, FlexrayCluster, FlexrayCommunicationConnector, NPdu, Pdu, TpAddress};
+use crate::communication::{AbstractIpdu, FlexrayCluster, FlexrayCommunicationConnector, IPdu, NPdu, TpAddress};
 use crate::{
     abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
 };
@@ -21,11 +21,27 @@ impl FlexrayArTpConfig {
         let pkg_elem = package.element().get_or_create_sub_element(ElementName::Elements)?;
 
         let tp_config_elem = pkg_elem.create_named_sub_element(ElementName::FlexrayArTpConfig, name)?;
-        tp_config_elem
-            .create_sub_element(ElementName::CommunicationClusterRef)?
-            .set_reference_target(cluster.element())?;
+        let tp_config = Self(tp_config_elem);
+        tp_config.set_cluster(cluster)?;
 
-        Ok(Self(tp_config_elem))
+        Ok(tp_config)
+    }
+
+    /// set the Flexray cluster for the configuration
+    pub fn set_cluster(&self, cluster: &FlexrayCluster) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::CommunicationClusterRef)?
+            .set_reference_target(cluster.element())?;
+        Ok(())
+    }
+
+    /// get the Flexray cluster for the configuration
+    #[must_use]
+    pub fn cluster(&self) -> Option<FlexrayCluster> {
+        self.element()
+            .get_sub_element(ElementName::CommunicationClusterRef)
+            .and_then(|refelem| refelem.get_reference_target().ok())
+            .and_then(|elem| elem.try_into().ok())
     }
 
     /// create a new `TpAddress`
@@ -64,7 +80,7 @@ impl FlexrayArTpConfig {
     }
 
     /// get an iterator over the channels in the configuration
-    pub fn channels(&self) -> impl Iterator<Item = FlexrayArTpChannel> + Send + 'static {
+    pub fn flexray_ar_tp_channels(&self) -> impl Iterator<Item = FlexrayArTpChannel> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TpChannels)
             .into_iter()
@@ -79,7 +95,7 @@ impl FlexrayArTpConfig {
     }
 
     /// get an iterator over the nodes
-    pub fn nodes(&self) -> impl Iterator<Item = FlexrayArTpNode> + Send + 'static {
+    pub fn flexray_ar_tp_nodes(&self) -> impl Iterator<Item = FlexrayArTpNode> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TpNodes)
             .into_iter()
@@ -105,26 +121,26 @@ impl FlexrayArTpChannel {
         multicast_segmentation: bool,
     ) -> Result<Self, AutosarAbstractionError> {
         let tp_channel_elem = parent.create_sub_element(ElementName::FlexrayArTpChannel)?;
-        tp_channel_elem
-            .create_sub_element(ElementName::AckType)?
-            .set_character_data::<EnumItem>(ack_type.into())?;
-        tp_channel_elem
-            .create_sub_element(ElementName::ExtendedAddressing)?
-            .set_character_data(extended_addressing)?;
-        tp_channel_elem
-            .create_sub_element(ElementName::MaximumMessageLength)?
-            .set_character_data::<EnumItem>(maximum_message_length.into())?;
-        tp_channel_elem
-            .create_sub_element(ElementName::MinimumSeparationTime)?
-            .set_character_data(f64::from(minimum_separation_time))?;
-        tp_channel_elem
-            .create_sub_element(ElementName::MulticastSegmentation)?
-            .set_character_data(multicast_segmentation)?;
+        let tp_channel = Self(tp_channel_elem);
 
-        Ok(Self(tp_channel_elem))
+        tp_channel.set_ack_type(ack_type)?;
+        tp_channel.set_extended_addressing(extended_addressing)?;
+        tp_channel.set_maximum_message_length(maximum_message_length)?;
+        tp_channel.set_minimum_separation_time(minimum_separation_time)?;
+        tp_channel.set_multicast_segmentation(multicast_segmentation)?;
+
+        Ok(tp_channel)
     }
 
-    /// get the ack type
+    /// set the ack type of the channel
+    pub fn set_ack_type(&self, ack_type: FrArTpAckType) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::AckType)?
+            .set_character_data::<EnumItem>(ack_type.into())?;
+        Ok(())
+    }
+
+    /// get the ack type of the channel
     #[must_use]
     pub fn ack_type(&self) -> Option<FrArTpAckType> {
         self.element()
@@ -135,13 +151,36 @@ impl FlexrayArTpChannel {
             .ok()
     }
 
-    /// get the extended addressing
+    /// set the extended addressing attribute
+    ///
+    /// When extended addressing is enabled, the TP address is 16 bit long, otherwise it is 8 bit long.
+    pub fn set_extended_addressing(&self, extended_addressing: bool) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::ExtendedAddressing)?
+            .set_character_data(extended_addressing)?;
+        Ok(())
+    }
+
+    /// get the extended addressing attribute
+    ///
+    /// When extended addressing is enabled, the TP address is 16 bit long, otherwise it is 8 bit long.
     #[must_use]
     pub fn extended_addressing(&self) -> Option<bool> {
         self.element()
             .get_sub_element(ElementName::ExtendedAddressing)?
             .character_data()?
             .parse_bool()
+    }
+
+    /// set the maximum message length type
+    pub fn set_maximum_message_length(
+        &self,
+        maximum_message_length: MaximumMessageLengthType,
+    ) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::MaximumMessageLength)?
+            .set_character_data::<EnumItem>(maximum_message_length.into())?;
+        Ok(())
     }
 
     /// get the maximum message length type
@@ -155,6 +194,14 @@ impl FlexrayArTpChannel {
             .ok()
     }
 
+    /// set the minimum separation time
+    pub fn set_minimum_separation_time(&self, minimum_separation_time: f32) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::MinimumSeparationTime)?
+            .set_character_data(f64::from(minimum_separation_time))?;
+        Ok(())
+    }
+
     /// get the minimum separation time
     #[must_use]
     pub fn minimum_separation_time(&self) -> Option<f32> {
@@ -165,7 +212,15 @@ impl FlexrayArTpChannel {
             .map(|v| v as f32)
     }
 
-    /// get the multicast segmentation
+    /// set the multicast segmentation attribute
+    pub fn set_multicast_segmentation(&self, multicast_segmentation: bool) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::MulticastSegmentation)?
+            .set_character_data(multicast_segmentation)?;
+        Ok(())
+    }
+
+    /// get the multicast segmentation attribute
     #[must_use]
     pub fn multicast_segmentation(&self) -> Option<bool> {
         self.element()
@@ -329,7 +384,7 @@ impl FlexrayArTpConnection {
     pub(crate) fn new(
         name: Option<&str>,
         parent: &Element,
-        direct_tp_sdu: &Pdu,
+        direct_tp_sdu: &IPdu,
         source: &FlexrayArTpNode,
         target: &FlexrayArTpNode,
     ) -> Result<Self, AutosarAbstractionError> {
@@ -337,27 +392,37 @@ impl FlexrayArTpConnection {
         if let Some(name) = name {
             tp_connection_elem.create_named_sub_element(ElementName::Ident, name)?;
         }
-        tp_connection_elem
-            .create_sub_element(ElementName::DirectTpSduRef)?
-            .set_reference_target(direct_tp_sdu.element())?;
-        tp_connection_elem
-            .create_sub_element(ElementName::SourceRef)?
-            .set_reference_target(source.element())?;
-        tp_connection_elem
-            .create_sub_element(ElementName::TargetRefs)?
-            .create_sub_element(ElementName::TargetRef)?
-            .set_reference_target(target.element())?;
+        let tp_connection = Self(tp_connection_elem);
+        tp_connection.set_direct_tp_sdu(direct_tp_sdu)?;
+        tp_connection.set_source(source)?;
+        tp_connection.add_target(target)?;
 
-        Ok(Self(tp_connection_elem))
+        Ok(tp_connection)
+    }
+
+    /// set the direct TP SDU
+    pub fn set_direct_tp_sdu<T: AbstractIpdu>(&self, direct_tp_sdu: &T) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::DirectTpSduRef)?
+            .set_reference_target(direct_tp_sdu.element())?;
+        Ok(())
     }
 
     /// get the direct tp sdu
     #[must_use]
-    pub fn direct_tp_sdu(&self) -> Option<Pdu> {
+    pub fn direct_tp_sdu(&self) -> Option<IPdu> {
         self.element()
             .get_sub_element(ElementName::DirectTpSduRef)
             .and_then(|refelem| refelem.get_reference_target().ok())
             .and_then(|elem| elem.try_into().ok())
+    }
+
+    /// set the source of the connection
+    pub fn set_source(&self, source: &FlexrayArTpNode) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::SourceRef)?
+            .set_reference_target(source.element())?;
+        Ok(())
     }
 
     /// get the source
@@ -414,7 +479,7 @@ impl FlexrayArTpConnection {
 
     /// get the reversed tp sdu
     #[must_use]
-    pub fn reversed_tp_sdu(&self) -> Option<Pdu> {
+    pub fn reversed_tp_sdu(&self) -> Option<IPdu> {
         self.element()
             .get_sub_element(ElementName::ReversedTpSduRef)
             .and_then(|refelem| refelem.get_reference_target().ok())
@@ -466,7 +531,7 @@ impl FlexrayArTpNode {
     /// The connectors define the association with a `PhysicalChannel` and an ECU.
     /// In a `SystemDescription`, this reference is mandatory, but in an `ECUExtract` it is optional.
     /// Up to 2 connectors can be added to a node.
-    pub fn add_flexray_communication_connector(
+    pub fn add_communication_connector(
         &self,
         connector: &FlexrayCommunicationConnector,
     ) -> Result<(), AutosarAbstractionError> {
@@ -479,7 +544,7 @@ impl FlexrayArTpNode {
     }
 
     /// get the connectors
-    pub fn connectors(&self) -> impl Iterator<Item = FlexrayCommunicationConnector> + Send + 'static {
+    pub fn communication_connectors(&self) -> impl Iterator<Item = FlexrayCommunicationConnector> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ConnectorRefs)
             .into_iter()
@@ -534,6 +599,8 @@ mod test {
         let fr_ar_tp_config = system
             .create_flexray_ar_tp_config("FrArTpConfig", &package, &flexray_cluster)
             .unwrap();
+        assert_eq!(fr_ar_tp_config.cluster(), Some(flexray_cluster));
+
         let fr_ar_tp_channel = fr_ar_tp_config
             .create_flexray_ar_tp_channel(
                 FrArTpAckType::AckWithRt,
@@ -543,7 +610,7 @@ mod test {
                 false,
             )
             .unwrap();
-        assert_eq!(fr_ar_tp_config.channels().count(), 1);
+        assert_eq!(fr_ar_tp_config.flexray_ar_tp_channels().count(), 1);
         assert_eq!(fr_ar_tp_channel.ack_type(), Some(FrArTpAckType::AckWithRt));
         assert_eq!(fr_ar_tp_channel.extended_addressing(), Some(true));
         assert_eq!(
@@ -561,11 +628,9 @@ mod test {
         let tp_address_source = fr_ar_tp_config.create_tp_address("tp_address_s", 1).unwrap();
         fr_ar_tp_node_source.set_tp_address(Some(&tp_address_source)).unwrap();
         assert_eq!(fr_ar_tp_node_source.tp_address(), Some(tp_address_source));
-        fr_ar_tp_node_source
-            .add_flexray_communication_connector(&connector)
-            .unwrap();
-        assert_eq!(fr_ar_tp_node_source.connectors().count(), 1);
-        assert_eq!(fr_ar_tp_node_source.connectors().next(), Some(connector));
+        fr_ar_tp_node_source.add_communication_connector(&connector).unwrap();
+        assert_eq!(fr_ar_tp_node_source.communication_connectors().count(), 1);
+        assert_eq!(fr_ar_tp_node_source.communication_connectors().next(), Some(connector));
 
         let fr_ar_tp_node_target = fr_ar_tp_config.create_flexray_ar_tp_node("node_t").unwrap();
         let tp_address_target = fr_ar_tp_config.create_tp_address("tp_address_t", 2).unwrap();
@@ -573,7 +638,7 @@ mod test {
         assert_eq!(fr_ar_tp_node_target.tp_address(), Some(tp_address_target));
 
         assert_eq!(fr_ar_tp_config.tp_addresses().count(), 2);
-        assert_eq!(fr_ar_tp_config.nodes().count(), 2);
+        assert_eq!(fr_ar_tp_config.flexray_ar_tp_nodes().count(), 2);
 
         let flexray_ar_tp_connection = fr_ar_tp_channel
             .create_flexray_ar_tp_connection(Some("conn"), &tp_sdu, &fr_ar_tp_node_source, &fr_ar_tp_node_target)

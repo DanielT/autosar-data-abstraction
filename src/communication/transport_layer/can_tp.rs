@@ -1,4 +1,4 @@
-use crate::communication::{AbstractIpdu, CanCluster, CanCommunicationConnector, NPdu, Pdu};
+use crate::communication::{AbstractIpdu, CanCluster, CanCommunicationConnector, IPdu, NPdu};
 use crate::{
     abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance,
     IdentifiableAbstractionElement,
@@ -18,44 +18,58 @@ impl IdentifiableAbstractionElement for CanTpConfig {}
 impl CanTpConfig {
     pub(crate) fn new(name: &str, package: &ArPackage, cluster: &CanCluster) -> Result<Self, AutosarAbstractionError> {
         let pkg_elem = package.element().get_or_create_sub_element(ElementName::Elements)?;
-
         let tp_config_elem = pkg_elem.create_named_sub_element(ElementName::CanTpConfig, name)?;
-        tp_config_elem
-            .create_sub_element(ElementName::CommunicationClusterRef)?
-            .set_reference_target(cluster.element())?;
+        let tp_config = Self(tp_config_elem);
+        tp_config.set_cluster(cluster)?;
 
-        Ok(Self(tp_config_elem))
+        Ok(tp_config)
     }
 
-    /// add a `CanTp` ECU to the configuration
-    pub fn add_ecu(&self, tp_ecu: &CanTpEcu) -> Result<(), AutosarAbstractionError> {
-        let ecu_collection = self.element().get_or_create_sub_element(ElementName::TpEcus)?;
-        let ecu_elem = ecu_collection.create_sub_element(ElementName::CanTpEcu)?;
-        tp_ecu.set(&ecu_elem)?;
-
+    /// set the `CanCluster` associated with this configuration
+    pub fn set_cluster(&self, cluster: &CanCluster) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::CommunicationClusterRef)?
+            .set_reference_target(cluster.element())?;
         Ok(())
     }
 
+    /// get the `CanCluster` associated with this configuration
+    #[must_use]
+    pub fn cluster(&self) -> Option<CanCluster> {
+        self.element()
+            .get_sub_element(ElementName::CommunicationClusterRef)
+            .and_then(|elem| elem.get_reference_target().ok())
+            .and_then(|target| CanCluster::try_from(target).ok())
+    }
+
+    /// create a `CanTp` ECU in the configuration
+    pub fn create_can_tp_ecu(
+        &self,
+        ecu_instance: &EcuInstance,
+        cycle_time_main_function: Option<f64>,
+    ) -> Result<CanTpEcu, AutosarAbstractionError> {
+        let ecu_collection = self.element().get_or_create_sub_element(ElementName::TpEcus)?;
+
+        CanTpEcu::new(&ecu_collection, ecu_instance, cycle_time_main_function)
+    }
+
     /// get all of the ECUs in the configuration
-    pub fn ecus(&self) -> impl Iterator<Item = CanTpEcu> + Send + 'static {
+    pub fn can_tp_ecus(&self) -> impl Iterator<Item = CanTpEcu> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TpEcus)
             .into_iter()
-            .flat_map(|ecu_collection| {
-                ecu_collection
-                    .sub_elements()
-                    .filter_map(|tp_ecu_elem| CanTpEcu::get(&tp_ecu_elem))
-            })
+            .flat_map(|ecu_collection| ecu_collection.sub_elements())
+            .filter_map(|tp_ecu_elem| CanTpEcu::try_from(tp_ecu_elem).ok())
     }
 
     /// create a new `CanTpAddress` in the configuration
-    pub fn create_address(&self, name: &str, address: u32) -> Result<CanTpAddress, AutosarAbstractionError> {
+    pub fn create_can_tp_address(&self, name: &str, address: u32) -> Result<CanTpAddress, AutosarAbstractionError> {
         let addresses_container = self.element().get_or_create_sub_element(ElementName::TpAddresss)?;
         CanTpAddress::new(name, &addresses_container, address)
     }
 
     /// get all of the Can Tp addresses in the configuration
-    pub fn addresses(&self) -> impl Iterator<Item = CanTpAddress> + Send + 'static {
+    pub fn can_tp_addresses(&self) -> impl Iterator<Item = CanTpAddress> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TpAddresss)
             .into_iter()
@@ -77,14 +91,26 @@ impl CanTpConfig {
         CanTpChannel::new(name, &channels_container, channel_id, mode)
     }
 
+    /// iterate over all `CanTpChannel`s in the configuration
+    pub fn can_tp_channels(&self) -> impl Iterator<Item = CanTpChannel> + Send + 'static {
+        self.element()
+            .get_sub_element(ElementName::TpChannels)
+            .into_iter()
+            .flat_map(|channels_container| {
+                channels_container
+                    .sub_elements()
+                    .filter_map(|channel_elem| CanTpChannel::try_from(channel_elem).ok())
+            })
+    }
+
     /// create a new `CanTpConnection` in the configuration
-    pub fn create_can_tp_connection(
+    pub fn create_can_tp_connection<T: AbstractIpdu>(
         &self,
         name: Option<&str>,
         addressing_format: CanTpAddressingFormat,
         can_tp_channel: &CanTpChannel,
         data_pdu: &NPdu,
-        tp_sdu: &Pdu,
+        tp_sdu: &T,
         padding_activation: bool,
     ) -> Result<CanTpConnection, AutosarAbstractionError> {
         let connections_container = self.element().get_or_create_sub_element(ElementName::TpConnections)?;
@@ -94,13 +120,13 @@ impl CanTpConfig {
             addressing_format,
             can_tp_channel,
             data_pdu,
-            tp_sdu,
+            &tp_sdu.clone().into(),
             padding_activation,
         )
     }
 
-    /// get all of the `CanTpConnections` in the configuration
-    pub fn connections(&self) -> impl Iterator<Item = CanTpConnection> + Send + 'static {
+    /// iterate over all `CanTpConnections` in the configuration
+    pub fn can_tp_connections(&self) -> impl Iterator<Item = CanTpConnection> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TpConnections)
             .into_iter()
@@ -118,7 +144,7 @@ impl CanTpConfig {
     }
 
     /// get all of the `CanTpNodes` in the configuration
-    pub fn nodes(&self) -> impl Iterator<Item = CanTpNode> + Send + 'static {
+    pub fn can_tp_nodes(&self) -> impl Iterator<Item = CanTpNode> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TpNodes)
             .into_iter()
@@ -134,44 +160,62 @@ impl CanTpConfig {
 
 /// A `CanTpEcu` represents an ECU that is using the `CanTp` module
 #[derive(Debug, Clone, PartialEq)]
-pub struct CanTpEcu {
-    /// The ECU instance backing the `CanTpEcu`
-    pub ecu_instance: EcuInstance,
-    /// The cycle time of the `CanTp` main function of the ECU
-    pub cycle_time_main_function: Option<f64>,
-}
+pub struct CanTpEcu(Element);
+abstraction_element!(CanTpEcu, CanTpEcu);
 
 impl CanTpEcu {
-    fn get(element: &Element) -> Option<Self> {
-        let ecu_instance = element
-            .get_sub_element(ElementName::EcuInstanceRef)?
-            .get_reference_target()
-            .ok()?
-            .try_into()
-            .ok()?;
-        let cycle_time_main_function = element
-            .get_sub_element(ElementName::CycleTimeMainFunction)
-            .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.parse_float());
+    pub(crate) fn new(
+        parent: &Element,
+        ecu_instance: &EcuInstance,
+        cycle_time_main_function: Option<f64>,
+    ) -> Result<Self, AutosarAbstractionError> {
+        let tp_ecu_elem = parent.create_sub_element(ElementName::CanTpEcu)?;
+        let tp_ecu = Self(tp_ecu_elem);
 
-        Some(Self {
-            ecu_instance,
-            cycle_time_main_function,
-        })
+        tp_ecu.set_ecu_instance(ecu_instance)?;
+        tp_ecu.set_cycle_time_main_function(cycle_time_main_function)?;
+
+        Ok(tp_ecu)
     }
 
-    fn set(&self, element: &Element) -> Result<(), AutosarAbstractionError> {
-        element
+    /// set the ECU instance of the `CanTpEcu`
+    pub fn set_ecu_instance(&self, ecu_instance: &EcuInstance) -> Result<(), AutosarAbstractionError> {
+        self.element()
             .get_or_create_sub_element(ElementName::EcuInstanceRef)?
-            .set_reference_target(self.ecu_instance.element())?;
+            .set_reference_target(ecu_instance.element())?;
+        Ok(())
+    }
 
-        if let Some(cycle_time) = self.cycle_time_main_function {
-            element
+    /// get the ECU instance of the `CanTpEcu`
+    #[must_use]
+    pub fn ecu_instance(&self) -> Option<EcuInstance> {
+        self.element()
+            .get_sub_element(ElementName::EcuInstanceRef)
+            .and_then(|elem| elem.get_reference_target().ok())
+            .and_then(|target| EcuInstance::try_from(target).ok())
+    }
+
+    /// set the cycle time of the `CanTp` main function of the ECU
+    pub fn set_cycle_time_main_function(&self, cycle_time: Option<f64>) -> Result<(), AutosarAbstractionError> {
+        if let Some(cycle_time) = cycle_time {
+            self.element()
                 .get_or_create_sub_element(ElementName::CycleTimeMainFunction)?
                 .set_character_data(cycle_time)?;
+        } else {
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::CycleTimeMainFunction);
         }
-
         Ok(())
+    }
+
+    /// get the cycle time of the `CanTp` main function of the ECU
+    #[must_use]
+    pub fn cycle_time_main_function(&self) -> Option<f64> {
+        self.element()
+            .get_sub_element(ElementName::CycleTimeMainFunction)
+            .and_then(|elem| elem.character_data())
+            .and_then(|cdata| cdata.parse_float())
     }
 }
 
@@ -209,13 +253,20 @@ impl CanTpChannel {
         mode: CanTpChannelMode,
     ) -> Result<Self, AutosarAbstractionError> {
         let channel_elem = parent.create_named_sub_element(ElementName::CanTpChannel, name)?;
-        channel_elem
-            .create_sub_element(ElementName::ChannelId)?
+        let channel = Self(channel_elem);
+
+        channel.set_channel_id(channel_id)?;
+        channel.set_channel_mode(mode)?;
+
+        Ok(channel)
+    }
+
+    /// set the channel id of the channel
+    pub fn set_channel_id(&self, channel_id: u32) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::ChannelId)?
             .set_character_data(u64::from(channel_id))?;
-        channel_elem
-            .create_sub_element(ElementName::ChannelMode)?
-            .set_character_data::<EnumItem>(mode.into())?;
-        Ok(Self(channel_elem))
+        Ok(())
     }
 
     /// get the channel id of the channel
@@ -225,6 +276,14 @@ impl CanTpChannel {
             .get_sub_element(ElementName::ChannelId)
             .and_then(|elem| elem.character_data())
             .and_then(|cdata| cdata.parse_integer())
+    }
+
+    /// set the channel mode of the channel
+    pub fn set_channel_mode(&self, mode: CanTpChannelMode) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::ChannelMode)?
+            .set_character_data::<EnumItem>(mode.into())?;
+        Ok(())
     }
 
     /// get the channel mode of the channel
@@ -313,30 +372,30 @@ impl CanTpConnection {
         addressing_format: CanTpAddressingFormat,
         can_tp_channel: &CanTpChannel,
         data_pdu: &NPdu,
-        tp_sdu: &Pdu,
+        tp_sdu: &IPdu,
         padding_activation: bool,
     ) -> Result<Self, AutosarAbstractionError> {
         let connection_elem = parent.create_sub_element(ElementName::CanTpConnection)?;
-        if let Some(name) = name {
-            connection_elem.create_named_sub_element(ElementName::Ident, name)?;
-        }
-        connection_elem
-            .create_sub_element(ElementName::AddressingFormat)?
-            .set_character_data::<EnumItem>(addressing_format.into())?;
-        connection_elem
-            .create_sub_element(ElementName::CanTpChannelRef)?
-            .set_reference_target(can_tp_channel.element())?;
-        connection_elem
-            .create_sub_element(ElementName::DataPduRef)?
-            .set_reference_target(data_pdu.element())?;
-        connection_elem
-            .create_sub_element(ElementName::TpSduRef)?
-            .set_reference_target(tp_sdu.element())?;
-        connection_elem
-            .create_sub_element(ElementName::PaddingActivation)?
-            .set_character_data(padding_activation)?;
+        let connection = Self(connection_elem);
 
-        Ok(Self(connection_elem))
+        if let Some(name) = name {
+            connection.set_name(name)?;
+        }
+        connection.set_addressing_format(addressing_format)?;
+        connection.set_channel(can_tp_channel)?;
+        connection.set_data_pdu(data_pdu)?;
+        connection.set_tp_sdu(tp_sdu)?;
+        connection.set_padding_activation(padding_activation)?;
+
+        Ok(connection)
+    }
+
+    /// set the `CanTpChannel` associated with this connection
+    pub fn set_channel(&self, channel: &CanTpChannel) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::CanTpChannelRef)?
+            .set_reference_target(channel.element())?;
+        Ok(())
     }
 
     /// get the `CanTpChannel` associated with this connection
@@ -346,6 +405,14 @@ impl CanTpConnection {
             .get_sub_element(ElementName::CanTpChannelRef)
             .and_then(|elem| elem.get_reference_target().ok())
             .and_then(|target| CanTpChannel::try_from(target).ok())
+    }
+
+    /// set the `NPdu` associated with this connection
+    pub fn set_data_pdu(&self, data_pdu: &NPdu) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::DataPduRef)?
+            .set_reference_target(data_pdu.element())?;
+        Ok(())
     }
 
     /// get the `NPdu` associated with this connection
@@ -359,58 +426,23 @@ impl CanTpConnection {
             .and_then(|target| NPdu::try_from(target).ok())
     }
 
-    /// get the `IPdu` associated with this connection
-    ///
-    /// This is the Pdu that is sent over the transport protocol
-    #[must_use]
-    pub fn tp_sdu(&self) -> Option<Pdu> {
-        self.element()
-            .get_sub_element(ElementName::TpSduRef)
-            .and_then(|elem| elem.get_reference_target().ok())
-            .and_then(|target| Pdu::try_from(target).ok())
-    }
-
-    /// get the addressing format of the connection
-    #[must_use]
-    pub fn addressing_format(&self) -> Option<CanTpAddressingFormat> {
-        self.element()
-            .get_sub_element(ElementName::AddressingFormat)
-            .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.enum_value())
-            .and_then(|enumitem| enumitem.try_into().ok())
-    }
-
-    /// get the padding activation of the connection
-    #[must_use]
-    pub fn padding_activation(&self) -> Option<bool> {
-        self.element()
-            .get_sub_element(ElementName::PaddingActivation)
-            .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.parse_bool())
-    }
-
-    /// set the `CanTpChannel` associated with this connection
-    pub fn set_channel(&self, channel: &CanTpChannel) -> Result<(), AutosarAbstractionError> {
-        self.element()
-            .get_or_create_sub_element(ElementName::CanTpChannelRef)?
-            .set_reference_target(channel.element())?;
-        Ok(())
-    }
-
-    /// set the `NPdu` associated with this connection
-    pub fn set_data_pdu(&self, data_pdu: &NPdu) -> Result<(), AutosarAbstractionError> {
-        self.element()
-            .get_or_create_sub_element(ElementName::DataPduRef)?
-            .set_reference_target(data_pdu.element())?;
-        Ok(())
-    }
-
     /// set the `IPdu` associated with this connection
     pub fn set_tp_sdu<T: AbstractIpdu>(&self, tp_sdu: &T) -> Result<(), AutosarAbstractionError> {
         self.element()
             .get_or_create_sub_element(ElementName::TpSduRef)?
             .set_reference_target(tp_sdu.element())?;
         Ok(())
+    }
+
+    /// get the `IPdu` associated with this connection
+    ///
+    /// This is the Pdu that is sent over the transport protocol
+    #[must_use]
+    pub fn tp_sdu(&self) -> Option<IPdu> {
+        self.element()
+            .get_sub_element(ElementName::TpSduRef)
+            .and_then(|elem| elem.get_reference_target().ok())
+            .and_then(|target| IPdu::try_from(target).ok())
     }
 
     /// set the addressing format of the connection
@@ -424,12 +456,31 @@ impl CanTpConnection {
         Ok(())
     }
 
+    /// get the addressing format of the connection
+    #[must_use]
+    pub fn addressing_format(&self) -> Option<CanTpAddressingFormat> {
+        self.element()
+            .get_sub_element(ElementName::AddressingFormat)
+            .and_then(|elem| elem.character_data())
+            .and_then(|cdata| cdata.enum_value())
+            .and_then(|enumitem| enumitem.try_into().ok())
+    }
+
     /// set the padding activation of the connection
     pub fn set_padding_activation(&self, padding_activation: bool) -> Result<(), AutosarAbstractionError> {
         self.element()
             .get_or_create_sub_element(ElementName::PaddingActivation)?
             .set_character_data(padding_activation)?;
         Ok(())
+    }
+
+    /// get the padding activation of the connection
+    #[must_use]
+    pub fn padding_activation(&self) -> Option<bool> {
+        self.element()
+            .get_sub_element(ElementName::PaddingActivation)
+            .and_then(|elem| elem.character_data())
+            .and_then(|cdata| cdata.parse_bool())
     }
 
     /// set the transmitter of the connection
@@ -604,17 +655,17 @@ mod test {
         let can_tp_config = system
             .create_can_tp_config("can_tp_config", &package, &can_cluster)
             .unwrap();
-        let can_tp_ecu = CanTpEcu {
-            ecu_instance,
-            cycle_time_main_function: Some(1.0),
-        };
-        can_tp_config.add_ecu(&can_tp_ecu).unwrap();
-        assert_eq!(can_tp_config.ecus().count(), 1);
-        assert_eq!(can_tp_config.ecus().next().unwrap(), can_tp_ecu);
+        assert_eq!(can_tp_config.cluster().unwrap(), can_cluster);
 
-        let address = can_tp_config.create_address("address", 0x1234).unwrap();
-        assert_eq!(can_tp_config.addresses().count(), 1);
-        assert_eq!(can_tp_config.addresses().next().unwrap(), address);
+        let tp_ecu = can_tp_config.create_can_tp_ecu(&ecu_instance, Some(1.0)).unwrap();
+        assert_eq!(can_tp_config.can_tp_ecus().count(), 1);
+        assert_eq!(can_tp_config.can_tp_ecus().next().unwrap(), tp_ecu);
+        assert_eq!(tp_ecu.ecu_instance().unwrap().name().unwrap(), "ecu_instance");
+        assert_eq!(tp_ecu.cycle_time_main_function().unwrap(), 1.0);
+
+        let address = can_tp_config.create_can_tp_address("address", 0x1234).unwrap();
+        assert_eq!(can_tp_config.can_tp_addresses().count(), 1);
+        assert_eq!(can_tp_config.can_tp_addresses().next().unwrap(), address);
 
         let channel = can_tp_config
             .create_can_tp_channel("channel", 1, CanTpChannelMode::FullDuplex)
@@ -622,6 +673,7 @@ mod test {
         let channel2 = can_tp_config
             .create_can_tp_channel("channel2", 2, CanTpChannelMode::FullDuplex)
             .unwrap();
+        assert_eq!(can_tp_config.can_tp_channels().count(), 2);
         assert_eq!(channel.channel_id().unwrap(), 1);
         assert_eq!(channel.channel_mode().unwrap(), CanTpChannelMode::FullDuplex);
 
@@ -636,12 +688,12 @@ mod test {
                 CanTpAddressingFormat::Standard,
                 &channel,
                 &data_pdu,
-                &tp_sdu.clone().into(),
+                &tp_sdu,
                 false,
             )
             .unwrap();
-        assert_eq!(can_tp_config.connections().count(), 1);
-        assert_eq!(can_tp_config.connections().next().unwrap(), connection);
+        assert_eq!(can_tp_config.can_tp_connections().count(), 1);
+        assert_eq!(can_tp_config.can_tp_connections().next().unwrap(), connection);
 
         assert_eq!(connection.name().unwrap(), "connection");
         // in a CanTpConnection, the name is provided by the optional IDENT sub-element
@@ -676,8 +728,8 @@ mod test {
         assert_eq!(connection.padding_activation().unwrap(), true);
 
         let node = can_tp_config.create_can_tp_node("node").unwrap();
-        assert_eq!(can_tp_config.nodes().count(), 1);
-        assert_eq!(can_tp_config.nodes().next().unwrap(), node);
+        assert_eq!(can_tp_config.can_tp_nodes().count(), 1);
+        assert_eq!(can_tp_config.can_tp_nodes().next().unwrap(), node);
 
         node.set_address(&address).unwrap();
         assert_eq!(node.address().unwrap(), address);
