@@ -118,7 +118,7 @@ use autosar_data::EnumItem;
 
 mod cluster;
 mod controller;
-mod datatransformation;
+mod data_transformation;
 mod frame;
 mod network_management;
 mod pdu;
@@ -128,7 +128,7 @@ mod transport_layer;
 
 pub use cluster::*;
 pub use controller::*;
-pub use datatransformation::*;
+pub use data_transformation::*;
 pub use frame::*;
 pub use network_management::*;
 pub use pdu::*;

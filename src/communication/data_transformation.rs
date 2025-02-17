@@ -198,49 +198,66 @@ impl TransformationTechnology {
         name: &str,
         config: &TransformationTechnologyConfig,
     ) -> Result<Self, AutosarAbstractionError> {
-        let version = parent.min_version()?;
-        let ttech = parent.create_named_sub_element(ElementName::TransformationTechnology, name)?;
-        let buffer_props = ttech.create_sub_element(ElementName::BufferProperties)?;
+        let ttech_elem = parent.create_named_sub_element(ElementName::TransformationTechnology, name)?;
+        let ttech = Self(ttech_elem);
+        ttech.set_config(config)?;
+
+        Ok(ttech)
+    }
+
+    /// Set the configuration of the `TransformationTechnology`
+    pub fn set_config(&self, config: &TransformationTechnologyConfig) -> Result<(), AutosarAbstractionError> {
+        let ttech = self.element();
+        let version = ttech.min_version()?;
+        let buffer_props = ttech.get_or_create_sub_element(ElementName::BufferProperties)?;
 
         match config {
             TransformationTechnologyConfig::Generic(generic_config) => {
                 ttech
-                    .create_sub_element(ElementName::Protocol)?
+                    .get_or_create_sub_element(ElementName::Protocol)?
                     .set_character_data(generic_config.protocol_name.as_str())?;
                 ttech
-                    .create_sub_element(ElementName::Version)?
+                    .get_or_create_sub_element(ElementName::Version)?
                     .set_character_data(generic_config.protocol_version.as_str())?;
                 ttech
-                    .create_sub_element(ElementName::TransformerClass)?
+                    .get_or_create_sub_element(ElementName::TransformerClass)?
                     .set_character_data(EnumItem::Custom)?;
                 buffer_props
-                    .create_sub_element(ElementName::HeaderLength)?
+                    .get_or_create_sub_element(ElementName::HeaderLength)?
                     .set_character_data(u64::from(generic_config.header_length))?;
                 buffer_props
-                    .create_sub_element(ElementName::InPlace)?
+                    .get_or_create_sub_element(ElementName::InPlace)?
                     .set_character_data(generic_config.in_place)?;
+
+                // remove the transformation descriptions, which are only used by E2E and SOMEIP
+                let _ = ttech.remove_sub_element_kind(ElementName::TransformationDescriptions);
+                // remove the buffer computation, which is only used by COM
+                let _ = buffer_props.remove_sub_element_kind(ElementName::BufferComputation);
+                // remove the NeedsOriginalData setting, which is only used by E2E
+                let _ = ttech.remove_sub_element_kind(ElementName::NeedsOriginalData);
             }
             TransformationTechnologyConfig::Com(com_config) => {
                 ttech
-                    .create_sub_element(ElementName::Protocol)?
+                    .get_or_create_sub_element(ElementName::Protocol)?
                     .set_character_data("COMBased")?;
                 ttech
-                    .create_sub_element(ElementName::Version)?
+                    .get_or_create_sub_element(ElementName::Version)?
                     .set_character_data("1")?;
                 ttech
-                    .create_sub_element(ElementName::TransformerClass)?
+                    .get_or_create_sub_element(ElementName::TransformerClass)?
                     .set_character_data(EnumItem::Serializer)?;
 
                 // comxf does not have a header
                 buffer_props
-                    .create_sub_element(ElementName::HeaderLength)?
+                    .get_or_create_sub_element(ElementName::HeaderLength)?
                     .set_character_data(0)?;
                 // comxf is always the first transformer in a chain, and the first transformer is not allowed to be in place
                 buffer_props
-                    .create_sub_element(ElementName::InPlace)?
+                    .get_or_create_sub_element(ElementName::InPlace)?
                     .set_character_data("false")?;
 
                 if version <= AutosarVersion::Autosar_00049 {
+                    let _ = buffer_props.remove_sub_element_kind(ElementName::BufferComputation);
                     // only in versions up to AUTOSAR R20-11 (AUTOSAR_00049): a COM transformer must have a BUFFER-COMPUTATION
                     let bufcomp_compu = buffer_props
                         .create_sub_element(ElementName::BufferComputation)?
@@ -255,24 +272,29 @@ impl TransformationTechnology {
                         .create_sub_element(ElementName::V)?
                         .set_character_data(1)?;
                 }
+
+                // remove the transformation descriptions, which are only used by E2E and SOMEIP
+                let _ = ttech.remove_sub_element_kind(ElementName::TransformationDescriptions);
+                // remove the NeedsOriginalData setting, which is only used by E2E
+                let _ = ttech.remove_sub_element_kind(ElementName::NeedsOriginalData);
             }
             TransformationTechnologyConfig::E2E(e2e_config) => {
                 ttech
-                    .create_sub_element(ElementName::Protocol)?
+                    .get_or_create_sub_element(ElementName::Protocol)?
                     .set_character_data("E2E")?;
                 ttech
-                    .create_sub_element(ElementName::Version)?
+                    .get_or_create_sub_element(ElementName::Version)?
                     .set_character_data("1.0.0")?;
                 ttech
-                    .create_sub_element(ElementName::TransformerClass)?
+                    .get_or_create_sub_element(ElementName::TransformerClass)?
                     .set_character_data(EnumItem::Safety)?;
                 if version >= AutosarVersion::Autosar_4_3_0 {
                     ttech
-                        .create_sub_element(ElementName::HasInternalState)?
+                        .get_or_create_sub_element(ElementName::HasInternalState)?
                         .set_character_data("true")?;
                 }
                 ttech
-                    .create_sub_element(ElementName::NeedsOriginalData)?
+                    .get_or_create_sub_element(ElementName::NeedsOriginalData)?
                     .set_character_data("false")?;
 
                 // select the profile name and header length based on the chosen E2E profile
@@ -302,65 +324,66 @@ impl TransformationTechnology {
                 };
 
                 buffer_props
-                    .create_sub_element(ElementName::HeaderLength)?
+                    .get_or_create_sub_element(ElementName::HeaderLength)?
                     .set_character_data(u64::from(real_header_length))?;
                 buffer_props
-                    .create_sub_element(ElementName::InPlace)?
+                    .get_or_create_sub_element(ElementName::InPlace)?
                     .set_character_data(e2e_config.transform_in_place)?;
 
-                let trans_desc = ttech.create_sub_element(ElementName::TransformationDescriptions)?;
-                let e2e_desc = trans_desc.create_sub_element(ElementName::EndToEndTransformationDescription)?;
+                let trans_desc = ttech.get_or_create_sub_element(ElementName::TransformationDescriptions)?;
+                let _ = trans_desc.remove_sub_element_kind(ElementName::SomeipTransformationDescription);
+                let e2e_desc = trans_desc.get_or_create_sub_element(ElementName::EndToEndTransformationDescription)?;
 
                 // create the E2E profile description, with the mandatory fields
                 e2e_desc
-                    .create_sub_element(ElementName::ProfileName)?
+                    .get_or_create_sub_element(ElementName::ProfileName)?
                     .set_character_data(profile_name)?;
                 e2e_desc
-                    .create_sub_element(ElementName::UpperHeaderBitsToShift)?
+                    .get_or_create_sub_element(ElementName::UpperHeaderBitsToShift)?
                     .set_character_data(u64::from(e2e_config.offset))?;
                 e2e_desc
-                    .create_sub_element(ElementName::MaxDeltaCounter)?
+                    .get_or_create_sub_element(ElementName::MaxDeltaCounter)?
                     .set_character_data(u64::from(e2e_config.max_delta_counter))?;
                 e2e_desc
-                    .create_sub_element(ElementName::MaxErrorStateInit)?
+                    .get_or_create_sub_element(ElementName::MaxErrorStateInit)?
                     .set_character_data(u64::from(e2e_config.max_error_state_init))?;
                 e2e_desc
-                    .create_sub_element(ElementName::MaxErrorStateInvalid)?
+                    .get_or_create_sub_element(ElementName::MaxErrorStateInvalid)?
                     .set_character_data(u64::from(e2e_config.max_error_state_invalid))?;
                 e2e_desc
-                    .create_sub_element(ElementName::MaxErrorStateValid)?
+                    .get_or_create_sub_element(ElementName::MaxErrorStateValid)?
                     .set_character_data(u64::from(e2e_config.max_error_state_valid))?;
                 e2e_desc
-                    .create_sub_element(ElementName::MaxNoNewOrRepeatedData)?
+                    .get_or_create_sub_element(ElementName::MaxNoNewOrRepeatedData)?
                     .set_character_data(u64::from(e2e_config.max_no_new_or_repeated_data))?;
                 e2e_desc
-                    .create_sub_element(ElementName::MinOkStateInit)?
+                    .get_or_create_sub_element(ElementName::MinOkStateInit)?
                     .set_character_data(u64::from(e2e_config.min_ok_state_init))?;
                 e2e_desc
-                    .create_sub_element(ElementName::MinOkStateInvalid)?
+                    .get_or_create_sub_element(ElementName::MinOkStateInvalid)?
                     .set_character_data(u64::from(e2e_config.min_ok_state_invalid))?;
                 e2e_desc
-                    .create_sub_element(ElementName::MinOkStateValid)?
+                    .get_or_create_sub_element(ElementName::MinOkStateValid)?
                     .set_character_data(u64::from(e2e_config.min_ok_state_valid))?;
 
                 // window size is one value in AUTOSAR 4.4.0 (AUTOSAR_00047) and older, and three values in AUTOSAR 4.5.0 (AUTOSAR_00048) and newer
                 if version <= AutosarVersion::Autosar_00047 {
                     // window size is only valid in AUTOSAR 4.4.0 (AUTOSAR_00047) and older
                     e2e_desc
-                        .create_sub_element(ElementName::WindowSize)?
+                        .get_or_create_sub_element(ElementName::WindowSize)?
                         .set_character_data(u64::from(e2e_config.window_size))?;
                 } else {
                     // new (Autosar 4.5.0+): window size can be set for each state
                     e2e_desc
-                        .create_sub_element(ElementName::WindowSizeInit)?
+                        .get_or_create_sub_element(ElementName::WindowSizeInit)?
                         .set_character_data(u64::from(e2e_config.window_size_init.unwrap_or(e2e_config.window_size)))?;
                     e2e_desc
-                        .create_sub_element(ElementName::WindowSizeInvalid)?
+                        .get_or_create_sub_element(ElementName::WindowSizeInvalid)?
                         .set_character_data(u64::from(
                             e2e_config.window_size_invalid.unwrap_or(e2e_config.window_size),
                         ))?;
                     e2e_desc
-                        .create_sub_element(ElementName::WindowSizeValid)?
+                        .get_or_create_sub_element(ElementName::WindowSizeValid)?
                         .set_character_data(u64::from(
                             e2e_config.window_size_valid.unwrap_or(e2e_config.window_size),
                         ))?;
@@ -375,7 +398,7 @@ impl TransformationTechnology {
                         ));
                     };
                     e2e_desc
-                        .create_sub_element(ElementName::DataIdMode)?
+                        .get_or_create_sub_element(ElementName::DataIdMode)?
                         .set_character_data::<EnumItem>(data_id_mode.into())?;
 
                     // counter offset
@@ -385,7 +408,7 @@ impl TransformationTechnology {
                         ));
                     };
                     e2e_desc
-                        .create_sub_element(ElementName::CounterOffset)?
+                        .get_or_create_sub_element(ElementName::CounterOffset)?
                         .set_character_data(u64::from(counter_offset))?;
 
                     // crc offset
@@ -395,7 +418,7 @@ impl TransformationTechnology {
                         ));
                     };
                     e2e_desc
-                        .create_sub_element(ElementName::CrcOffset)?
+                        .get_or_create_sub_element(ElementName::CrcOffset)?
                         .set_character_data(u64::from(crc_offset))?;
 
                     // data id nibble offset
@@ -406,68 +429,86 @@ impl TransformationTechnology {
                             ));
                         };
                         e2e_desc
-                            .create_sub_element(ElementName::DataIdNibbleOffset)?
+                            .get_or_create_sub_element(ElementName::DataIdNibbleOffset)?
                             .set_character_data(u64::from(data_id_nibble_offset))?;
                     }
+
+                    // offset may only be set if the profile is not 01 or 11
+                    let _ = e2e_desc.remove_sub_element_kind(ElementName::Offset);
                 } else {
                     // offset may only be set if the profile is not 01 or 11
                     e2e_desc
-                        .create_sub_element(ElementName::Offset)?
+                        .get_or_create_sub_element(ElementName::Offset)?
                         .set_character_data(u64::from(e2e_config.offset))?;
+
+                    // remove the data id mode, counter offset, crc offset, and data id nibble offset, which are only used by profiles 01 and 11
+                    let _ = e2e_desc.remove_sub_element_kind(ElementName::DataIdMode);
+                    let _ = e2e_desc.remove_sub_element_kind(ElementName::CounterOffset);
+                    let _ = e2e_desc.remove_sub_element_kind(ElementName::CrcOffset);
+                    let _ = e2e_desc.remove_sub_element_kind(ElementName::DataIdNibbleOffset);
                 }
 
                 // optional fields
                 // profile behavior
                 if let Some(profile_behavior) = e2e_config.profile_behavior {
                     e2e_desc
-                        .create_sub_element(ElementName::ProfileBehavior)?
+                        .get_or_create_sub_element(ElementName::ProfileBehavior)?
                         .set_character_data::<EnumItem>(profile_behavior.into())?;
                 }
 
                 // sync counter init
                 if let Some(sync_counter_init) = e2e_config.sync_counter_init {
                     e2e_desc
-                        .create_sub_element(ElementName::SyncCounterInit)?
+                        .get_or_create_sub_element(ElementName::SyncCounterInit)?
                         .set_character_data(u64::from(sync_counter_init))?;
                 }
+
+                // remove the buffer computation, which is only used by COM
+                let _ = buffer_props.remove_sub_element_kind(ElementName::BufferComputation);
             }
             TransformationTechnologyConfig::SomeIp(someip_config) => {
                 ttech
-                    .create_sub_element(ElementName::Protocol)?
+                    .get_or_create_sub_element(ElementName::Protocol)?
                     .set_character_data("SOMEIP")?;
                 ttech
-                    .create_sub_element(ElementName::TransformerClass)?
+                    .get_or_create_sub_element(ElementName::TransformerClass)?
                     .set_character_data(EnumItem::Serializer)?;
 
                 // someip header length is always 64
                 buffer_props
-                    .create_sub_element(ElementName::HeaderLength)?
+                    .get_or_create_sub_element(ElementName::HeaderLength)?
                     .set_character_data(64)?;
                 // someip is always the first transformer in a chain, and the first transformer is not allowed to be in place
                 buffer_props
-                    .create_sub_element(ElementName::InPlace)?
+                    .get_or_create_sub_element(ElementName::InPlace)?
                     .set_character_data("false")?;
 
-                let trans_desc = ttech.create_sub_element(ElementName::TransformationDescriptions)?;
-                let someip_desc = trans_desc.create_sub_element(ElementName::SomeipTransformationDescription)?;
+                let trans_desc = ttech.get_or_create_sub_element(ElementName::TransformationDescriptions)?;
+                let _ = trans_desc.remove_sub_element_kind(ElementName::EndToEndTransformationDescription);
+                let someip_desc = trans_desc.get_or_create_sub_element(ElementName::SomeipTransformationDescription)?;
                 someip_desc
-                    .create_sub_element(ElementName::Alignment)?
+                    .get_or_create_sub_element(ElementName::Alignment)?
                     .set_character_data(u64::from(someip_config.alignment))?;
                 someip_desc
-                    .create_sub_element(ElementName::ByteOrder)?
+                    .get_or_create_sub_element(ElementName::ByteOrder)?
                     .set_character_data::<EnumItem>(someip_config.byte_order.into())?;
                 someip_desc
-                    .create_sub_element(ElementName::InterfaceVersion)?
+                    .get_or_create_sub_element(ElementName::InterfaceVersion)?
                     .set_character_data(u64::from(someip_config.interface_version))?;
 
                 // the someip transformer must currently always use version "1.0.0"
                 ttech
-                    .create_sub_element(ElementName::Version)?
+                    .get_or_create_sub_element(ElementName::Version)?
                     .set_character_data("1.0.0")?;
+
+                // remove the buffer computation, which is only used by COM
+                let _ = buffer_props.remove_sub_element_kind(ElementName::BufferComputation);
+                // remove the needs original data setting, which is only used by E2E
+                let _ = ttech.remove_sub_element_kind(ElementName::NeedsOriginalData);
             }
         }
 
-        Ok(Self(ttech))
+        Ok(())
     }
 
     /// Get the protocol of the `TransformationTechnology`
@@ -1500,6 +1541,119 @@ mod test {
         assert_eq!(dts_iter.next().unwrap().name().unwrap(), "test8");
         assert_eq!(dts_iter.next().unwrap().name().unwrap(), "test9");
         assert_eq!(dts_iter.next(), None);
+    }
+
+    #[test]
+    fn transformation_technology() {
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::Autosar_4_2_1);
+        let package = model.get_or_create_package("/package").unwrap();
+        let dts = DataTransformationSet::new("test_dts", &package).unwrap();
+
+        let e2e_config_p01 = TransformationTechnologyConfig::E2E(E2ETransformationTechnologyConfig {
+            profile: E2EProfile::P01,
+            zero_header_length: false,
+            transform_in_place: true,
+            offset: 0,
+            max_delta_counter: 0,
+            max_error_state_init: 0,
+            max_error_state_invalid: 0,
+            max_error_state_valid: 0,
+            max_no_new_or_repeated_data: 0,
+            min_ok_state_init: 0,
+            min_ok_state_invalid: 0,
+            min_ok_state_valid: 0,
+            window_size: 10,
+            window_size_init: Some(11),
+            window_size_invalid: Some(12),
+            window_size_valid: Some(13),
+            profile_behavior: Some(E2EProfileBehavior::R4_2),
+            sync_counter_init: Some(0),
+            data_id_mode: Some(DataIdMode::Lower12Bit),
+            data_id_nibble_offset: Some(1),
+            crc_offset: Some(2),
+            counter_offset: Some(3),
+        });
+        let e2e_config_p04 = TransformationTechnologyConfig::E2E(E2ETransformationTechnologyConfig {
+            profile: E2EProfile::P04,
+            zero_header_length: false,
+            transform_in_place: true,
+            offset: 0,
+            max_delta_counter: 0,
+            max_error_state_init: 0,
+            max_error_state_invalid: 0,
+            max_error_state_valid: 0,
+            max_no_new_or_repeated_data: 0,
+            min_ok_state_init: 0,
+            min_ok_state_invalid: 0,
+            min_ok_state_valid: 0,
+            window_size: 10,
+            window_size_init: Some(11),
+            window_size_invalid: Some(12),
+            window_size_valid: Some(13),
+            profile_behavior: Some(E2EProfileBehavior::R4_2),
+            sync_counter_init: Some(0),
+            data_id_mode: None,
+            data_id_nibble_offset: None,
+            crc_offset: None,
+            counter_offset: None,
+        });
+        let com_config =
+            TransformationTechnologyConfig::Com(ComTransformationTechnologyConfig { isignal_ipdu_length: 8 });
+        let someip_config = TransformationTechnologyConfig::SomeIp(SomeIpTransformationTechnologyConfig {
+            alignment: 8,
+            byte_order: ByteOrder::MostSignificantByteFirst,
+            interface_version: 1,
+        });
+        let generic_config = TransformationTechnologyConfig::Generic(GenericTransformationTechnologyConfig {
+            protocol_name: "test".to_string(),
+            protocol_version: "1.0.0".to_string(),
+            header_length: 16,
+            in_place: true,
+        });
+
+        // create a "clean" transformation technology for each type
+        let transformation = dts.create_transformation_technology("t", &e2e_config_p01).unwrap();
+        let e2e_p01_transformation_orig = transformation.element().serialize();
+        dts.element()
+            .remove_sub_element_kind(ElementName::TransformationTechnologys)
+            .unwrap();
+
+        let transformation = dts.create_transformation_technology("t", &e2e_config_p04).unwrap();
+        let e2e_p04_transformation_orig = transformation.element().serialize();
+        dts.element()
+            .remove_sub_element_kind(ElementName::TransformationTechnologys)
+            .unwrap();
+
+        let transformation = dts.create_transformation_technology("t", &com_config).unwrap();
+        let com_transformation_orig = transformation.element().serialize();
+        dts.element()
+            .remove_sub_element_kind(ElementName::TransformationTechnologys)
+            .unwrap();
+
+        let transformation = dts.create_transformation_technology("t", &someip_config).unwrap();
+        let someip_transformation_orig = transformation.element().serialize();
+        dts.element()
+            .remove_sub_element_kind(ElementName::TransformationTechnologys)
+            .unwrap();
+
+        let transformation = dts.create_transformation_technology("t", &generic_config).unwrap();
+        let generic_transformation_orig = transformation.element().serialize();
+        dts.element()
+            .remove_sub_element_kind(ElementName::TransformationTechnologys)
+            .unwrap();
+
+        // overwrite the transformation technology with another configuration, and check if the resulting xml is identical
+        let transformation = dts.create_transformation_technology("t", &generic_config).unwrap();
+        transformation.set_config(&e2e_config_p01).unwrap();
+        assert_eq!(transformation.element().serialize(), e2e_p01_transformation_orig);
+        transformation.set_config(&e2e_config_p04).unwrap();
+        assert_eq!(transformation.element().serialize(), e2e_p04_transformation_orig);
+        transformation.set_config(&com_config).unwrap();
+        assert_eq!(transformation.element().serialize(), com_transformation_orig);
+        transformation.set_config(&someip_config).unwrap();
+        assert_eq!(transformation.element().serialize(), someip_transformation_orig);
+        transformation.set_config(&generic_config).unwrap();
+        assert_eq!(transformation.element().serialize(), generic_transformation_orig);
     }
 
     #[test]
