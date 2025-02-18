@@ -977,58 +977,6 @@ impl TryFrom<EnumItem> for DataIdMode {
 
 //#########################################################
 
-/// Properties of a transformation of an ISignal(Group)
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum TransformationISignalPropsConfig {
-    /// Properties of an E2E transformation
-    E2E(E2ETransformationISignalPropsConfig),
-    /// Properties of a SOMEIP transformation
-    SomeIp(SomeIpTransformationISignalPropsConfig),
-}
-
-//#########################################################
-
-/// Properties of an E2E transformation of an ISignal(Group)
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct E2ETransformationISignalPropsConfig {
-    /// The data IDs that are used for the E2E transformation
-    pub data_ids: Vec<u32>,
-    /// Length of payload and E2E header in bits
-    pub data_length: Option<u32>,
-    /// Maximum length
-    pub max_data_length: Option<u32>,
-    /// Minimum length
-    pub min_data_length: Option<u32>,
-    /// A unique numerical identifier identifying the source of a certain transmission.
-    /// `source_id` was added in AUTOSAR R20-11 (`AUTOSAR_00049`), and setting it to Some(x) causes an error in older files
-    pub source_id: Option<u32>,
-}
-
-//#########################################################
-
-/// Properties of a SOMEIP transformation of an ISignal(Group)
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SomeIpTransformationISignalPropsConfig {
-    /// if set, this indicates that Strings in the SOME/IP message will NOT be serialized according to the SOME/IP specification for Strings
-    pub legacy_strings: Option<bool>,
-    /// The interface version used by the SOME/IP transformer
-    pub interface_version: Option<u32>,
-    /// used to determine the wire type in the context of TLV encoding
-    pub dynamic_length: Option<bool>,
-    /// The Message Type in the SOME/IP header
-    pub message_type: Option<SomeIpMessageType>,
-    /// The size of all length fields (in bytes) for arrays (both fixed and variable length)
-    pub size_of_array_length: Option<u32>,
-    /// The size of all length fields (in bytes) of dynamic length strings
-    pub size_of_string_length: Option<u32>,
-    /// The size of all length fields (in Bytes) of structs in the SOME/IP message
-    pub size_of_struct_length: Option<u32>,
-    /// The size of all length fields (in Bytes) of unions in the SOME/IP message
-    pub size_of_union_length: Option<u32>,
-}
-
-//#########################################################
-
 /// message types that can be used in a SOME/IP message header, depending on the type of communication
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SomeIpMessageType {
@@ -1072,213 +1020,482 @@ impl TryFrom<EnumItem> for SomeIpMessageType {
 
 //#########################################################
 
-// Properties for the End to End transformation of an ISignal(Group)
-//
-// Implementation notes:
-// - This is not an AbstractionElement, as it is not named.
-// - It references the inner EndToEndTransformationISignalPropsConditional element.
+/// Properties for the End to End transformation of an ISignal(Group)
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct EndToEndTransformationISignalProps(pub(crate) Element);
+pub struct EndToEndTransformationISignalProps(Element);
+abstraction_element!(EndToEndTransformationISignalProps, EndToEndTransformationISignalProps);
 
 impl EndToEndTransformationISignalProps {
     pub(crate) fn new(
         parent_element: Element,
         transformer: &TransformationTechnology,
-        props: &E2ETransformationISignalPropsConfig,
     ) -> Result<Self, AutosarAbstractionError> {
         if transformer.protocol().as_deref() != Some("E2E") {
             return Err(AutosarAbstractionError::InvalidParameter(
                 "EndToEndTransformationISignalProps must reference a E2E transformer".to_string(),
             ));
         }
-        let e2e_props_elem = parent_element
-            .create_sub_element(ElementName::EndToEndTransformationISignalProps)?
-            .create_sub_element(ElementName::EndToEndTransformationISignalPropsVariants)?
-            .create_sub_element(ElementName::EndToEndTransformationISignalPropsConditional)?;
-        e2e_props_elem
-            .create_sub_element(ElementName::TransformerRef)?
-            .set_reference_target(transformer.element())?;
+        let e2e_props_elem = parent_element.create_sub_element(ElementName::EndToEndTransformationISignalProps)?;
 
-        if !props.data_ids.is_empty() {
-            let data_ids_elem = e2e_props_elem.create_sub_element(ElementName::DataIds)?;
-            for data_id in &props.data_ids {
+        let e2e_props = Self(e2e_props_elem);
+        e2e_props.set_transformer(transformer)?;
+
+        Ok(e2e_props)
+    }
+
+    fn inner_element(&self) -> Option<Element> {
+        self.0
+            .get_sub_element(ElementName::EndToEndTransformationISignalPropsVariants)?
+            .get_sub_element(ElementName::EndToEndTransformationISignalPropsConditional)
+    }
+
+    fn create_inner_element(&self) -> Result<Element, AutosarAbstractionError> {
+        let e2e_props_elem = self
+            .element()
+            .get_or_create_sub_element(ElementName::EndToEndTransformationISignalPropsVariants)?
+            .get_or_create_sub_element(ElementName::EndToEndTransformationISignalPropsConditional)?;
+        Ok(e2e_props_elem)
+    }
+
+    /// set the transformer reference of the E2E transformation properties
+    pub fn set_transformer(&self, transformer: &TransformationTechnology) -> Result<(), AutosarAbstractionError> {
+        if transformer.protocol().as_deref() != Some("E2E") {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "EndToEndTransformationISignalProps must reference a E2E transformer".to_string(),
+            ));
+        }
+        self.create_inner_element()?
+            .get_or_create_sub_element(ElementName::TransformerRef)?
+            .set_reference_target(transformer.element())?;
+        Ok(())
+    }
+
+    /// get the transformer reference of the E2E transformation properties
+    #[must_use]
+    pub fn transformer(&self) -> Option<TransformationTechnology> {
+        let t_elem = self
+            .inner_element()?
+            .get_sub_element(ElementName::TransformerRef)?
+            .get_reference_target()
+            .ok()?;
+        TransformationTechnology::try_from(t_elem).ok()
+    }
+
+    /// set the data IDs that are used for the E2E transformation
+    pub fn set_data_ids(&self, data_ids: &[u32]) -> Result<(), AutosarAbstractionError> {
+        if data_ids.is_empty() {
+            let _ = self
+                .inner_element()
+                .and_then(|inner| inner.remove_sub_element_kind(ElementName::DataIds).ok());
+        } else {
+            let data_ids_elem = self.create_inner_element()?.create_sub_element(ElementName::DataIds)?;
+            for data_id in data_ids {
                 data_ids_elem
                     .create_sub_element(ElementName::DataId)?
                     .set_character_data(u64::from(*data_id))?;
             }
         }
-        if let Some(data_length) = props.data_length {
-            e2e_props_elem
-                .create_sub_element(ElementName::DataLength)?
-                .set_character_data(data_length.to_string())?;
-        }
-        if let Some(max_data_length) = props.max_data_length {
-            e2e_props_elem
-                .create_sub_element(ElementName::MaxDataLength)?
-                .set_character_data(max_data_length.to_string())?;
-        }
-        if let Some(min_data_length) = props.min_data_length {
-            e2e_props_elem
-                .create_sub_element(ElementName::MinDataLength)?
-                .set_character_data(min_data_length.to_string())?;
-        }
-        if let Some(source_id) = props.source_id {
-            e2e_props_elem
-                .create_sub_element(ElementName::SourceId)?
-                .set_character_data(source_id.to_string())?;
-        }
-        Ok(Self(e2e_props_elem))
+        Ok(())
     }
 
-    pub(crate) fn config(&self) -> E2ETransformationISignalPropsConfig {
-        let elem = &self.0;
-        let data_ids = elem
-            .get_sub_element(ElementName::DataIds)
-            .into_iter()
-            .flat_map(|elem| elem.sub_elements())
-            .filter_map(|elem| elem.character_data())
-            .filter_map(|cdata| cdata.parse_integer())
-            .collect();
-        let data_length = elem
-            .get_sub_element(ElementName::DataLength)
-            .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.parse_integer());
-        let max_data_length = elem
+    /// get the data IDs that are used for the E2E transformation
+    #[must_use]
+    pub fn data_ids(&self) -> Vec<u32> {
+        self.inner_element()
+            .and_then(|inner_elem| inner_elem.get_sub_element(ElementName::DataIds))
+            .map(|elem| {
+                elem.sub_elements()
+                    .filter_map(|elem| elem.character_data().and_then(|cdata| cdata.parse_integer()))
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    /// set the length of payload and E2E header in bits
+    pub fn set_data_length(&self, data_length: Option<u32>) -> Result<(), AutosarAbstractionError> {
+        if let Some(data_length) = data_length {
+            self.create_inner_element()?
+                .get_or_create_sub_element(ElementName::DataLength)?
+                .set_character_data(data_length.to_string())?;
+        } else {
+            let _ = self
+                .inner_element()
+                .and_then(|inner| inner.remove_sub_element_kind(ElementName::DataLength).ok());
+        }
+        Ok(())
+    }
+
+    /// get the length of payload and E2E header in bits
+    #[must_use]
+    pub fn data_length(&self) -> Option<u32> {
+        self.inner_element()?
+            .get_sub_element(ElementName::DataLength)?
+            .character_data()?
+            .parse_integer()
+    }
+
+    /// set the maximum data length
+    pub fn set_max_data_length(&self, max_data_length: Option<u32>) -> Result<(), AutosarAbstractionError> {
+        if let Some(max_data_length) = max_data_length {
+            self.create_inner_element()?
+                .get_or_create_sub_element(ElementName::MaxDataLength)?
+                .set_character_data(max_data_length.to_string())?;
+        } else {
+            let _ = self
+                .inner_element()
+                .and_then(|inner| inner.remove_sub_element_kind(ElementName::MaxDataLength).ok());
+        }
+        Ok(())
+    }
+
+    /// get the maximum data length
+    #[must_use]
+    pub fn max_data_length(&self) -> Option<u32> {
+        self.inner_element()?
             .get_sub_element(ElementName::MaxDataLength)
             .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.parse_integer());
-        let min_data_length = elem
-            .get_sub_element(ElementName::MinDataLength)
-            .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.parse_integer());
-        let source_id = elem
-            .get_sub_element(ElementName::SourceId)
-            .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.parse_integer());
-        E2ETransformationISignalPropsConfig {
-            data_ids,
-            data_length,
-            max_data_length,
-            min_data_length,
-            source_id,
+            .and_then(|cdata| cdata.parse_integer())
+    }
+
+    /// set the minimum data length
+    pub fn set_min_data_length(&self, min_data_length: Option<u32>) -> Result<(), AutosarAbstractionError> {
+        if let Some(min_data_length) = min_data_length {
+            self.create_inner_element()?
+                .get_or_create_sub_element(ElementName::MinDataLength)?
+                .set_character_data(min_data_length.to_string())?;
+        } else {
+            let _ = self
+                .inner_element()
+                .and_then(|inner| inner.remove_sub_element_kind(ElementName::MinDataLength).ok());
         }
+        Ok(())
+    }
+
+    /// get the minimum data length
+    #[must_use]
+    pub fn min_data_length(&self) -> Option<u32> {
+        self.inner_element()?
+            .get_sub_element(ElementName::MinDataLength)?
+            .character_data()?
+            .parse_integer()
+    }
+
+    /// set the source ID
+    pub fn set_source_id(&self, source_id: Option<u32>) -> Result<(), AutosarAbstractionError> {
+        if let Some(source_id) = source_id {
+            self.create_inner_element()?
+                .get_or_create_sub_element(ElementName::SourceId)?
+                .set_character_data(source_id.to_string())?;
+        } else {
+            let _ = self
+                .inner_element()
+                .and_then(|inner| inner.remove_sub_element_kind(ElementName::SourceId).ok());
+        }
+        Ok(())
+    }
+
+    /// get the source ID
+    #[must_use]
+    pub fn source_id(&self) -> Option<u32> {
+        self.inner_element()?
+            .get_sub_element(ElementName::SourceId)?
+            .character_data()?
+            .parse_integer()
     }
 }
 
 //#########################################################
 
-// Properties for the SOMEIP transformation of an ISignal(Group)
-//
-// Implementation notes:
-// - This is not an AbstractionElement, as it is not named.
-// - It references the inner SomeIpTransformationISignalPropsConditional element.
-pub(crate) struct SomeIpTransformationISignalProps(pub(crate) Element);
+/// Properties for the SOMEIP transformation of an ISignal(Group)
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SomeIpTransformationISignalProps(Element);
+abstraction_element!(SomeIpTransformationISignalProps, SomeipTransformationISignalProps);
 
 impl SomeIpTransformationISignalProps {
     pub(crate) fn new(
         parent_element: Element,
         transformer: &TransformationTechnology,
-        props: &SomeIpTransformationISignalPropsConfig,
     ) -> Result<Self, AutosarAbstractionError> {
         if transformer.protocol().as_deref() != Some("SOMEIP") {
             return Err(AutosarAbstractionError::InvalidParameter(
                 "SOMEIPTransformationISignalProps must reference a SOMEIP transformer".to_string(),
             ));
         }
-        let someip_props_elem = parent_element
-            .create_sub_element(ElementName::SomeipTransformationISignalProps)?
-            .create_sub_element(ElementName::SomeipTransformationISignalPropsVariants)?
-            .create_sub_element(ElementName::SomeipTransformationISignalPropsConditional)?;
-        someip_props_elem
-            .create_sub_element(ElementName::TransformerRef)?
-            .set_reference_target(transformer.element())?;
-        if let Some(legacy_strings) = props.legacy_strings {
-            someip_props_elem
-                .create_sub_element(ElementName::ImplementsLegacyStringSerialization)?
-                .set_character_data(legacy_strings)?;
-        }
-        if let Some(interface_version) = props.interface_version {
-            someip_props_elem
-                .create_sub_element(ElementName::InterfaceVersion)?
-                .set_character_data(interface_version.to_string())?;
-        }
-        if let Some(dynamic_length) = props.dynamic_length {
-            someip_props_elem
-                .create_sub_element(ElementName::IsDynamicLengthFieldSize)?
-                .set_character_data(dynamic_length)?;
-        }
-        if let Some(message_type) = props.message_type {
-            someip_props_elem
-                .create_sub_element(ElementName::MessageType)?
-                .set_character_data::<EnumItem>(message_type.into())?;
-        }
-        if let Some(size_of_array_length) = props.size_of_array_length {
-            someip_props_elem
-                .create_sub_element(ElementName::SizeOfArrayLengthFields)?
-                .set_character_data(size_of_array_length.to_string())?;
-        }
-        if let Some(size_of_string_length) = props.size_of_string_length {
-            someip_props_elem
-                .create_sub_element(ElementName::SizeOfStringLengthFields)?
-                .set_character_data(size_of_string_length.to_string())?;
-        }
-        if let Some(size_of_struct_length) = props.size_of_struct_length {
-            someip_props_elem
-                .create_sub_element(ElementName::SizeOfStructLengthFields)?
-                .set_character_data(size_of_struct_length.to_string())?;
-        }
-        if let Some(size_of_union_length) = props.size_of_union_length {
-            someip_props_elem
-                .create_sub_element(ElementName::SizeOfUnionLengthFields)?
-                .set_character_data(size_of_union_length.to_string())?;
-        }
-        Ok(Self(someip_props_elem))
+        let someip_props_elem = parent_element.create_sub_element(ElementName::SomeipTransformationISignalProps)?;
+        let someip_props = Self(someip_props_elem);
+        someip_props.set_transformer(transformer)?;
+
+        Ok(someip_props)
     }
 
-    pub(crate) fn config(&self) -> SomeIpTransformationISignalPropsConfig {
-        let elem = &self.0;
-        let legacy_strings = elem
-            .get_sub_element(ElementName::ImplementsLegacyStringSerialization)
-            .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.parse_bool());
-        let interface_version = elem
-            .get_sub_element(ElementName::InterfaceVersion)
-            .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.parse_integer());
-        let dynamic_length = elem
-            .get_sub_element(ElementName::IsDynamicLengthFieldSize)
-            .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.parse_bool());
-        let message_type = elem
-            .get_sub_element(ElementName::MessageType)
-            .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.enum_value())
-            .and_then(|enumitem| enumitem.try_into().ok());
-        let size_of_array_length = elem
-            .get_sub_element(ElementName::SizeOfArrayLengthFields)
-            .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.parse_integer());
-        let size_of_string_length = elem
-            .get_sub_element(ElementName::SizeOfStringLengthFields)
-            .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.parse_integer());
-        let size_of_struct_length = elem
-            .get_sub_element(ElementName::SizeOfStructLengthFields)
-            .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.parse_integer());
-        let size_of_union_length = elem
-            .get_sub_element(ElementName::SizeOfUnionLengthFields)
-            .and_then(|elem| elem.character_data())
-            .and_then(|cdata| cdata.parse_integer());
-        SomeIpTransformationISignalPropsConfig {
-            legacy_strings,
-            interface_version,
-            dynamic_length,
-            message_type,
-            size_of_array_length,
-            size_of_string_length,
-            size_of_struct_length,
-            size_of_union_length,
+    fn inner_element(&self) -> Option<Element> {
+        self.0
+            .get_sub_element(ElementName::SomeipTransformationISignalPropsVariants)?
+            .get_sub_element(ElementName::SomeipTransformationISignalPropsConditional)
+    }
+
+    fn create_inner_element(&self) -> Result<Element, AutosarAbstractionError> {
+        let e2e_props_elem = self
+            .element()
+            .get_or_create_sub_element(ElementName::SomeipTransformationISignalPropsVariants)?
+            .get_or_create_sub_element(ElementName::SomeipTransformationISignalPropsConditional)?;
+        Ok(e2e_props_elem)
+    }
+
+    /// set the transformer reference of the SOMEIP transformation properties
+    pub fn set_transformer(&self, transformer: &TransformationTechnology) -> Result<(), AutosarAbstractionError> {
+        if transformer.protocol().as_deref() != Some("SOMEIP") {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "SOMEIPTransformationISignalProps must reference a SOMEIP transformer".to_string(),
+            ));
+        }
+        self.create_inner_element()?
+            .get_or_create_sub_element(ElementName::TransformerRef)?
+            .set_reference_target(transformer.element())?;
+        Ok(())
+    }
+
+    /// get the transformer reference of the SOMEIP transformation properties
+    #[must_use]
+    pub fn transformer(&self) -> Option<TransformationTechnology> {
+        let t_elem = self
+            .inner_element()?
+            .get_sub_element(ElementName::TransformerRef)?
+            .get_reference_target()
+            .ok()?;
+        TransformationTechnology::try_from(t_elem).ok()
+    }
+
+    /// set the legacy strings property
+    pub fn set_legacy_strings(&self, legacy_strings: Option<bool>) -> Result<(), AutosarAbstractionError> {
+        if let Some(legacy_strings) = legacy_strings {
+            self.create_inner_element()?
+                .get_or_create_sub_element(ElementName::ImplementsLegacyStringSerialization)?
+                .set_character_data(legacy_strings.to_string())?;
+        } else {
+            let _ = self.inner_element().and_then(|inner| {
+                inner
+                    .remove_sub_element_kind(ElementName::ImplementsLegacyStringSerialization)
+                    .ok()
+            });
+        }
+        Ok(())
+    }
+
+    /// get the legacy strings property
+    #[must_use]
+    pub fn legacy_strings(&self) -> Option<bool> {
+        self.inner_element()?
+            .get_sub_element(ElementName::ImplementsLegacyStringSerialization)?
+            .character_data()?
+            .parse_bool()
+    }
+
+    /// set the interface version property
+    pub fn set_interface_version(&self, interface_version: Option<u32>) -> Result<(), AutosarAbstractionError> {
+        if let Some(interface_version) = interface_version {
+            self.create_inner_element()?
+                .get_or_create_sub_element(ElementName::InterfaceVersion)?
+                .set_character_data(interface_version.to_string())?;
+        } else {
+            let _ = self
+                .inner_element()
+                .and_then(|inner| inner.remove_sub_element_kind(ElementName::InterfaceVersion).ok());
+        }
+        Ok(())
+    }
+
+    /// get the interface version property
+    #[must_use]
+    pub fn interface_version(&self) -> Option<u32> {
+        self.inner_element()?
+            .get_sub_element(ElementName::InterfaceVersion)?
+            .character_data()?
+            .parse_integer()
+    }
+
+    /// set the dynamic length property
+    pub fn set_dynamic_length(&self, dynamic_length: Option<bool>) -> Result<(), AutosarAbstractionError> {
+        if let Some(dynamic_length) = dynamic_length {
+            self.create_inner_element()?
+                .get_or_create_sub_element(ElementName::IsDynamicLengthFieldSize)?
+                .set_character_data(dynamic_length.to_string())?;
+        } else {
+            let _ = self.inner_element().and_then(|inner| {
+                inner
+                    .remove_sub_element_kind(ElementName::IsDynamicLengthFieldSize)
+                    .ok()
+            });
+        }
+        Ok(())
+    }
+
+    /// get the dynamic length property
+    #[must_use]
+    pub fn dynamic_length(&self) -> Option<bool> {
+        self.inner_element()?
+            .get_sub_element(ElementName::IsDynamicLengthFieldSize)?
+            .character_data()?
+            .parse_bool()
+    }
+
+    /// set the message type property
+    pub fn set_message_type(&self, message_type: Option<SomeIpMessageType>) -> Result<(), AutosarAbstractionError> {
+        if let Some(message_type) = message_type {
+            self.create_inner_element()?
+                .get_or_create_sub_element(ElementName::MessageType)?
+                .set_character_data::<EnumItem>(message_type.into())?;
+        } else {
+            let _ = self
+                .inner_element()
+                .and_then(|inner| inner.remove_sub_element_kind(ElementName::MessageType).ok());
+        }
+        Ok(())
+    }
+
+    /// get the message type property
+    #[must_use]
+    pub fn message_type(&self) -> Option<SomeIpMessageType> {
+        self.inner_element()?
+            .get_sub_element(ElementName::MessageType)?
+            .character_data()?
+            .enum_value()?
+            .try_into()
+            .ok()
+    }
+
+    /// set the size of array length property
+    pub fn set_size_of_array_length(&self, size_of_array_length: Option<u32>) -> Result<(), AutosarAbstractionError> {
+        if let Some(size_of_array_length) = size_of_array_length {
+            self.create_inner_element()?
+                .get_or_create_sub_element(ElementName::SizeOfArrayLengthFields)?
+                .set_character_data(size_of_array_length.to_string())?;
+        } else {
+            let _ = self
+                .inner_element()
+                .and_then(|inner| inner.remove_sub_element_kind(ElementName::SizeOfArrayLengthFields).ok());
+        }
+        Ok(())
+    }
+
+    /// get the size of array length property
+    #[must_use]
+    pub fn size_of_array_length(&self) -> Option<u32> {
+        self.inner_element()?
+            .get_sub_element(ElementName::SizeOfArrayLengthFields)?
+            .character_data()?
+            .parse_integer()
+    }
+
+    /// set the size of string length property
+    pub fn set_size_of_string_length(&self, size_of_string_length: Option<u32>) -> Result<(), AutosarAbstractionError> {
+        if let Some(size_of_string_length) = size_of_string_length {
+            self.create_inner_element()?
+                .get_or_create_sub_element(ElementName::SizeOfStringLengthFields)?
+                .set_character_data(size_of_string_length.to_string())?;
+        } else {
+            let _ = self.inner_element().and_then(|inner| {
+                inner
+                    .remove_sub_element_kind(ElementName::SizeOfStringLengthFields)
+                    .ok()
+            });
+        }
+        Ok(())
+    }
+
+    /// get the size of string length property
+    #[must_use]
+    pub fn size_of_string_length(&self) -> Option<u32> {
+        self.inner_element()?
+            .get_sub_element(ElementName::SizeOfStringLengthFields)?
+            .character_data()?
+            .parse_integer()
+    }
+
+    /// set the size of struct length property
+    pub fn set_size_of_struct_length(&self, size_of_struct_length: Option<u32>) -> Result<(), AutosarAbstractionError> {
+        if let Some(size_of_struct_length) = size_of_struct_length {
+            self.create_inner_element()?
+                .get_or_create_sub_element(ElementName::SizeOfStructLengthFields)?
+                .set_character_data(size_of_struct_length.to_string())?;
+        } else {
+            let _ = self.inner_element().and_then(|inner| {
+                inner
+                    .remove_sub_element_kind(ElementName::SizeOfStructLengthFields)
+                    .ok()
+            });
+        }
+        Ok(())
+    }
+
+    /// get the size of struct length property
+    #[must_use]
+    pub fn size_of_struct_length(&self) -> Option<u32> {
+        self.inner_element()?
+            .get_sub_element(ElementName::SizeOfStructLengthFields)?
+            .character_data()?
+            .parse_integer()
+    }
+
+    /// set the size of union length property
+    pub fn set_size_of_union_length(&self, size_of_union_length: Option<u32>) -> Result<(), AutosarAbstractionError> {
+        if let Some(size_of_union_length) = size_of_union_length {
+            self.create_inner_element()?
+                .get_or_create_sub_element(ElementName::SizeOfUnionLengthFields)?
+                .set_character_data(size_of_union_length.to_string())?;
+        } else {
+            let _ = self
+                .inner_element()
+                .and_then(|inner| inner.remove_sub_element_kind(ElementName::SizeOfUnionLengthFields).ok());
+        }
+        Ok(())
+    }
+
+    /// get the size of union length property
+    #[must_use]
+    pub fn size_of_union_length(&self) -> Option<u32> {
+        self.inner_element()?
+            .get_sub_element(ElementName::SizeOfUnionLengthFields)?
+            .character_data()?
+            .parse_integer()
+    }
+}
+
+//#########################################################
+
+/// Wrapper enum for the properties for the transformation of an ISignal(Group)
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TransformationISignalProps {
+    /// Properties for the End to End transformation of an ISignal(Group)
+    E2E(EndToEndTransformationISignalProps),
+    /// Properties for the SOMEIP transformation of an ISignal(Group)
+    SomeIp(SomeIpTransformationISignalProps),
+}
+
+impl AbstractionElement for TransformationISignalProps {
+    fn element(&self) -> &Element {
+        match self {
+            TransformationISignalProps::E2E(e2e_props) => e2e_props.element(),
+            TransformationISignalProps::SomeIp(someip_props) => someip_props.element(),
+        }
+    }
+}
+
+impl TryFrom<Element> for TransformationISignalProps {
+    type Error = AutosarAbstractionError;
+
+    fn try_from(element: Element) -> Result<Self, Self::Error> {
+        match element.element_name() {
+            ElementName::EndToEndTransformationISignalProps => {
+                EndToEndTransformationISignalProps::try_from(element).map(TransformationISignalProps::E2E)
+            }
+            ElementName::SomeipTransformationISignalProps => {
+                SomeIpTransformationISignalProps::try_from(element).map(TransformationISignalProps::SomeIp)
+            }
+            _ => Err(AutosarAbstractionError::ConversionError {
+                element,
+                dest: "TransformationISignalProps".to_string(),
+            }),
         }
     }
 }
@@ -1734,45 +1951,75 @@ mod test {
         )
         .unwrap();
 
-        let e2e_props = E2ETransformationISignalPropsConfig {
-            data_ids: vec![1, 2, 3],
-            data_length: Some(8),
-            max_data_length: Some(16),
-            min_data_length: Some(4),
-            source_id: Some(0),
-        };
-        let someip_props = SomeIpTransformationISignalPropsConfig {
-            legacy_strings: Some(true),
-            interface_version: Some(1),
-            dynamic_length: Some(true),
-            message_type: Some(SomeIpMessageType::Request),
-            size_of_array_length: Some(8),
-            size_of_string_length: Some(16),
-            size_of_struct_length: Some(32),
-            size_of_union_length: Some(64),
-        };
+        let e2e_props = signal
+            .create_e2e_transformation_isignal_props(&e2e_transformation)
+            .unwrap();
+        assert_eq!(e2e_props.transformer().unwrap(), e2e_transformation);
+        e2e_props.set_data_ids(&[1, 2, 3]).unwrap();
+        e2e_props.set_data_length(Some(8)).unwrap();
+        e2e_props.set_max_data_length(Some(16)).unwrap();
+        e2e_props.set_min_data_length(Some(4)).unwrap();
+        e2e_props.set_source_id(Some(0)).unwrap();
+        assert_eq!(e2e_props.data_ids(), vec![1, 2, 3]);
+        assert_eq!(e2e_props.data_length().unwrap(), 8);
+        assert_eq!(e2e_props.max_data_length().unwrap(), 16);
+        assert_eq!(e2e_props.min_data_length().unwrap(), 4);
+        assert_eq!(e2e_props.source_id().unwrap(), 0);
+        e2e_props.set_data_ids(&[]).unwrap();
+        e2e_props.set_data_length(None).unwrap();
+        e2e_props.set_max_data_length(None).unwrap();
+        e2e_props.set_min_data_length(None).unwrap();
+        e2e_props.set_source_id(None).unwrap();
+        assert_eq!(e2e_props.data_ids(), vec![]);
+        assert_eq!(e2e_props.data_length(), None);
+        assert_eq!(e2e_props.max_data_length(), None);
+        assert_eq!(e2e_props.min_data_length(), None);
+        assert_eq!(e2e_props.source_id(), None);
 
-        signal
-            .add_transformation_isignal_props(
-                &e2e_transformation,
-                &TransformationISignalPropsConfig::E2E(e2e_props.clone()),
-            )
+        assert!(EndToEndTransformationISignalProps::try_from(e2e_props.element().clone()).is_ok());
+
+        let someip_props = signal
+            .create_someip_transformation_isignal_props(&someip_transformation)
             .unwrap();
-        signal
-            .add_transformation_isignal_props(
-                &someip_transformation,
-                &TransformationISignalPropsConfig::SomeIp(someip_props.clone()),
-            )
-            .unwrap();
+        assert_eq!(someip_props.transformer().unwrap(), someip_transformation);
+        someip_props.set_legacy_strings(Some(true)).unwrap();
+        someip_props.set_interface_version(Some(1)).unwrap();
+        someip_props.set_dynamic_length(Some(true)).unwrap();
+        someip_props.set_message_type(Some(SomeIpMessageType::Request)).unwrap();
+        someip_props.set_size_of_array_length(Some(8)).unwrap();
+        someip_props.set_size_of_string_length(Some(16)).unwrap();
+        someip_props.set_size_of_struct_length(Some(32)).unwrap();
+        someip_props.set_size_of_union_length(Some(64)).unwrap();
+        assert_eq!(someip_props.legacy_strings().unwrap(), true);
+        assert_eq!(someip_props.interface_version().unwrap(), 1);
+        assert_eq!(someip_props.dynamic_length().unwrap(), true);
+        assert_eq!(someip_props.message_type().unwrap(), SomeIpMessageType::Request);
+        assert_eq!(someip_props.size_of_array_length().unwrap(), 8);
+        assert_eq!(someip_props.size_of_string_length().unwrap(), 16);
+        assert_eq!(someip_props.size_of_struct_length().unwrap(), 32);
+        assert_eq!(someip_props.size_of_union_length().unwrap(), 64);
+        someip_props.set_legacy_strings(None).unwrap();
+        someip_props.set_interface_version(None).unwrap();
+        someip_props.set_dynamic_length(None).unwrap();
+        someip_props.set_message_type(None).unwrap();
+        someip_props.set_size_of_array_length(None).unwrap();
+        someip_props.set_size_of_string_length(None).unwrap();
+        someip_props.set_size_of_struct_length(None).unwrap();
+        someip_props.set_size_of_union_length(None).unwrap();
+        assert_eq!(someip_props.legacy_strings(), None);
+        assert_eq!(someip_props.interface_version(), None);
+        assert_eq!(someip_props.dynamic_length(), None);
+        assert_eq!(someip_props.message_type(), None);
+        assert_eq!(someip_props.size_of_array_length(), None);
+        assert_eq!(someip_props.size_of_string_length(), None);
+        assert_eq!(someip_props.size_of_struct_length(), None);
+        assert_eq!(someip_props.size_of_union_length(), None);
+
+        assert!(SomeIpTransformationISignalProps::try_from(someip_props.element().clone()).is_ok());
+
         assert_eq!(signal.transformation_isignal_props().count(), 2);
         let mut props_iter = signal.transformation_isignal_props();
-        assert_eq!(
-            props_iter.next().unwrap(),
-            TransformationISignalPropsConfig::E2E(e2e_props)
-        );
-        assert_eq!(
-            props_iter.next().unwrap(),
-            TransformationISignalPropsConfig::SomeIp(someip_props)
-        );
+        assert_eq!(props_iter.next().unwrap().element(), e2e_props.element());
+        assert_eq!(props_iter.next().unwrap().element(), someip_props.element());
     }
 }

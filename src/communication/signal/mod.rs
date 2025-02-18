@@ -1,6 +1,6 @@
 use crate::communication::{
     AbstractPhysicalChannel, CommunicationDirection, DataTransformation, EndToEndTransformationISignalProps,
-    PhysicalChannel, SomeIpTransformationISignalProps, TransformationISignalPropsConfig, TransformationTechnology,
+    PhysicalChannel, SomeIpTransformationISignalProps, TransformationTechnology,
 };
 use crate::datatype::{CompuMethod, DataConstr, SwBaseType, Unit};
 use crate::IdentifiableAbstractionElement;
@@ -9,6 +9,8 @@ use crate::{
     ArPackage, AutosarAbstractionError, EcuInstance,
 };
 use autosar_data::{AutosarDataError, Element, ElementName, EnumItem, WeakElement};
+
+use super::TransformationISignalProps;
 
 /// Signal of the Interaction Layer
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -167,55 +169,35 @@ impl ISignal {
             .filter_map(|elem| elem.try_into().ok())
     }
 
-    /// add transformation properties to this signal
-    pub fn add_transformation_isignal_props(
+    /// create E2E transformation properties for this signal
+    pub fn create_e2e_transformation_isignal_props(
         &self,
         transformer: &TransformationTechnology,
-        props: &TransformationISignalPropsConfig,
-    ) -> Result<(), AutosarAbstractionError> {
+    ) -> Result<EndToEndTransformationISignalProps, AutosarAbstractionError> {
         let tsp = self
             .element()
             .get_or_create_sub_element(ElementName::TransformationISignalPropss)?;
+        EndToEndTransformationISignalProps::new(tsp, transformer)
+    }
 
-        match props {
-            TransformationISignalPropsConfig::SomeIp(props) => {
-                SomeIpTransformationISignalProps::new(tsp, transformer, props)?;
-            }
-            TransformationISignalPropsConfig::E2E(props) => {
-                EndToEndTransformationISignalProps::new(tsp, transformer, props)?;
-            }
-        }
-
-        Ok(())
+    /// create SomeIp transformation properties for this signal
+    pub fn create_someip_transformation_isignal_props(
+        &self,
+        transformer: &TransformationTechnology,
+    ) -> Result<SomeIpTransformationISignalProps, AutosarAbstractionError> {
+        let tsp = self
+            .element()
+            .get_or_create_sub_element(ElementName::TransformationISignalPropss)?;
+        SomeIpTransformationISignalProps::new(tsp, transformer)
     }
 
     /// get all transformation properties that are applied to this signal
-    pub fn transformation_isignal_props(
-        &self,
-    ) -> impl Iterator<Item = TransformationISignalPropsConfig> + Send + 'static {
+    pub fn transformation_isignal_props(&self) -> impl Iterator<Item = TransformationISignalProps> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TransformationISignalPropss)
             .into_iter()
             .flat_map(|elem| elem.sub_elements())
-            .filter_map(|elem| match elem.element_name() {
-                ElementName::SomeipTransformationISignalProps => {
-                    let inner_elem = elem
-                        .get_sub_element(ElementName::SomeipTransformationISignalPropsVariants)?
-                        .get_sub_element(ElementName::SomeipTransformationISignalPropsConditional)?;
-                    Some(TransformationISignalPropsConfig::SomeIp(
-                        SomeIpTransformationISignalProps(inner_elem).config(),
-                    ))
-                }
-                ElementName::EndToEndTransformationISignalProps => {
-                    let inner_elem = elem
-                        .get_sub_element(ElementName::EndToEndTransformationISignalPropsVariants)?
-                        .get_sub_element(ElementName::EndToEndTransformationISignalPropsConditional)?;
-                    Some(TransformationISignalPropsConfig::E2E(
-                        EndToEndTransformationISignalProps(inner_elem).config(),
-                    ))
-                }
-                _ => None,
-            })
+            .filter_map(|elem| TransformationISignalProps::try_from(elem).ok())
     }
 }
 
@@ -427,55 +409,35 @@ impl ISignalGroup {
             .filter_map(|elem| elem.try_into().ok())
     }
 
-    /// add transformation properties to this signal group
-    pub fn add_transformation_isignal_props(
+    /// create E2E transformation properties for this signal group
+    pub fn create_e2e_transformation_isignal_props(
         &self,
         transformer: &TransformationTechnology,
-        props: &TransformationISignalPropsConfig,
-    ) -> Result<(), AutosarAbstractionError> {
+    ) -> Result<EndToEndTransformationISignalProps, AutosarAbstractionError> {
         let tsp = self
             .element()
             .get_or_create_sub_element(ElementName::TransformationISignalPropss)?;
+        EndToEndTransformationISignalProps::new(tsp, transformer)
+    }
 
-        match props {
-            TransformationISignalPropsConfig::SomeIp(props) => {
-                SomeIpTransformationISignalProps::new(tsp, transformer, props)?;
-            }
-            TransformationISignalPropsConfig::E2E(props) => {
-                EndToEndTransformationISignalProps::new(tsp, transformer, props)?;
-            }
-        }
-
-        Ok(())
+    /// create SomeIp transformation properties for this signal group
+    pub fn create_someip_transformation_isignal_props(
+        &self,
+        transformer: &TransformationTechnology,
+    ) -> Result<SomeIpTransformationISignalProps, AutosarAbstractionError> {
+        let tsp = self
+            .element()
+            .get_or_create_sub_element(ElementName::TransformationISignalPropss)?;
+        SomeIpTransformationISignalProps::new(tsp, transformer)
     }
 
     /// get all transformation properties that are applied to this signal group
-    pub fn transformation_isignal_props(
-        &self,
-    ) -> impl Iterator<Item = TransformationISignalPropsConfig> + Send + 'static {
+    pub fn transformation_isignal_props(&self) -> impl Iterator<Item = TransformationISignalProps> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::TransformationISignalPropss)
             .into_iter()
             .flat_map(|elem| elem.sub_elements())
-            .filter_map(|elem| match elem.element_name() {
-                ElementName::SomeipTransformationISignalProps => {
-                    let inner_elem = elem
-                        .get_sub_element(ElementName::SomeipTransformationISignalPropsVariants)?
-                        .get_sub_element(ElementName::SomeipTransformationISignalPropsConditional)?;
-                    Some(TransformationISignalPropsConfig::SomeIp(
-                        SomeIpTransformationISignalProps(inner_elem).config(),
-                    ))
-                }
-                ElementName::EndToEndTransformationISignalProps => {
-                    let inner_elem = elem
-                        .get_sub_element(ElementName::EndToEndTransformationISignalPropsVariants)?
-                        .get_sub_element(ElementName::EndToEndTransformationISignalPropsConditional)?;
-                    Some(TransformationISignalPropsConfig::E2E(
-                        EndToEndTransformationISignalProps(inner_elem).config(),
-                    ))
-                }
-                _ => None,
-            })
+            .filter_map(|elem| TransformationISignalProps::try_from(elem).ok())
     }
 }
 
@@ -726,8 +688,8 @@ mod tests {
     use super::*;
     use crate::{
         communication::{
-            CanClusterSettings, DataTransformationSet, SomeIpMessageType, SomeIpTransformationISignalPropsConfig,
-            SomeIpTransformationTechnologyConfig, TransformationTechnologyConfig,
+            CanClusterSettings, DataTransformationSet, SomeIpMessageType, SomeIpTransformationTechnologyConfig,
+            TransformationTechnologyConfig,
         },
         datatype::{BaseTypeEncoding, CompuMethodContent, SwBaseType, Unit},
         AutosarModelAbstraction, ByteOrder, SystemCategory,
@@ -813,23 +775,16 @@ mod tests {
         assert_eq!(signal.data_transformations().count(), 1);
         assert_eq!(signal.data_transformations().next(), Some(data_transformation));
 
-        let someip_props = SomeIpTransformationISignalPropsConfig {
-            legacy_strings: Some(true),
-            interface_version: Some(1),
-            dynamic_length: Some(true),
-            message_type: Some(SomeIpMessageType::Request),
-            size_of_array_length: Some(8),
-            size_of_string_length: Some(16),
-            size_of_struct_length: Some(32),
-            size_of_union_length: Some(64),
-        };
+        let someip_props = signal.create_someip_transformation_isignal_props(&transformer).unwrap();
+        someip_props.set_legacy_strings(Some(true)).unwrap();
+        someip_props.set_interface_version(Some(1)).unwrap();
+        someip_props.set_dynamic_length(Some(true)).unwrap();
+        someip_props.set_message_type(Some(SomeIpMessageType::Request)).unwrap();
+        someip_props.set_size_of_array_length(Some(8)).unwrap();
+        someip_props.set_size_of_string_length(Some(16)).unwrap();
+        someip_props.set_size_of_struct_length(Some(32)).unwrap();
+        someip_props.set_size_of_union_length(Some(64)).unwrap();
 
-        signal
-            .add_transformation_isignal_props(
-                &transformer,
-                &TransformationISignalPropsConfig::SomeIp(someip_props.clone()),
-            )
-            .unwrap();
         assert_eq!(signal.transformation_isignal_props().count(), 1);
     }
 
@@ -864,19 +819,13 @@ mod tests {
         assert_eq!(signal_group.data_transformations().count(), 1);
         assert_eq!(signal_group.data_transformations().next(), Some(data_transformation));
 
-        let someipxf_props = TransformationISignalPropsConfig::SomeIp(SomeIpTransformationISignalPropsConfig {
-            legacy_strings: None,
-            interface_version: None,
-            dynamic_length: None,
-            message_type: None,
-            size_of_array_length: None,
-            size_of_string_length: None,
-            size_of_struct_length: None,
-            size_of_union_length: None,
-        });
-        signal_group
-            .add_transformation_isignal_props(&transformer, &someipxf_props)
+        let _someipxf_props = signal_group
+            .create_someip_transformation_isignal_props(&transformer)
             .unwrap();
+        // the referenced transformer is not an E2E transformer, so no E2E properties can be created
+        let result = signal_group.create_e2e_transformation_isignal_props(&transformer);
+        assert!(result.is_err());
+
         assert_eq!(signal_group.transformation_isignal_props().count(), 1);
     }
 

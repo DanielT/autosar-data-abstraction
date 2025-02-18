@@ -6,9 +6,8 @@ mod test {
             CommonServiceDiscoveryConfig, CommunicationDirection, CyclicTiming, E2EProfile, E2EProfileBehavior,
             E2ETransformationTechnologyConfig, EthernetVlanInfo, EventControlledTiming, EventGroupControlType,
             GeneralPurposePduCategory, IPv4AddressSource, IpduTiming, NetworkEndpointAddress, PduCollectionTrigger,
-            SdConfig, SdEventConfig, SocketAddressType, SomeIpMessageType, SomeIpTransformationISignalPropsConfig,
-            SomeIpTransformationTechnologyConfig, TpConfig, TransferProperty, TransformationISignalPropsConfig,
-            TransformationTechnologyConfig, TransmissionModeTiming,
+            SdConfig, SdEventConfig, SocketAddressType, SomeIpMessageType, SomeIpTransformationTechnologyConfig,
+            TpConfig, TransferProperty, TransformationTechnologyConfig, TransmissionModeTiming,
         },
         datatype::{ApplicationPrimitiveCategory, BaseTypeEncoding, ImplementationDataTypeSettings},
         software_component::AbstractSwComponentType,
@@ -385,19 +384,9 @@ mod test {
         let someip_isignal_1 =
             system.create_isignal("Someip_Signal_1", &isignal_package, 400, &system_signal_3, None)?;
         someip_isignal_1.add_data_transformation(&data_transformation)?;
-        someip_isignal_1.add_transformation_isignal_props(
-            &someip_tranformation_technology,
-            &TransformationISignalPropsConfig::SomeIp(SomeIpTransformationISignalPropsConfig {
-                legacy_strings: None,
-                dynamic_length: None,
-                message_type: Some(SomeIpMessageType::Notification),
-                size_of_array_length: None,
-                size_of_string_length: None,
-                size_of_struct_length: None,
-                size_of_union_length: None,
-                interface_version: None,
-            }),
-        )?;
+        let someip_props_config =
+            someip_isignal_1.create_someip_transformation_isignal_props(&someip_tranformation_technology)?;
+        someip_props_config.set_message_type(Some(SomeIpMessageType::Notification))?;
 
         // create a PDU for SomeIp communication. The PDU is larger than the signal to account for the SomeIP and E2E headers.
         // SomeIp: 64 bits; E2E Profile 7: 160 bits
