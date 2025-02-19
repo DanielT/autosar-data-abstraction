@@ -2,7 +2,7 @@ use crate::{
     abstraction_element, datatype, AbstractionElement, ArPackage, AutosarAbstractionError, Element,
     IdentifiableAbstractionElement,
 };
-use autosar_data::ElementName;
+use autosar_data::{ElementName, EnumItem};
 use datatype::{AbstractAutosarDataType, CompuMethod, DataConstr, Unit};
 
 //#########################################################
@@ -22,17 +22,17 @@ impl ApplicationArrayDataType {
         name: &str,
         package: &ArPackage,
         element_type: &T,
-        max_num_elements: u64,
+        size: ApplicationArraySize,
     ) -> Result<Self, AutosarAbstractionError> {
         let element_type = element_type.clone().into();
-        Self::new_internal(name, package, &element_type, max_num_elements)
+        Self::new_internal(name, package, &element_type, size)
     }
 
     fn new_internal(
         name: &str,
         package: &ArPackage,
         element_type: &ApplicationDataType,
-        max_num_elements: u64,
+        size: ApplicationArraySize,
     ) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let application_array_data_type =
@@ -43,35 +43,12 @@ impl ApplicationArrayDataType {
             .set_character_data("ARRAY")?;
 
         let application_array_data_type = Self(application_array_data_type);
-        ApplicationArrayElement::new("Element", &application_array_data_type, element_type, max_num_elements)?;
+        ApplicationArrayElement::new("Element", &application_array_data_type, element_type)?;
+
+        // set the size of the array after creating the array element, since some settings must be set in the array element
+        application_array_data_type.set_size(size)?;
 
         Ok(application_array_data_type)
-    }
-
-    /// set the array element type of the array data type
-    pub fn set_array_element<T: Into<ApplicationDataType> + AbstractionElement>(
-        &self,
-        element_type: &T,
-    ) -> Result<ApplicationArrayElement, AutosarAbstractionError> {
-        let element_type = element_type.clone().into();
-        self.set_array_element_internal(&element_type)
-    }
-
-    fn set_array_element_internal(
-        &self,
-        element_type: &ApplicationDataType,
-    ) -> Result<ApplicationArrayElement, AutosarAbstractionError> {
-        let mut max_num_elements = 0;
-        if let Some(element) = self.element().get_sub_element(ElementName::Element) {
-            max_num_elements = element
-                .get_sub_element(ElementName::MaxNumberOfElements)
-                .and_then(|mnoe| mnoe.character_data())
-                .and_then(|cdata| cdata.parse_integer())
-                .unwrap_or(0);
-            let _ = self.element().remove_sub_element(element);
-        }
-
-        ApplicationArrayElement::new("Element", self, element_type, max_num_elements)
     }
 
     /// get the array element of the array data type
@@ -80,15 +57,158 @@ impl ApplicationArrayDataType {
         self.element().get_sub_element(ElementName::Element)?.try_into().ok()
     }
 
-    /// get the max number of elements of the array data type
-    #[must_use]
-    pub fn max_number_of_elements(&self) -> Option<u64> {
-        self.element()
-            .get_sub_element(ElementName::Element)?
-            .get_sub_element(ElementName::MaxNumberOfElements)?
-            .character_data()?
-            .parse_integer()
+    /// set the size of the array
+    pub fn set_size(&self, size: ApplicationArraySize) -> Result<(), AutosarAbstractionError> {
+        let array_element = self.array_element().ok_or(AutosarAbstractionError::InvalidParameter(
+            "Array data type has no array element".to_string(),
+        ))?;
+        if let Some(datatype) = array_element.data_type() {
+            let is_array_datatype = matches!(datatype, ApplicationDataType::Array(_));
+            if is_array_datatype && matches!(size, ApplicationArraySize::VariableLinear(_)) {
+                return Err(AutosarAbstractionError::InvalidParameter(
+                    "When the size type is VariableLinear, the element type may not be an array".to_string(),
+                ));
+            } else if !is_array_datatype
+                && matches!(
+                    size,
+                    ApplicationArraySize::VariableSquare
+                        | ApplicationArraySize::VariableRectangular(_)
+                        | ApplicationArraySize::VariableFullyFlexible(_)
+                )
+            {
+                return Err(AutosarAbstractionError::InvalidParameter(
+                    "When the size type is VariableSquare, VariableRectangular or VariableFullyFlexible, the element type must be an array".to_string(),
+                ));
+            }
+        }
+        let array_element_elem = array_element.element();
+        match size {
+            ApplicationArraySize::Fixed(size) => {
+                let _ = self
+                    .element()
+                    .remove_sub_element_kind(ElementName::DynamicArraySizeProfile);
+                array_element_elem
+                    .get_or_create_sub_element(ElementName::MaxNumberOfElements)?
+                    .set_character_data(size)?;
+                array_element_elem
+                    .get_or_create_sub_element(ElementName::ArraySizeSemantics)?
+                    .set_character_data(EnumItem::FixedSize)?;
+                let _ = array_element_elem.remove_sub_element_kind(ElementName::ArraySizeHandling);
+            }
+            ApplicationArraySize::VariableLinear(max_size) => {
+                self.element()
+                    .get_or_create_sub_element(ElementName::DynamicArraySizeProfile)?
+                    .set_character_data("VSA_LINEAR")?;
+                array_element_elem
+                    .get_or_create_sub_element(ElementName::MaxNumberOfElements)?
+                    .set_character_data(max_size)?;
+                array_element_elem
+                    .get_or_create_sub_element(ElementName::ArraySizeSemantics)?
+                    .set_character_data(EnumItem::VariableSize)?;
+                array_element_elem
+                    .get_or_create_sub_element(ElementName::ArraySizeHandling)?
+                    .set_character_data(EnumItem::AllIndicesSameArraySize)?;
+            }
+            ApplicationArraySize::VariableSquare => {
+                self.element()
+                    .get_or_create_sub_element(ElementName::DynamicArraySizeProfile)?
+                    .set_character_data("VSA_SQUARE")?;
+                let _ = array_element_elem.remove_sub_element_kind(ElementName::MaxNumberOfElements);
+                array_element_elem
+                    .get_or_create_sub_element(ElementName::ArraySizeSemantics)?
+                    .set_character_data(EnumItem::VariableSize)?;
+                array_element_elem
+                    .get_or_create_sub_element(ElementName::ArraySizeHandling)?
+                    .set_character_data(EnumItem::InheritedFromArrayElementTypeSize)?;
+            }
+            ApplicationArraySize::VariableRectangular(max_size) => {
+                self.element()
+                    .get_or_create_sub_element(ElementName::DynamicArraySizeProfile)?
+                    .set_character_data("VSA_RECTANGULAR")?;
+                array_element_elem
+                    .get_or_create_sub_element(ElementName::MaxNumberOfElements)?
+                    .set_character_data(max_size)?;
+                array_element_elem
+                    .get_or_create_sub_element(ElementName::ArraySizeSemantics)?
+                    .set_character_data(EnumItem::VariableSize)?;
+                array_element_elem
+                    .get_or_create_sub_element(ElementName::ArraySizeHandling)?
+                    .set_character_data(EnumItem::AllIndicesSameArraySize)?;
+            }
+            ApplicationArraySize::VariableFullyFlexible(max_size) => {
+                self.element()
+                    .get_or_create_sub_element(ElementName::DynamicArraySizeProfile)?
+                    .set_character_data("VSA_FULLY_FLEXIBLE")?;
+                array_element_elem
+                    .get_or_create_sub_element(ElementName::MaxNumberOfElements)?
+                    .set_character_data(max_size)?;
+                array_element_elem
+                    .get_or_create_sub_element(ElementName::ArraySizeSemantics)?
+                    .set_character_data(EnumItem::VariableSize)?;
+                array_element_elem
+                    .get_or_create_sub_element(ElementName::ArraySizeHandling)?
+                    .set_character_data(EnumItem::AllIndicesDifferentArraySize)?;
+            }
+        }
+
+        Ok(())
     }
+
+    /// get the size of the array
+    #[must_use]
+    pub fn size(&self) -> Option<ApplicationArraySize> {
+        let max_number_of_elements = self
+            .array_element()?
+            .element()
+            .get_sub_element(ElementName::MaxNumberOfElements);
+
+        if let Some(size_profile) = self
+            .element()
+            .get_sub_element(ElementName::DynamicArraySizeProfile)
+            .and_then(|elem| elem.character_data().and_then(|cdata| cdata.string_value()))
+        {
+            match size_profile.as_str() {
+                "VSA_LINEAR" => {
+                    let max_size = max_number_of_elements?.character_data()?.parse_integer()?;
+                    Some(ApplicationArraySize::VariableLinear(max_size))
+                }
+                "VSA_SQUARE" => Some(ApplicationArraySize::VariableSquare),
+                "VSA_RECTANGULAR" => {
+                    let max_size = max_number_of_elements?.character_data()?.parse_integer()?;
+                    Some(ApplicationArraySize::VariableRectangular(max_size))
+                }
+                "VSA_FULLY_FLEXIBLE" => {
+                    let max_size = max_number_of_elements?.character_data()?.parse_integer()?;
+                    Some(ApplicationArraySize::VariableFullyFlexible(max_size))
+                }
+                _ => None,
+            }
+        } else {
+            let size = max_number_of_elements?.character_data()?.parse_integer()?;
+            Some(ApplicationArraySize::Fixed(size))
+        }
+    }
+}
+
+//#########################################################
+
+/// definition of the size type of an application array data type
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ApplicationArraySize {
+    /// Fixed size array, with the given size
+    Fixed(u64),
+    /// Variable size array, with a single dimension. The maximum size is given
+    VariableLinear(u64),
+    /// Variable size "square" array, with two or more dimensions. All dimensions have the same maximum size
+    /// This maximum size is set in the innermost dimension; it is not set here.
+    /// When the size is set to `VariableSquare`, the array element data type must also be an `ApplicationArrayDataType`
+    VariableSquare,
+    /// Variable size "rectangular" array, with two or more dimensions. Each dimension has its own maximum size.
+    /// The array element data type must also be an `ApplicationArrayDataType`.
+    VariableRectangular(u64),
+    /// Fully flexible variable size array of arrays. The maximum number of elements of each contained array is not necessarily identical
+    /// The array element data type must also be an `ApplicationArrayDataType`.
+    VariableFullyFlexible(u64),
 }
 
 //#########################################################
@@ -104,26 +224,35 @@ impl ApplicationArrayElement {
         name: &str,
         parent: &ApplicationArrayDataType,
         data_type: &ApplicationDataType,
-        max_num_elements: u64,
     ) -> Result<Self, AutosarAbstractionError> {
         let application_array_element = parent.element().create_named_sub_element(ElementName::Element, name)?;
+        let application_array_element = Self(application_array_element);
 
-        let category = data_type.category().ok_or(AutosarAbstractionError::InvalidParameter(
-            "array data_type has no category".to_string(),
-        ))?;
-        application_array_element
-            .create_sub_element(ElementName::Category)?
-            .set_character_data(category)?;
+        application_array_element.set_data_type(data_type)?;
 
-        application_array_element
-            .create_sub_element(ElementName::TypeTref)?
+        Ok(application_array_element)
+    }
+
+    /// set the data type of the array element
+    pub fn set_data_type<T: Into<ApplicationDataType> + AbstractionElement>(
+        &self,
+        data_type: &T,
+    ) -> Result<(), AutosarAbstractionError> {
+        let data_type: ApplicationDataType = data_type.clone().into();
+        self.element()
+            .get_or_create_sub_element(ElementName::TypeTref)?
             .set_reference_target(data_type.element())?;
+        // keep the category synced with the data type, as required by [constr_1152]
+        if let Some(category) = data_type.category() {
+            self.element()
+                .get_or_create_sub_element(ElementName::Category)?
+                .set_character_data(category)?;
+        } else {
+            // remove the category if the data type has no category
+            let _ = self.element().remove_sub_element_kind(ElementName::Category);
+        }
 
-        application_array_element
-            .create_sub_element(ElementName::MaxNumberOfElements)?
-            .set_character_data(max_num_elements)?;
-
-        Ok(Self(application_array_element))
+        Ok(())
     }
 
     /// get the data type of the array element
@@ -489,13 +618,55 @@ mod tests {
             None,
         )
         .unwrap();
-        let array_data_type = ApplicationArrayDataType::new("Array", &package, &element_type, 10).unwrap();
+        let array_data_type =
+            ApplicationArrayDataType::new("Array", &package, &element_type, ApplicationArraySize::Fixed(10)).unwrap();
+        let array_type_2 =
+            ApplicationArrayDataType::new("Array2", &package, &element_type, ApplicationArraySize::Fixed(100)).unwrap();
 
         assert_eq!(
             array_data_type.array_element().unwrap().data_type().unwrap(),
             ApplicationDataType::Primitive(element_type)
         );
-        assert_eq!(array_data_type.max_number_of_elements().unwrap(), 10);
+        assert_eq!(array_data_type.size().unwrap(), ApplicationArraySize::Fixed(10));
+
+        array_data_type
+            .set_size(ApplicationArraySize::VariableLinear(100))
+            .unwrap();
+        assert_eq!(
+            array_data_type.size().unwrap(),
+            ApplicationArraySize::VariableLinear(100)
+        );
+
+        // the inner type must be an array type for the following size settings
+        let result = array_data_type.set_size(ApplicationArraySize::VariableSquare);
+        assert!(result.is_err());
+        let result = array_data_type.set_size(ApplicationArraySize::VariableRectangular(100));
+        assert!(result.is_err());
+        let result = array_data_type.set_size(ApplicationArraySize::VariableFullyFlexible(100));
+        assert!(result.is_err());
+
+        // reassign the array element type to an array type
+        array_data_type
+            .array_element()
+            .unwrap()
+            .set_data_type(&array_type_2)
+            .unwrap();
+        array_data_type.set_size(ApplicationArraySize::VariableSquare).unwrap();
+        assert_eq!(array_data_type.size().unwrap(), ApplicationArraySize::VariableSquare);
+        array_data_type
+            .set_size(ApplicationArraySize::VariableRectangular(100))
+            .unwrap();
+        assert_eq!(
+            array_data_type.size().unwrap(),
+            ApplicationArraySize::VariableRectangular(100)
+        );
+        array_data_type
+            .set_size(ApplicationArraySize::VariableFullyFlexible(100))
+            .unwrap();
+        assert_eq!(
+            array_data_type.size().unwrap(),
+            ApplicationArraySize::VariableFullyFlexible(100)
+        );
 
         // reassign the array element type
         let element_type_2 = ApplicationPrimitiveDataType::new(
@@ -507,7 +678,8 @@ mod tests {
             None,
         )
         .unwrap();
-        let array_element = array_data_type.set_array_element(&element_type_2).unwrap();
+        let array_element = array_data_type.array_element().unwrap();
+        array_element.set_data_type(&element_type_2).unwrap();
         assert_eq!(
             array_element.data_type().unwrap(),
             ApplicationDataType::Primitive(element_type_2)
@@ -584,7 +756,8 @@ mod tests {
             None,
         )
         .unwrap();
-        let array_data_type = ApplicationArrayDataType::new("Array", &package, &element_type, 10).unwrap();
+        let array_data_type =
+            ApplicationArrayDataType::new("Array", &package, &element_type, ApplicationArraySize::Fixed(10)).unwrap();
         let record_data_type = ApplicationRecordDataType::new("Record", &package).unwrap();
         let primitive_data_type = ApplicationPrimitiveDataType::new(
             "Primitive",

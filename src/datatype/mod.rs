@@ -273,7 +273,8 @@ mod test {
             None,
         )
         .unwrap();
-        let app_array = ApplicationArrayDataType::new("Array", &package, &app_primitive, 1).unwrap();
+        let app_array =
+            ApplicationArrayDataType::new("Array", &package, &app_primitive, ApplicationArraySize::Fixed(1)).unwrap();
         let app_record = ApplicationRecordDataType::new("Record", &package).unwrap();
         let base_type =
             SwBaseType::new("uint8", &package, 8, BaseTypeEncoding::None, None, None, Some("uint8")).unwrap();

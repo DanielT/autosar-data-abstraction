@@ -9,7 +9,9 @@ mod test {
             RequestResponseDelay, SocketAddressType, SomeIpMessageType, SomeIpTransformationTechnologyConfig, TpConfig,
             TransferProperty, TransformationTechnologyConfig, TransmissionModeTiming,
         },
-        datatype::{ApplicationPrimitiveCategory, BaseTypeEncoding, ImplementationDataTypeSettings},
+        datatype::{
+            ApplicationArraySize, ApplicationPrimitiveCategory, BaseTypeEncoding, ImplementationDataTypeSettings,
+        },
         software_component::AbstractSwComponentType,
         AbstractionElement, AutosarAbstractionError, AutosarModelAbstraction, ByteOrder, SystemCategory,
     };
@@ -222,8 +224,11 @@ mod test {
             None,
             None,
         )?;
-        let application_data_type_array =
-            data_type_package.create_application_array_data_type("AppDataType_array", &application_data_type_u8, 50)?;
+        let application_data_type_array = data_type_package.create_application_array_data_type(
+            "AppDataType_array",
+            &application_data_type_u8,
+            ApplicationArraySize::Fixed(50),
+        )?;
 
         // create a type mapping
         let type_mapping_package = model.get_or_create_package("/TypeMappings")?;

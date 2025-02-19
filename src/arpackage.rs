@@ -8,9 +8,9 @@ use crate::{
         SystemSignal, SystemSignalGroup,
     },
     datatype::{
-        ApplicationArrayDataType, ApplicationDataType, ApplicationPrimitiveCategory, ApplicationPrimitiveDataType,
-        ApplicationRecordDataType, BaseTypeEncoding, CompuMethod, CompuMethodContent, DataConstr, DataTypeMappingSet,
-        ImplementationDataType, ImplementationDataTypeSettings, SwBaseType, Unit,
+        ApplicationArrayDataType, ApplicationArraySize, ApplicationDataType, ApplicationPrimitiveCategory,
+        ApplicationPrimitiveDataType, ApplicationRecordDataType, BaseTypeEncoding, CompuMethod, CompuMethodContent,
+        DataConstr, DataTypeMappingSet, ImplementationDataType, ImplementationDataTypeSettings, SwBaseType, Unit,
     },
     ecu_configuration::{
         EcucDefinitionCollection, EcucDestinationUriDefSet, EcucModuleConfigurationValues, EcucModuleDef,
@@ -78,7 +78,7 @@ impl ArPackage {
     /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// let package = model.get_or_create_package("/some/package")?;
     /// let element_type = package.create_application_primitive_data_type("ElementType", ApplicationPrimitiveCategory::Value, None, None, None)?;
-    /// let data_type = package.create_application_array_data_type("ArrayDataType", &element_type, 4)?;
+    /// let data_type = package.create_application_array_data_type("ArrayDataType", &element_type, ApplicationArraySize::Fixed(4))?;
     /// assert!(model.get_element_by_path("/some/package/ArrayDataType").is_some());
     /// # Ok(())}
     /// ```
@@ -90,9 +90,9 @@ impl ArPackage {
         &self,
         name: &str,
         element_type: &T,
-        max_num_elements: u64,
+        size: ApplicationArraySize,
     ) -> Result<ApplicationArrayDataType, AutosarAbstractionError> {
-        ApplicationArrayDataType::new(name, self, element_type, max_num_elements)
+        ApplicationArrayDataType::new(name, self, element_type, size)
     }
 
     /// create a new `ApplicationPrimitiveDataType` in the package
@@ -1061,7 +1061,11 @@ mod test {
 
         // create a new application array data type
         let array_data_type = package
-            .create_application_array_data_type("ApplicationArrayDataType", &primitive_data_type, 4)
+            .create_application_array_data_type(
+                "ApplicationArrayDataType",
+                &primitive_data_type,
+                ApplicationArraySize::Fixed(4),
+            )
             .unwrap();
         assert_eq!(array_data_type.name().unwrap(), "ApplicationArrayDataType");
 
