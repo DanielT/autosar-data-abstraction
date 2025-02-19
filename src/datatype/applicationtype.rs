@@ -292,8 +292,8 @@ impl ApplicationRecordDataType {
         Ok(Self(application_record_data_type))
     }
 
-    /// add a new element to the record data type
-    pub fn add_record_element<T: Into<ApplicationDataType> + Clone>(
+    /// create a new element in the record data type
+    pub fn create_record_element<T: Into<ApplicationDataType> + Clone>(
         &self,
         name: &str,
         data_type: &T,
@@ -301,7 +301,7 @@ impl ApplicationRecordDataType {
         ApplicationRecordElement::new(name, self, &data_type.clone().into())
     }
 
-    ///get an iterator over the record elements of the record data type
+    /// iterate over the record elements of the record data type
     pub fn record_elements(&self) -> impl Iterator<Item = ApplicationRecordElement> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::Elements)
@@ -330,18 +330,31 @@ impl ApplicationRecordElement {
             .get_or_create_sub_element(ElementName::Elements)?
             .create_named_sub_element(ElementName::ApplicationRecordElement, name)?;
 
-        let category = data_type.category().ok_or(AutosarAbstractionError::InvalidParameter(
-            "record element data_type has no category".to_string(),
-        ))?;
-        application_record_element
-            .create_sub_element(ElementName::Category)?
-            .set_character_data(category)?;
+        let application_record_element = Self(application_record_element);
+        application_record_element.set_data_type(data_type)?;
 
-        application_record_element
-            .create_sub_element(ElementName::TypeTref)?
+        Ok(application_record_element)
+    }
+
+    /// set the data type of the record element
+    pub fn set_data_type<T: Into<ApplicationDataType> + AbstractionElement>(
+        &self,
+        data_type: &T,
+    ) -> Result<(), AutosarAbstractionError> {
+        let data_type: ApplicationDataType = data_type.clone().into();
+        self.element()
+            .get_or_create_sub_element(ElementName::TypeTref)?
             .set_reference_target(data_type.element())?;
+        if let Some(category) = data_type.category() {
+            self.element()
+                .get_or_create_sub_element(ElementName::Category)?
+                .set_character_data(category)?;
+        } else {
+            // remove the category if the data type has no category
+            let _ = self.element().remove_sub_element_kind(ElementName::Category);
+        }
 
-        Ok(Self(application_record_element))
+        Ok(())
     }
 
     /// get the data type of the record element
@@ -381,33 +394,53 @@ impl ApplicationPrimitiveDataType {
         let application_primitive_data_type =
             elements.create_named_sub_element(ElementName::ApplicationPrimitiveDataType, name)?;
 
-        application_primitive_data_type
-            .create_sub_element(ElementName::Category)?
-            .set_character_data(category.to_string())?;
-
         let application_primitive_data_type = Self(application_primitive_data_type);
 
-        if let Some(compu_method) = compu_method {
-            application_primitive_data_type.set_compu_method(compu_method)?;
-        }
-        if let Some(unit) = unit {
-            application_primitive_data_type.set_unit(unit)?;
-        }
-        if let Some(data_constraint) = data_constraint {
-            application_primitive_data_type.set_data_constraint(data_constraint)?;
-        }
+        application_primitive_data_type.set_category(category)?;
+        application_primitive_data_type.set_compu_method(compu_method)?;
+        application_primitive_data_type.set_unit(unit)?;
+        application_primitive_data_type.set_data_constraint(data_constraint)?;
 
         Ok(application_primitive_data_type)
     }
 
-    /// set the compu method of the primitive data type
-    pub fn set_compu_method(&self, compu_method: &CompuMethod) -> Result<(), AutosarAbstractionError> {
+    /// set the category of the primitive data type
+    pub fn set_category(&self, category: ApplicationPrimitiveCategory) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .get_or_create_sub_element(ElementName::SwDataDefProps)?
-            .get_or_create_sub_element(ElementName::SwDataDefPropsVariants)?
-            .get_or_create_sub_element(ElementName::SwDataDefPropsConditional)?
-            .get_or_create_sub_element(ElementName::CompuMethodRef)?
-            .set_reference_target(compu_method.element())?;
+            .get_or_create_sub_element(ElementName::Category)?
+            .set_character_data(category.to_string())?;
+
+        Ok(())
+    }
+
+    /// get the category of the primitive data type
+    #[must_use]
+    pub fn category(&self) -> Option<ApplicationPrimitiveCategory> {
+        self.element()
+            .get_sub_element(ElementName::Category)?
+            .character_data()?
+            .string_value()?
+            .parse()
+            .ok()
+    }
+
+    /// set the compu method of the primitive data type
+    pub fn set_compu_method(&self, compu_method: Option<&CompuMethod>) -> Result<(), AutosarAbstractionError> {
+        if let Some(compu_method) = compu_method {
+            self.element()
+                .get_or_create_sub_element(ElementName::SwDataDefProps)?
+                .get_or_create_sub_element(ElementName::SwDataDefPropsVariants)?
+                .get_or_create_sub_element(ElementName::SwDataDefPropsConditional)?
+                .get_or_create_sub_element(ElementName::CompuMethodRef)?
+                .set_reference_target(compu_method.element())?;
+        } else {
+            let _ = self
+                .element()
+                .get_sub_element(ElementName::SwDataDefProps)
+                .and_then(|sddp| sddp.get_sub_element(ElementName::SwDataDefPropsVariants))
+                .and_then(|sddpv| sddpv.get_sub_element(ElementName::SwDataDefPropsConditional))
+                .and_then(|sddpc| sddpc.remove_sub_element_kind(ElementName::CompuMethodRef).ok());
+        }
 
         Ok(())
     }
@@ -427,13 +460,22 @@ impl ApplicationPrimitiveDataType {
     }
 
     /// set the unit of the primitive data type
-    pub fn set_unit(&self, unit: &Unit) -> Result<(), AutosarAbstractionError> {
-        self.element()
-            .get_or_create_sub_element(ElementName::SwDataDefProps)?
-            .get_or_create_sub_element(ElementName::SwDataDefPropsVariants)?
-            .get_or_create_sub_element(ElementName::SwDataDefPropsConditional)?
-            .get_or_create_sub_element(ElementName::UnitRef)?
-            .set_reference_target(unit.element())?;
+    pub fn set_unit(&self, unit: Option<&Unit>) -> Result<(), AutosarAbstractionError> {
+        if let Some(unit) = unit {
+            self.element()
+                .get_or_create_sub_element(ElementName::SwDataDefProps)?
+                .get_or_create_sub_element(ElementName::SwDataDefPropsVariants)?
+                .get_or_create_sub_element(ElementName::SwDataDefPropsConditional)?
+                .get_or_create_sub_element(ElementName::UnitRef)?
+                .set_reference_target(unit.element())?;
+        } else {
+            let _ = self
+                .element()
+                .get_sub_element(ElementName::SwDataDefProps)
+                .and_then(|sddp| sddp.get_sub_element(ElementName::SwDataDefPropsVariants))
+                .and_then(|sddpv| sddpv.get_sub_element(ElementName::SwDataDefPropsConditional))
+                .and_then(|sddpc| sddpc.remove_sub_element_kind(ElementName::UnitRef).ok());
+        }
 
         Ok(())
     }
@@ -453,13 +495,22 @@ impl ApplicationPrimitiveDataType {
     }
 
     /// set the data constraint of the primitive data type
-    pub fn set_data_constraint(&self, data_constraint: &DataConstr) -> Result<(), AutosarAbstractionError> {
-        self.element()
-            .get_or_create_sub_element(ElementName::SwDataDefProps)?
-            .get_or_create_sub_element(ElementName::SwDataDefPropsVariants)?
-            .get_or_create_sub_element(ElementName::SwDataDefPropsConditional)?
-            .get_or_create_sub_element(ElementName::DataConstrRef)?
-            .set_reference_target(data_constraint.element())?;
+    pub fn set_data_constraint(&self, data_constraint: Option<&DataConstr>) -> Result<(), AutosarAbstractionError> {
+        if let Some(data_constraint) = data_constraint {
+            self.element()
+                .get_or_create_sub_element(ElementName::SwDataDefProps)?
+                .get_or_create_sub_element(ElementName::SwDataDefPropsVariants)?
+                .get_or_create_sub_element(ElementName::SwDataDefPropsConditional)?
+                .get_or_create_sub_element(ElementName::DataConstrRef)?
+                .set_reference_target(data_constraint.element())?;
+        } else {
+            let _ = self
+                .element()
+                .get_sub_element(ElementName::SwDataDefProps)
+                .and_then(|sddp| sddp.get_sub_element(ElementName::SwDataDefPropsVariants))
+                .and_then(|sddpv| sddpv.get_sub_element(ElementName::SwDataDefPropsConditional))
+                .and_then(|sddpc| sddpc.remove_sub_element_kind(ElementName::DataConstrRef).ok());
+        }
 
         Ok(())
     }
@@ -522,6 +573,30 @@ impl std::fmt::Display for ApplicationPrimitiveCategory {
             ApplicationPrimitiveCategory::Cuboid => f.write_str("CUBOID"),
             ApplicationPrimitiveCategory::Cube4 => f.write_str("CUBE_4"),
             ApplicationPrimitiveCategory::Cube5 => f.write_str("CUBE_5"),
+        }
+    }
+}
+
+impl std::str::FromStr for ApplicationPrimitiveCategory {
+    type Err = AutosarAbstractionError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "VALUE" => Ok(ApplicationPrimitiveCategory::Value),
+            "VAL_BLK" => Ok(ApplicationPrimitiveCategory::ValBlk),
+            "STRING" => Ok(ApplicationPrimitiveCategory::String),
+            "BOOLEAN" => Ok(ApplicationPrimitiveCategory::Boolean),
+            "COM_AXIS" => Ok(ApplicationPrimitiveCategory::ComAxis),
+            "RES_AXIS" => Ok(ApplicationPrimitiveCategory::ResAxis),
+            "CURVE" => Ok(ApplicationPrimitiveCategory::Curve),
+            "MAP" => Ok(ApplicationPrimitiveCategory::Map),
+            "CUBOID" => Ok(ApplicationPrimitiveCategory::Cuboid),
+            "CUBE_4" => Ok(ApplicationPrimitiveCategory::Cube4),
+            "CUBE_5" => Ok(ApplicationPrimitiveCategory::Cube5),
+            _ => Err(AutosarAbstractionError::ValueConversionError {
+                value: s.to_string(),
+                dest: "ApplicationPrimitiveCategory".to_string(),
+            }),
         }
     }
 }
@@ -700,7 +775,9 @@ mod tests {
             None,
         )
         .unwrap();
-        let record_element = record_data_type.add_record_element("Element", &element_type).unwrap();
+        let record_element = record_data_type
+            .create_record_element("Element", &element_type)
+            .unwrap();
 
         assert_eq!(
             record_element.data_type().unwrap(),
@@ -738,9 +815,27 @@ mod tests {
         )
         .unwrap();
 
+        assert_eq!(
+            primitive_data_type.category().unwrap(),
+            ApplicationPrimitiveCategory::Value
+        );
         assert_eq!(primitive_data_type.compu_method().unwrap(), compu_method);
         assert_eq!(primitive_data_type.unit().unwrap(), unit);
         assert_eq!(primitive_data_type.data_constraint().unwrap(), data_constraint);
+
+        primitive_data_type
+            .set_category(ApplicationPrimitiveCategory::Boolean)
+            .unwrap();
+        assert_eq!(
+            primitive_data_type.category().unwrap(),
+            ApplicationPrimitiveCategory::Boolean
+        );
+        primitive_data_type.set_compu_method(None).unwrap();
+        assert!(primitive_data_type.compu_method().is_none());
+        primitive_data_type.set_unit(None).unwrap();
+        assert!(primitive_data_type.unit().is_none());
+        primitive_data_type.set_data_constraint(None).unwrap();
+        assert!(primitive_data_type.data_constraint().is_none());
     }
 
     #[test]
