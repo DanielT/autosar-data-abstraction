@@ -509,7 +509,7 @@ impl ArPackage {
     ///     compu_method: None,
     ///     data_constraint: None,
     /// };
-    /// let data_type = package.create_implementation_data_type(settings)?;
+    /// let data_type = package.create_implementation_data_type(&settings)?;
     /// assert!(model.get_element_by_path("/some/package/ImplementationDataType_Value").is_some());
     /// # Ok(())}
     /// ```
@@ -519,7 +519,7 @@ impl ArPackage {
     /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model while trying to create the IMPLEMENTATION-DATA-TYPE element
     pub fn create_implementation_data_type(
         &self,
-        settings: ImplementationDataTypeSettings,
+        settings: &ImplementationDataTypeSettings,
     ) -> Result<ImplementationDataType, AutosarAbstractionError> {
         ImplementationDataType::new(self, settings)
     }
@@ -1164,7 +1164,7 @@ mod test {
             compu_method: None,
             data_constraint: None,
         };
-        let data_type = package.create_implementation_data_type(settings).unwrap();
+        let data_type = package.create_implementation_data_type(&settings).unwrap();
         assert_eq!(data_type.name().unwrap(), "ImplementationDataType_Value");
 
         // create a new mode switch interface
@@ -1301,7 +1301,7 @@ mod test {
             compu_method: None,
             data_constraint: None,
         };
-        package.create_implementation_data_type(settings).unwrap();
+        package.create_implementation_data_type(&settings).unwrap();
         package.create_mode_switch_interface("ModeSwitchInterface").unwrap();
         package.create_nv_data_interface("NvDataInterface").unwrap();
         package.create_parameter_interface("ParameterInterface").unwrap();

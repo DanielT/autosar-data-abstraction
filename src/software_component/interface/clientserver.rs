@@ -288,7 +288,7 @@ mod test {
             compu_method: None,
             data_constraint: None,
         };
-        let datatype = package.create_implementation_data_type(impl_settings).unwrap();
+        let datatype = package.create_implementation_data_type(&impl_settings).unwrap();
         let argument = operation
             .create_argument("TestArgument", &datatype, ArgumentDirection::In)
             .unwrap();

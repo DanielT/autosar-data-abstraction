@@ -284,7 +284,7 @@ mod test {
             compu_method: None,
             data_constraint: None,
         };
-        let impl_type = ImplementationDataType::new(&package, impl_settings).unwrap();
+        let impl_type = ImplementationDataType::new(&package, &impl_settings).unwrap();
 
         let app_primitive2 = AutosarDataType::try_from(app_primitive.element().clone()).unwrap();
         assert!(matches!(

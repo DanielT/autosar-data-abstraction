@@ -181,7 +181,7 @@ mod test {
         let base_type_u8 =
             base_type_package.create_sw_base_type("uint8", 8, BaseTypeEncoding::None, None, None, Some("uint8"))?;
         let implementation_data_type_u8 =
-            data_type_package.create_implementation_data_type(ImplementationDataTypeSettings::Value {
+            data_type_package.create_implementation_data_type(&ImplementationDataTypeSettings::Value {
                 name: "ImplDataType_u8".to_string(),
                 base_type: base_type_u8.clone(),
                 compu_method: None,
@@ -189,7 +189,7 @@ mod test {
             })?;
 
         let implementation_data_type_array =
-            data_type_package.create_implementation_data_type(ImplementationDataTypeSettings::Array {
+            data_type_package.create_implementation_data_type(&ImplementationDataTypeSettings::Array {
                 name: "ImplDataType_array".to_string(),
                 element_type: Box::new(ImplementationDataTypeSettings::Value {
                     name: "ImplDataType_u8".to_string(),

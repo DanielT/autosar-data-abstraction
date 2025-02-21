@@ -106,6 +106,15 @@ pub trait AbstractImplementationDataType: IdentifiableAbstractionElement {
             .parse_integer()
     }
 
+    /// apply the settings to this implementation data type
+    /// 
+    /// Calling this method completely replaces the existing settings of the implementation data type,
+    /// deleting existing sub-elements and creating new ones according to the settings
+    fn apply_settings(&self, settings: &ImplementationDataTypeSettings) -> Result<(), AutosarAbstractionError> {
+        self.set_name(settings.name())?;
+        apply_impl_data_settings(self.element(), settings)
+    }
+
     /// get the settings of this implementation data type
     fn settings(&self) -> Option<ImplementationDataTypeSettings> {
         let category = self.category()?;
@@ -176,15 +185,15 @@ impl ImplementationDataType {
     /// create a new implementation data type from an `ImplementationDataTypeSettings` structure
     pub(crate) fn new(
         package: &ArPackage,
-        settings: ImplementationDataTypeSettings,
+        settings: &ImplementationDataTypeSettings,
     ) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let implementation_data_type =
             elements.create_named_sub_element(ElementName::ImplementationDataType, settings.name())?;
+        let implementation_data_type = Self(implementation_data_type);
+        implementation_data_type.apply_settings(settings)?;
 
-        apply_impl_data_settings(&implementation_data_type, &settings)?;
-
-        Ok(Self(implementation_data_type))
+        Ok(implementation_data_type)
     }
 }
 
@@ -204,10 +213,10 @@ impl ImplementationDataTypeElement {
     ) -> Result<Self, AutosarAbstractionError> {
         let implementation_data_type_element =
             parent.create_named_sub_element(ElementName::ImplementationDataTypeElement, settings.name())?;
+        let implementation_data_type_element = Self(implementation_data_type_element);
+        implementation_data_type_element.apply_settings(settings)?;
 
-        apply_impl_data_settings(&implementation_data_type_element, settings)?;
-
-        Ok(Self(implementation_data_type_element))
+        Ok(implementation_data_type_element)
     }
 }
 
@@ -221,6 +230,8 @@ fn apply_impl_data_settings(
     let _ = element.remove_sub_element_kind(ElementName::Category);
     let _ = element.remove_sub_element_kind(ElementName::SubElements);
     let _ = element.remove_sub_element_kind(ElementName::SwDataDefProps);
+    // DynamicArraySizeProfile is part of the definition of variable-sized arrays, which are not supported (yet?)
+    let _ = element.remove_sub_element_kind(ElementName::DynamicArraySizeProfile);
 
     match settings {
         ImplementationDataTypeSettings::Value {
@@ -495,7 +506,7 @@ mod tests {
         let data_constraint = DataConstr::new("constraint", &package).unwrap();
         let other_impl_data_type = ImplementationDataType::new(
             &package,
-            ImplementationDataTypeSettings::Value {
+            &ImplementationDataTypeSettings::Value {
                 name: "OtherImplDataType".to_string(),
                 base_type: base_type.clone(),
                 compu_method: Some(compu_method.clone()),
@@ -539,7 +550,7 @@ mod tests {
                 },
             ],
         };
-        let impl_data_type = ImplementationDataType::new(&package, settings.clone()).unwrap();
+        let impl_data_type = ImplementationDataType::new(&package, &settings).unwrap();
 
         assert_eq!(impl_data_type.category(), Some(ImplementationDataCategory::Structure));
 
@@ -553,8 +564,20 @@ mod tests {
             Some(ImplementationDataCategory::TypeReference)
         );
 
-        let settings2 = impl_data_type.settings().unwrap();
-        assert_eq!(settings, settings2);
+        let settings_read = impl_data_type.settings().unwrap();
+        assert_eq!(settings, settings_read);
+
+        // overwrite the current settings with new ones
+        let settings2 = ImplementationDataTypeSettings::Value {
+            name: "NewImplDataType".to_string(),
+            base_type,
+            compu_method: None,
+            data_constraint: None,
+        };
+        impl_data_type.apply_settings(&settings2).unwrap();
+        let settings_read = impl_data_type.settings().unwrap();
+        assert_eq!(settings2, settings_read);
+
     }
 
     #[test]

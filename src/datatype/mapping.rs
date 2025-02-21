@@ -116,7 +116,7 @@ mod tests {
             SwBaseType::new("uint8", &package, 8, BaseTypeEncoding::None, None, None, Some("uint8")).unwrap();
         let impl_data_type = ImplementationDataType::new(
             &package,
-            ImplementationDataTypeSettings::Value {
+            &ImplementationDataTypeSettings::Value {
                 name: "ImplDataType".to_string(),
                 base_type: base_type.clone(),
                 compu_method: None,
