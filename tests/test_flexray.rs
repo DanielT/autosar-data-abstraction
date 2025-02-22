@@ -2,11 +2,11 @@
 mod test {
     use autosar_data::{AutosarVersion, ElementName};
     use autosar_data_abstraction::{
+        AbstractionElement, AutosarAbstractionError, AutosarModelAbstraction, SystemCategory,
         communication::{
             AbstractFrame, AbstractFrameTriggering, CommunicationDirection, FlexrayChannelName, FlexrayClusterSettings,
             FlexrayCommunicationCycle,
         },
-        AbstractionElement, AutosarAbstractionError, AutosarModelAbstraction, SystemCategory,
     };
 
     #[test]

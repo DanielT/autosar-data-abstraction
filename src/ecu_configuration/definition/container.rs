@@ -1,12 +1,11 @@
 use crate::{
-    abstraction_element,
+    AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
     ecu_configuration::{
         EcucAddInfoParamDef, EcucAnyReferenceDef, EcucBooleanParamDef, EcucChoiceReferenceDef, EcucDefinitionElement,
         EcucEnumerationParamDef, EcucFloatParamDef, EcucForeignReferenceDef, EcucFunctionNameDef,
         EcucInstanceReferenceDef, EcucIntegerParamDef, EcucLinkerSymbolDef, EcucMultilineStringParamDef,
         EcucParameterDef, EcucReferenceDef, EcucStringParamDef, EcucUriReferenceDef,
     },
-    AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement,
 };
 use autosar_data::{Element, ElementName};
 

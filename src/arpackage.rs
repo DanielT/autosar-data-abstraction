@@ -1,6 +1,7 @@
 use autosar_data::{AutosarModel, Element, ElementName};
 
 use crate::{
+    AbstractionElement, AutosarAbstractionError, ByteOrder, IdentifiableAbstractionElement, System, SystemCategory,
     abstraction_element,
     communication::{
         DataTransformationSet, RequestResponseDelay, SomeipSdClientEventGroupTimingConfig,
@@ -22,7 +23,6 @@ use crate::{
         ParameterInterface, SenderReceiverInterface, SensorActuatorSwComponentType, ServiceSwComponentType,
         TriggerInterface,
     },
-    AbstractionElement, AutosarAbstractionError, ByteOrder, IdentifiableAbstractionElement, System, SystemCategory,
 };
 
 /// An `ArPackage` is an Autosar package, which can contain other packages or elements
@@ -995,7 +995,7 @@ impl ArPackage {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{datatype::*, AutosarModelAbstraction};
+    use crate::{AutosarModelAbstraction, datatype::*};
     use crate::{System, SystemCategory};
     use autosar_data::AutosarVersion;
 

@@ -3,7 +3,7 @@ use crate::communication::{
     PhysicalChannel, SocketAddress, TpConfig,
 };
 use crate::{
-    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
 };
 use autosar_data::{Element, ElementName, EnumItem};
 
@@ -103,7 +103,7 @@ impl SocketConnectionBundle {
             _ => {
                 return Err(AutosarAbstractionError::InvalidParameter(
                     "Both SocketAddresses must use the same transport protocol".to_string(),
-                ))
+                ));
             }
         }
         let conn = self
@@ -560,8 +560,8 @@ impl SoAdRoutingGroup {
 mod test {
     use super::*;
     use crate::{
-        communication::{IPv4AddressSource, NetworkEndpointAddress, SocketAddressType},
         AutosarModelAbstraction, SystemCategory,
+        communication::{IPv4AddressSource, NetworkEndpointAddress, SocketAddressType},
     };
     use autosar_data::AutosarVersion;
 

@@ -2,7 +2,7 @@ use crate::communication::{
     AbstractNmCluster, AbstractNmClusterCoupling, AbstractNmNode, EthernetCluster, EthernetCommunicationController,
     EthernetPhysicalChannel, NmEcu,
 };
-use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement};
+use crate::{AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element};
 use autosar_data::{Element, ElementName};
 
 //##################################################################

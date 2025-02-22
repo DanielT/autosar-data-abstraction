@@ -2,8 +2,8 @@ use crate::communication::{
     AbstractPhysicalChannel, CommunicationDirection, ISignal, ISignalGroup, ISignalTriggering, PhysicalChannel,
 };
 use crate::{
-    abstraction_element, make_unique_name, reflist_iterator, AbstractionElement, ArPackage, AutosarAbstractionError,
-    EcuInstance, IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement,
+    abstraction_element, make_unique_name, reflist_iterator,
 };
 use autosar_data::{AutosarDataError, Element, ElementName, EnumItem};
 use std::str::FromStr;
@@ -835,11 +835,11 @@ reflist_iterator!(PduTriggeringsIterator, PduTriggering);
 mod test {
     use super::*;
     use crate::{
+        AutosarModelAbstraction, ByteOrder, SystemCategory,
         communication::{
             AbstractFrame, AbstractFrameTriggering, CanAddressingMode, CanClusterSettings, CanFrameType,
             TransferProperty,
         },
-        AutosarModelAbstraction, ByteOrder, SystemCategory,
     };
     use autosar_data::AutosarVersion;
 

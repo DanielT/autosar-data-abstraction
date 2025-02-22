@@ -1,8 +1,8 @@
 use crate::{
+    AbstractionElement, ArPackage, AutosarAbstractionError, Element, EnumItem, IdentifiableAbstractionElement,
     abstraction_element,
     datatype::{self, AbstractAutosarDataType},
     software_component::AbstractPortInterface,
-    AbstractionElement, ArPackage, AutosarAbstractionError, Element, EnumItem, IdentifiableAbstractionElement,
 };
 use autosar_data::ElementName;
 use datatype::AutosarDataType;

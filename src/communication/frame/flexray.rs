@@ -3,8 +3,8 @@ use crate::communication::{
     FramePort, FrameTriggering, Pdu, PduToFrameMapping, PduTriggering,
 };
 use crate::{
-    abstraction_element, make_unique_name, reflist_iterator, AbstractionElement, ArPackage, AutosarAbstractionError,
-    ByteOrder, EcuInstance, IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder, EcuInstance, IdentifiableAbstractionElement,
+    abstraction_element, make_unique_name, reflist_iterator,
 };
 use autosar_data::{Element, ElementName, EnumItem};
 
@@ -322,8 +322,8 @@ reflist_iterator!(FlexrayFrameTriggeringsIterator, FlexrayFrameTriggering);
 mod test {
     use super::*;
     use crate::{
-        communication::{FlexrayChannelName, FlexrayClusterSettings},
         AutosarModelAbstraction, ByteOrder, SystemCategory,
+        communication::{FlexrayChannelName, FlexrayClusterSettings},
     };
     use autosar_data::AutosarVersion;
 

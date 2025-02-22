@@ -1,6 +1,6 @@
 use crate::{
-    abstraction_element, communication, software_component, AbstractionElement, AutosarAbstractionError, EcuInstance,
-    Element, IdentifiableAbstractionElement, System,
+    AbstractionElement, AutosarAbstractionError, EcuInstance, Element, IdentifiableAbstractionElement, System,
+    abstraction_element, communication, software_component,
 };
 use autosar_data::ElementName;
 use communication::SystemSignal;
@@ -261,8 +261,8 @@ impl SwcToEcuMapping {
 mod test {
     use super::*;
     use crate::{
-        datatype::{ApplicationPrimitiveCategory, ApplicationPrimitiveDataType},
         AutosarModelAbstraction, SystemCategory,
+        datatype::{ApplicationPrimitiveCategory, ApplicationPrimitiveDataType},
     };
 
     #[test]

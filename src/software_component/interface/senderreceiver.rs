@@ -1,6 +1,6 @@
 use crate::{
-    abstraction_element, datatype::AbstractAutosarDataType, software_component::AbstractPortInterface,
     AbstractionElement, ArPackage, AutosarAbstractionError, Element, IdentifiableAbstractionElement,
+    abstraction_element, datatype::AbstractAutosarDataType, software_component::AbstractPortInterface,
 };
 use autosar_data::ElementName;
 
@@ -75,8 +75,8 @@ impl VariableDataPrototype {
 #[cfg(test)]
 mod test {
     use crate::{
-        datatype::{BaseTypeEncoding, ImplementationDataTypeSettings},
         AutosarModelAbstraction,
+        datatype::{BaseTypeEncoding, ImplementationDataTypeSettings},
     };
     use autosar_data::AutosarVersion;
 

@@ -4,8 +4,8 @@
 //! It also contains the definition of the composition hierarchy, and the connectors between components.
 
 use crate::{
-    abstraction_element, datatype, reflist_iterator, AbstractionElement, ArPackage, AutosarAbstractionError, Element,
-    IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, Element, IdentifiableAbstractionElement,
+    abstraction_element, datatype, reflist_iterator,
 };
 use autosar_data::ElementName;
 use datatype::DataTypeMappingSet;

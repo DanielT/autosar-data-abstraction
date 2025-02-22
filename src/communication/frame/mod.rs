@@ -2,8 +2,8 @@ use crate::communication::{
     AbstractPdu, AbstractPhysicalChannel, CommunicationDirection, Pdu, PduTriggering, PhysicalChannel,
 };
 use crate::{
-    abstraction_element, make_unique_name, reflist_iterator, AbstractionElement, AutosarAbstractionError, ByteOrder,
-    EcuInstance, IdentifiableAbstractionElement,
+    AbstractionElement, AutosarAbstractionError, ByteOrder, EcuInstance, IdentifiableAbstractionElement,
+    abstraction_element, make_unique_name, reflist_iterator,
 };
 
 mod can;

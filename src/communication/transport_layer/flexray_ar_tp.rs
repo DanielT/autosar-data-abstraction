@@ -1,6 +1,6 @@
 use crate::communication::{AbstractIpdu, FlexrayCluster, FlexrayCommunicationConnector, IPdu, NPdu, TpAddress};
 use crate::{
-    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
 };
 use autosar_data::{Element, ElementName, EnumItem};
 
@@ -564,8 +564,8 @@ impl FlexrayArTpNode {
 mod test {
     use super::*;
     use crate::{
-        communication::{FlexrayChannelName, FlexrayClusterSettings},
         AutosarModelAbstraction, SystemCategory,
+        communication::{FlexrayChannelName, FlexrayClusterSettings},
     };
     use autosar_data::AutosarVersion;
 

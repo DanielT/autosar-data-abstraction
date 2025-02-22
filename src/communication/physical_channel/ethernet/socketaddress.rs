@@ -3,7 +3,7 @@ use crate::communication::{
     ProvidedServiceInstanceV1, StaticSocketConnection, TcpRole,
 };
 use crate::{
-    abstraction_element, AbstractionElement, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement,
+    AbstractionElement, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement, abstraction_element,
 };
 use autosar_data::{Element, ElementName};
 

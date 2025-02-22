@@ -1,10 +1,9 @@
 use crate::{
-    abstraction_element,
+    AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
     communication::{
         AbstractPhysicalChannel, CanAddressingMode, CanCluster, CanCommunicationConnector, CanFrame,
         CanFrameTriggering, CanFrameType,
     },
-    AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement,
 };
 use autosar_data::{Element, ElementName};
 
@@ -104,7 +103,7 @@ impl AbstractPhysicalChannel for CanPhysicalChannel {
 
 #[cfg(test)]
 mod test {
-    use crate::{communication::CanClusterSettings, AutosarModelAbstraction, SystemCategory};
+    use crate::{AutosarModelAbstraction, SystemCategory, communication::CanClusterSettings};
     use autosar_data::AutosarVersion;
 
     #[test]

@@ -3,8 +3,8 @@ use crate::communication::{
     GeneralPurposePdu, Pdu, PduCollectionTrigger, PduTriggering,
 };
 use crate::{
-    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance,
-    IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement,
+    abstraction_element,
 };
 use autosar_data::{AutosarVersion, Element, ElementName, EnumItem};
 
@@ -1272,7 +1272,7 @@ impl TryFrom<EnumItem> for EventGroupControlType {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{communication::GeneralPurposePduCategory, ArPackage, AutosarModelAbstraction, System, SystemCategory};
+    use crate::{ArPackage, AutosarModelAbstraction, System, SystemCategory, communication::GeneralPurposePduCategory};
     use autosar_data::AutosarVersion;
 
     #[test]

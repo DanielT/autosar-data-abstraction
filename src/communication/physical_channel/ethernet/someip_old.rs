@@ -748,10 +748,10 @@ pub struct SdEventConfig {
 mod test {
     use super::*;
     use crate::{
+        AutosarModelAbstraction, System, SystemCategory,
         communication::{
             EthernetVlanInfo, EventGroupControlType, NetworkEndpointAddress, SocketAddress, SocketAddressType, TpConfig,
         },
-        AutosarModelAbstraction, System, SystemCategory,
     };
     use autosar_data::AutosarVersion;
 

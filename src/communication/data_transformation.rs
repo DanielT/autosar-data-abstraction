@@ -1,6 +1,6 @@
 use crate::{
-    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder,
-    IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder, IdentifiableAbstractionElement,
+    abstraction_element,
 };
 use autosar_data::{AutosarVersion, Element, ElementName, EnumItem};
 
@@ -1506,9 +1506,9 @@ impl TryFrom<Element> for TransformationISignalProps {
 mod test {
     use super::*;
     use crate::{
+        AutosarModelAbstraction,
         communication::{ISignal, SystemSignal},
         datatype::{BaseTypeEncoding, SwBaseType},
-        AutosarModelAbstraction,
     };
 
     #[test]

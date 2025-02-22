@@ -2,6 +2,7 @@
 mod test {
     use autosar_data::{AutosarVersion, ElementName};
     use autosar_data_abstraction::{
+        AbstractionElement, AutosarAbstractionError, AutosarModelAbstraction, ByteOrder, SystemCategory,
         communication::{
             CommonServiceDiscoveryConfig, CommunicationDirection, CyclicTiming, E2EProfile, E2EProfileBehavior,
             E2ETransformationTechnologyConfig, EthernetVlanInfo, EventControlledTiming, EventGroupControlType,
@@ -13,7 +14,6 @@ mod test {
             ApplicationArraySize, ApplicationPrimitiveCategory, BaseTypeEncoding, ImplementationDataTypeSettings,
         },
         software_component::AbstractSwComponentType,
-        AbstractionElement, AutosarAbstractionError, AutosarModelAbstraction, ByteOrder, SystemCategory,
     };
 
     #[test]

@@ -2,7 +2,7 @@ use crate::communication::{
     AbstractCommunicationConnector, AbstractCommunicationController, EthernetPhysicalChannel, EthernetVlanInfo,
 };
 use crate::{
-    abstraction_element, AbstractionElement, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement,
+    AbstractionElement, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement, abstraction_element,
 };
 use autosar_data::{AutosarDataError, AutosarModel, Element, ElementName, ElementsIterator, WeakElement};
 
@@ -282,7 +282,7 @@ impl Iterator for EthernetCtrlChannelsIterator {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{communication::EthernetVlanInfo, AutosarModelAbstraction, SystemCategory};
+    use crate::{AutosarModelAbstraction, SystemCategory, communication::EthernetVlanInfo};
     use autosar_data::AutosarVersion;
 
     #[test]

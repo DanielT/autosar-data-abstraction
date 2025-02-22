@@ -1,6 +1,6 @@
 use crate::communication::{AbstractCommunicationConnector, AbstractCommunicationController, FlexrayPhysicalChannel};
 use crate::{
-    abstraction_element, AbstractionElement, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement,
+    AbstractionElement, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement, abstraction_element,
 };
 use autosar_data::{AutosarDataError, AutosarModel, Element, ElementName, ElementsIterator, WeakElement};
 
@@ -221,8 +221,8 @@ impl Iterator for FlexrayCtrlChannelsIterator {
 #[cfg(test)]
 mod test {
     use crate::{
-        communication::{FlexrayChannelName, FlexrayClusterSettings},
         AutosarModelAbstraction, SystemCategory,
+        communication::{FlexrayChannelName, FlexrayClusterSettings},
     };
 
     use super::*;

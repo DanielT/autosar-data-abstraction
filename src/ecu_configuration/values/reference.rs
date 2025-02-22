@@ -1,5 +1,5 @@
 use crate::ecu_configuration::{AbstractEcucReferenceDef, EcucAnyReferenceDef, EcucInstanceReferenceDef};
-use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement};
+use crate::{AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element};
 use autosar_data::{Element, ElementName};
 
 //#########################################################
@@ -323,8 +323,8 @@ impl IdentifiableAbstractionElement for EcucAnyReferenceValue {}
 #[cfg(test)]
 mod test {
     use crate::{
-        ecu_configuration::EcucAnyReferenceValue, software_component::AbstractSwComponentType, AbstractionElement,
-        AutosarModelAbstraction,
+        AbstractionElement, AutosarModelAbstraction, ecu_configuration::EcucAnyReferenceValue,
+        software_component::AbstractSwComponentType,
     };
     use autosar_data::AutosarVersion;
 

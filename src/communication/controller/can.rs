@@ -1,7 +1,6 @@
 use crate::{
-    abstraction_element,
+    AbstractionElement, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement, abstraction_element,
     communication::{AbstractCommunicationConnector, AbstractCommunicationController, CanPhysicalChannel},
-    AbstractionElement, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement,
 };
 use autosar_data::{AutosarDataError, AutosarModel, Element, ElementName, ElementsIterator, WeakElement};
 
@@ -229,7 +228,7 @@ impl Iterator for CanCtrlChannelsIterator {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{communication::CanClusterSettings, AutosarModelAbstraction, SystemCategory};
+    use crate::{AutosarModelAbstraction, SystemCategory, communication::CanClusterSettings};
     use autosar_data::AutosarVersion;
 
     #[test]

@@ -3,8 +3,8 @@ use crate::communication::{
     FrameTriggering, Pdu, PduToFrameMapping, PduTriggering,
 };
 use crate::{
-    abstraction_element, make_unique_name, reflist_iterator, AbstractionElement, ArPackage, AutosarAbstractionError,
-    ByteOrder, EcuInstance, IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder, EcuInstance, IdentifiableAbstractionElement,
+    abstraction_element, make_unique_name, reflist_iterator,
 };
 use autosar_data::{AutosarDataError, Element, ElementName, EnumItem};
 
@@ -291,8 +291,8 @@ reflist_iterator!(CanFrameTriggeringsIterator, CanFrameTriggering);
 mod test {
     use super::*;
     use crate::{
-        communication::{AbstractPhysicalChannel, CanClusterSettings},
         AutosarModelAbstraction, ByteOrder, SystemCategory,
+        communication::{AbstractPhysicalChannel, CanClusterSettings},
     };
     use autosar_data::AutosarVersion;
 

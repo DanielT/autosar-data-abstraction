@@ -9,8 +9,8 @@ use crate::communication::{
 use crate::datatype::SwBaseType;
 use crate::software_component::{CompositionSwComponentType, RootSwCompositionPrototype};
 use crate::{
-    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance,
-    IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement,
+    abstraction_element,
 };
 use autosar_data::{AutosarDataError, AutosarModel, Element, ElementName, WeakElement};
 use std::iter::FusedIterator;
@@ -1124,12 +1124,12 @@ impl FusedIterator for EcuInstanceIterator {}
 #[cfg(test)]
 mod test {
     use crate::{
+        AbstractionElement, AutosarModelAbstraction, IdentifiableAbstractionElement, System,
         communication::{
             CanClusterSettings, FlexrayClusterSettings, GeneralPurposeIPduCategory, GeneralPurposePduCategory,
         },
         software_component::CompositionSwComponentType,
         system::SystemCategory,
-        AbstractionElement, AutosarModelAbstraction, IdentifiableAbstractionElement, System,
     };
     use autosar_data::{AutosarVersion, ElementName};
 

@@ -1,12 +1,12 @@
+use crate::IdentifiableAbstractionElement;
 use crate::communication::{
     AbstractPhysicalChannel, CommunicationDirection, DataTransformation, EndToEndTransformationISignalProps,
     PhysicalChannel, SomeIpTransformationISignalProps, TransformationTechnology,
 };
 use crate::datatype::{CompuMethod, DataConstr, SwBaseType, Unit};
-use crate::IdentifiableAbstractionElement;
 use crate::{
-    abstraction_element, communication::ISignalToIPduMapping, make_unique_name, reflist_iterator, AbstractionElement,
-    ArPackage, AutosarAbstractionError, EcuInstance,
+    AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance, abstraction_element,
+    communication::ISignalToIPduMapping, make_unique_name, reflist_iterator,
 };
 use autosar_data::{AutosarDataError, Element, ElementName, EnumItem, WeakElement};
 
@@ -687,12 +687,12 @@ reflist_iterator!(ISignalToIPduMappingsIterator, ISignalToIPduMapping);
 mod tests {
     use super::*;
     use crate::{
+        AutosarModelAbstraction, ByteOrder, SystemCategory,
         communication::{
             CanClusterSettings, DataTransformationSet, SomeIpMessageType, SomeIpTransformationTechnologyConfig,
             TransformationTechnologyConfig,
         },
         datatype::{BaseTypeEncoding, CompuMethodContent, SwBaseType, Unit},
-        AutosarModelAbstraction, ByteOrder, SystemCategory,
     };
     use autosar_data::AutosarVersion;
 

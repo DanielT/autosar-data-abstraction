@@ -1,6 +1,6 @@
 use crate::{
-    abstraction_element, datatype, AbstractionElement, ArPackage, AutosarAbstractionError, Element, EnumItem,
-    IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, Element, EnumItem, IdentifiableAbstractionElement,
+    abstraction_element, datatype,
 };
 use autosar_data::ElementName;
 use datatype::{AbstractAutosarDataType, CompuMethod, DataConstr, SwBaseType};

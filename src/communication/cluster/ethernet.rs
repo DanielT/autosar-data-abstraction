@@ -1,6 +1,6 @@
 use crate::communication::{AbstractCluster, EthernetPhysicalChannel, EthernetVlanInfo};
 use crate::{
-    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
 };
 use autosar_data::{Element, ElementName};
 
@@ -134,8 +134,8 @@ impl AbstractCluster for EthernetCluster {}
 #[cfg(test)]
 mod test {
     use crate::{
-        communication::{AbstractCluster, EthernetVlanInfo},
         AutosarModelAbstraction, SystemCategory,
+        communication::{AbstractCluster, EthernetVlanInfo},
     };
     use autosar_data::AutosarVersion;
 

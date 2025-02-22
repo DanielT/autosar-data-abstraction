@@ -138,8 +138,8 @@ impl TryFrom<Element> for PhysicalChannel {
 mod test {
     use super::*;
     use crate::{
-        communication::{AbstractFrame, CanAddressingMode, CanClusterSettings, CanFrameType, TransferProperty},
         AutosarModelAbstraction, ByteOrder, SystemCategory,
+        communication::{AbstractFrame, CanAddressingMode, CanClusterSettings, CanFrameType, TransferProperty},
     };
     use autosar_data::AutosarVersion;
 

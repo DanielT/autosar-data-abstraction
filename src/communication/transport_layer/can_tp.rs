@@ -1,7 +1,7 @@
 use crate::communication::{AbstractIpdu, CanCluster, CanCommunicationConnector, IPdu, NPdu};
 use crate::{
-    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance,
-    IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement,
+    abstraction_element,
 };
 use autosar_data::{Element, ElementName, EnumItem};
 
@@ -633,7 +633,7 @@ impl CanTpNode {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{communication::CanClusterSettings, AutosarModelAbstraction, SystemCategory};
+    use crate::{AutosarModelAbstraction, SystemCategory, communication::CanClusterSettings};
     use autosar_data::AutosarVersion;
 
     #[test]

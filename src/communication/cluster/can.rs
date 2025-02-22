@@ -1,6 +1,6 @@
 use crate::communication::{AbstractCluster, CanPhysicalChannel};
 use crate::{
-    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
 };
 use autosar_data::{Element, ElementName};
 
@@ -245,8 +245,8 @@ impl Default for CanClusterSettings {
 #[cfg(test)]
 mod test {
     use crate::{
-        communication::{AbstractCluster, CanClusterSettings},
         AutosarModelAbstraction, SystemCategory,
+        communication::{AbstractCluster, CanClusterSettings},
     };
     use autosar_data::AutosarVersion;
 

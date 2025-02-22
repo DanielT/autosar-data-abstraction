@@ -1,6 +1,6 @@
 use crate::communication::{EthernetCluster, PduTriggering};
 use crate::{
-    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
 };
 use autosar_data::{Element, ElementName};
 
@@ -239,10 +239,10 @@ abstraction_element!(DoIpConfig, DoIpConfig);
 mod test {
     use super::*;
     use crate::{
+        AutosarModelAbstraction, SystemCategory,
         communication::{
             CommunicationDirection, IPv4AddressSource, NetworkEndpointAddress, SocketAddressType, TpConfig,
         },
-        AutosarModelAbstraction, SystemCategory,
     };
     use autosar_data::AutosarVersion;
 

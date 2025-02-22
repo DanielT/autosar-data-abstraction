@@ -1,6 +1,6 @@
 use crate::{
-    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, Element,
-    IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, Element, IdentifiableAbstractionElement,
+    abstraction_element,
 };
 use autosar_data::ElementName;
 
@@ -162,7 +162,7 @@ impl TryFrom<Element> for PortInterface {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{software_component::AbstractSwComponentType, AutosarModelAbstraction};
+    use crate::{AutosarModelAbstraction, software_component::AbstractSwComponentType};
     use autosar_data::AutosarVersion;
 
     #[test]

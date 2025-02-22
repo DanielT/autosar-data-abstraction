@@ -191,8 +191,8 @@ impl AbstractCommunicationConnector for CommunicationConnector {
 mod tests {
     use super::*;
     use crate::{
-        communication::{CanClusterSettings, FlexrayChannelName, FlexrayClusterSettings},
         AutosarModelAbstraction, SystemCategory,
+        communication::{CanClusterSettings, FlexrayChannelName, FlexrayClusterSettings},
     };
     use autosar_data::AutosarVersion;
 

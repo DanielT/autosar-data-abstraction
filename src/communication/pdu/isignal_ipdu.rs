@@ -1,7 +1,7 @@
 use crate::communication::{AbstractIpdu, AbstractPdu, IPdu, ISignal, ISignalGroup, Pdu, TransferProperty};
 use crate::{
-    abstraction_element, make_unique_name, AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder,
-    IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder, IdentifiableAbstractionElement,
+    abstraction_element, make_unique_name,
 };
 use autosar_data::{Element, ElementName, EnumItem};
 

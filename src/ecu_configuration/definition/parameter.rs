@@ -1,5 +1,5 @@
 use crate::ecu_configuration::{EcucCommonAttributes, EcucDefinitionElement};
-use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement};
+use crate::{AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element};
 use autosar_data::{Element, ElementName};
 
 //#########################################################
@@ -697,8 +697,8 @@ impl EcucParamDef for EcucParameterDef {}
 mod test {
     use super::*;
     use crate::{
-        ecu_configuration::{EcucConfigurationClassEnum, EcucConfigurationVariantEnum},
         AutosarModelAbstraction,
+        ecu_configuration::{EcucConfigurationClassEnum, EcucConfigurationVariantEnum},
     };
     use autosar_data::AutosarVersion;
 

@@ -1,9 +1,9 @@
 use crate::{
+    AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, System,
     abstraction_element,
     ecu_configuration::{
         AbstractEcucContainerDef, AbstractEcucReferenceDef, EcucContainerDef, EcucInstanceReferenceDef, EcucModuleDef,
     },
-    AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, System,
 };
 use autosar_data::{Element, ElementName};
 
@@ -319,7 +319,7 @@ impl EcucContainerValue {
 
 #[cfg(test)]
 mod test {
-    use crate::{system, AbstractionElement, AutosarModelAbstraction};
+    use crate::{AbstractionElement, AutosarModelAbstraction, system};
     use autosar_data::{AutosarVersion, ElementName};
 
     #[test]

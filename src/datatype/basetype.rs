@@ -1,6 +1,6 @@
 use crate::{
-    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder, Element, EnumItem,
-    IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder, Element, EnumItem,
+    IdentifiableAbstractionElement, abstraction_element,
 };
 use autosar_data::ElementName;
 use std::fmt::Display;

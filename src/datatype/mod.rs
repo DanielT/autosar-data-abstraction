@@ -3,7 +3,7 @@
 //! This module contains the implementation of the AUTOSAR data types, as well as supporting elements like compu methods and data constraints.
 
 use crate::{
-    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
 };
 use autosar_data::{Element, ElementName};
 

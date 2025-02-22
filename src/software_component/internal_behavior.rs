@@ -1,6 +1,6 @@
 use crate::{
-    abstraction_element, datatype::DataTypeMappingSet, reflist_iterator, AbstractionElement, AutosarAbstractionError,
-    Element, IdentifiableAbstractionElement,
+    AbstractionElement, AutosarAbstractionError, Element, IdentifiableAbstractionElement, abstraction_element,
+    datatype::DataTypeMappingSet, reflist_iterator,
 };
 use autosar_data::ElementName;
 
@@ -533,8 +533,8 @@ impl AbstractRTEEvent for RTEEvent {}
 #[cfg(test)]
 mod test {
     use crate::{
-        software_component::{AbstractRTEEvent, AbstractSwComponentType},
         AbstractionElement, AutosarModelAbstraction,
+        software_component::{AbstractRTEEvent, AbstractSwComponentType},
     };
     use autosar_data::AutosarVersion;
 

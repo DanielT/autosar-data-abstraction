@@ -1,10 +1,9 @@
 use crate::{
-    abstraction_element,
+    AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
     communication::{
         AbstractPhysicalChannel, FlexrayCluster, FlexrayCommunicationConnector, FlexrayCommunicationCycle,
         FlexrayFrame, FlexrayFrameTriggering,
     },
-    AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement,
 };
 use autosar_data::{Element, ElementName, EnumItem};
 
@@ -138,8 +137,8 @@ pub enum FlexrayChannelName {
 #[cfg(test)]
 mod test {
     use crate::{
-        communication::{FlexrayChannelName, FlexrayClusterSettings},
         AbstractionElement, AutosarModelAbstraction, SystemCategory,
+        communication::{FlexrayChannelName, FlexrayClusterSettings},
     };
     use autosar_data::{AutosarVersion, ElementName};
 

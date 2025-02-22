@@ -2,8 +2,8 @@ use crate::communication::{
     AbstractCluster, AbstractCommunicationController, CanCluster, EthernetCluster, FlexrayCluster, NmPdu,
 };
 use crate::{
-    abstraction_element, AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance,
-    IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement,
+    abstraction_element,
 };
 use autosar_data::{Element, ElementName};
 

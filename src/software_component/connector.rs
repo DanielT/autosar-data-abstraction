@@ -1,6 +1,6 @@
 use crate::{
-    abstraction_element, software_component, AbstractionElement, AutosarAbstractionError,
-    IdentifiableAbstractionElement,
+    AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
+    software_component,
 };
 use autosar_data::{Element, ElementName};
 use software_component::{PortInterface, PortPrototype, SwComponentPrototype};
@@ -122,7 +122,7 @@ impl AssemblySwConnector {
             _ => {
                 return Err(AutosarAbstractionError::InvalidParameter(
                     "Invalid port roles".to_string(),
-                ))
+                ));
             }
         };
 
@@ -192,7 +192,7 @@ impl PassThroughSwConnector {
             _ => {
                 return Err(AutosarAbstractionError::InvalidParameter(
                     "Invalid port roles".to_string(),
-                ))
+                ));
             }
         };
 

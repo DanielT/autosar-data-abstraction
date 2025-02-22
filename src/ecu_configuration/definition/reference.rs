@@ -1,7 +1,6 @@
 use crate::{
-    abstraction_element,
+    AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
     ecu_configuration::{EcucCommonAttributes, EcucDefinitionElement},
-    AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement,
 };
 use autosar_data::{Element, ElementName};
 
@@ -325,8 +324,8 @@ impl AbstractEcucReferenceDef for EcucAnyReferenceDef {}
 #[cfg(test)]
 mod test {
     use crate::{
-        ecu_configuration::{EcucContainerDef, EcucDestinationUriNestingContract},
         AbstractionElement, AutosarModelAbstraction,
+        ecu_configuration::{EcucContainerDef, EcucDestinationUriNestingContract},
     };
     use autosar_data::AutosarVersion;
 

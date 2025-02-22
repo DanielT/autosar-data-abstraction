@@ -1,6 +1,6 @@
 use crate::{
-    abstraction_element, software_component, AbstractionElement, AutosarAbstractionError,
-    IdentifiableAbstractionElement,
+    AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
+    software_component,
 };
 use autosar_data::{Element, ElementName};
 use software_component::{AbstractPortInterface, PortInterface, SwComponentType};

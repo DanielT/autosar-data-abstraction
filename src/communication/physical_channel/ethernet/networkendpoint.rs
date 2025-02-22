@@ -1,5 +1,5 @@
 use crate::communication::EthernetPhysicalChannel;
-use crate::{abstraction_element, AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement};
+use crate::{AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element};
 use autosar_data::{CharacterData, Element, ElementName, EnumItem};
 
 /// A network endpoint contains address information for a connection

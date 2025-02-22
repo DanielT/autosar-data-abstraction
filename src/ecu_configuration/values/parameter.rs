@@ -1,7 +1,6 @@
 use crate::{
-    abstraction_element,
+    AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
     ecu_configuration::{EcucParamDef, EcucParameterDef},
-    AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement,
 };
 use autosar_data::{Element, ElementName};
 
@@ -340,8 +339,8 @@ impl IdentifiableAbstractionElement for EcucParameterValue {}
 #[cfg(test)]
 mod test {
     use crate::{
-        ecu_configuration::{EcucParameterDef, EcucParameterValue},
         AbstractionElement, AutosarModelAbstraction,
+        ecu_configuration::{EcucParameterDef, EcucParameterValue},
     };
     use autosar_data::{AutosarVersion, ElementName};
 

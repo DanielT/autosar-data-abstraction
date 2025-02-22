@@ -1,7 +1,6 @@
 use crate::{
-    abstraction_element,
+    AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
     communication::{AbstractCluster, FlexrayChannelName, FlexrayPhysicalChannel},
-    AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement,
 };
 use autosar_data::{Element, ElementName, EnumItem};
 
@@ -958,8 +957,8 @@ impl Default for FlexrayClusterSettings {
 #[cfg(test)]
 mod test {
     use crate::{
-        communication::{AbstractCluster, FlexrayChannelName, FlexrayClusterSettings},
         AutosarModelAbstraction, SystemCategory,
+        communication::{AbstractCluster, FlexrayChannelName, FlexrayClusterSettings},
     };
     use autosar_data::AutosarVersion;
 
