@@ -74,10 +74,18 @@ impl ApplicationError {
     /// Create a new `ApplicationError`
     fn new(name: &str, error_code: u64, parent_element: &Element) -> Result<Self, AutosarAbstractionError> {
         let application_error = parent_element.create_named_sub_element(ElementName::ApplicationError, name)?;
-        application_error
-            .create_sub_element(ElementName::ErrorCode)?
+        let application_error = Self(application_error);
+        application_error.set_error_code(error_code)?;
+
+        Ok(application_error)
+    }
+
+    /// Set the error code of the application error
+    pub fn set_error_code(&self, error_code: u64) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::ErrorCode)?
             .set_character_data(error_code)?;
-        Ok(Self(application_error))
+        Ok(())
     }
 
     /// Get the error code of the application error
@@ -112,7 +120,7 @@ impl ClientServerOperation {
         direction: ArgumentDirection,
     ) -> Result<ArgumentDataPrototype, AutosarAbstractionError> {
         let arguments = self.element().get_or_create_sub_element(ElementName::Arguments)?;
-        ArgumentDataPrototype::new(name, &arguments, data_type.element(), direction)
+        ArgumentDataPrototype::new(name, &arguments, data_type, direction)
     }
 
     /// iterate over all arguments
@@ -209,20 +217,26 @@ impl IdentifiableAbstractionElement for ArgumentDataPrototype {}
 
 impl ArgumentDataPrototype {
     /// Create a new `ArgumentDataPrototype`
-    fn new(
+    fn new<T: AbstractAutosarDataType>(
         name: &str,
         parent_element: &Element,
-        data_type: &Element,
+        data_type: &T,
         direction: ArgumentDirection,
     ) -> Result<Self, AutosarAbstractionError> {
         let argument = parent_element.create_named_sub_element(ElementName::ArgumentDataPrototype, name)?;
-        argument
-            .create_sub_element(ElementName::TypeTref)?
-            .set_reference_target(data_type)?;
-        argument
-            .create_sub_element(ElementName::Direction)?
-            .set_character_data::<EnumItem>(direction.into())?;
-        Ok(Self(argument))
+        let argument = Self(argument);
+        argument.set_data_type(data_type)?;
+        argument.set_direction(direction)?;
+
+        Ok(argument)
+    }
+
+    /// Set the data type of the argument
+    pub fn set_data_type<T: AbstractAutosarDataType>(&self, data_type: &T) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::TypeTref)?
+            .set_reference_target(data_type.element())?;
+        Ok(())
     }
 
     /// Get the data type of the argument
@@ -233,6 +247,14 @@ impl ArgumentDataPrototype {
             .get_reference_target()
             .ok()?;
         AutosarDataType::try_from(data_type_elem).ok()
+    }
+
+    /// Set the direction of the argument
+    pub fn set_direction(&self, direction: ArgumentDirection) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::Direction)?
+            .set_character_data::<EnumItem>(direction.into())?;
+        Ok(())
     }
 
     /// Get the direction of the argument

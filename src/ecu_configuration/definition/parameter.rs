@@ -167,8 +167,13 @@ macro_rules! string_param {
 
 //#########################################################
 
-/// marker trait for numerical parameter defintions: EcucFloatParamDef, EcucIntegerParamDef
-pub trait EcucNumericalParamDef: EcucCommonAttributes {}
+/// marker trait for all parameter defintions
+pub trait EcucParamDef: EcucCommonAttributes {}
+
+//#########################################################
+
+/// marker trait for numerical parameter defintions: EcucFloatParamDef, EcucIntegerParamDef, EcucBooleanParamDef
+pub trait EcucNumericalParamDef: EcucParamDef {}
 
 //#########################################################
 
@@ -176,7 +181,7 @@ pub trait EcucNumericalParamDef: EcucCommonAttributes {}
 /// EcucFunctionNameDef, EcucLinkerSymbolDef, EcucMultilineStringParamDef, EcucStringParamDef
 ///
 /// This grouping is determined by the usage in the value definition: `EcucTextualParamValue` can refer to any of these
-pub trait EcucTextualParamDef: EcucCommonAttributes {}
+pub trait EcucTextualParamDef: EcucParamDef {}
 
 //#########################################################
 
@@ -208,6 +213,7 @@ abstraction_element!(EcucBooleanParamDef, EcucBooleanParamDef);
 impl IdentifiableAbstractionElement for EcucBooleanParamDef {}
 impl EcucCommonAttributes for EcucBooleanParamDef {}
 impl EcucDefinitionElement for EcucBooleanParamDef {}
+impl EcucParamDef for EcucBooleanParamDef {}
 impl EcucNumericalParamDef for EcucBooleanParamDef {}
 
 impl EcucBooleanParamDef {
@@ -251,6 +257,7 @@ abstraction_element!(EcucEnumerationParamDef, EcucEnumerationParamDef);
 impl IdentifiableAbstractionElement for EcucEnumerationParamDef {}
 impl EcucCommonAttributes for EcucEnumerationParamDef {}
 impl EcucDefinitionElement for EcucEnumerationParamDef {}
+impl EcucParamDef for EcucEnumerationParamDef {}
 impl EcucTextualParamDef for EcucEnumerationParamDef {}
 
 impl EcucEnumerationParamDef {
@@ -338,6 +345,7 @@ abstraction_element!(EcucFloatParamDef, EcucFloatParamDef);
 impl IdentifiableAbstractionElement for EcucFloatParamDef {}
 impl EcucCommonAttributes for EcucFloatParamDef {}
 impl EcucDefinitionElement for EcucFloatParamDef {}
+impl EcucParamDef for EcucFloatParamDef {}
 impl EcucNumericalParamDef for EcucFloatParamDef {}
 
 impl EcucFloatParamDef {
@@ -423,6 +431,7 @@ abstraction_element!(EcucIntegerParamDef, EcucIntegerParamDef);
 impl IdentifiableAbstractionElement for EcucIntegerParamDef {}
 impl EcucCommonAttributes for EcucIntegerParamDef {}
 impl EcucDefinitionElement for EcucIntegerParamDef {}
+impl EcucParamDef for EcucIntegerParamDef {}
 impl EcucNumericalParamDef for EcucIntegerParamDef {}
 
 impl EcucIntegerParamDef {
@@ -508,6 +517,7 @@ abstraction_element!(EcucFunctionNameDef, EcucFunctionNameDef);
 impl IdentifiableAbstractionElement for EcucFunctionNameDef {}
 impl EcucCommonAttributes for EcucFunctionNameDef {}
 impl EcucDefinitionElement for EcucFunctionNameDef {}
+impl EcucParamDef for EcucFunctionNameDef {}
 
 string_param!(
     EcucFunctionNameDef,
@@ -536,6 +546,7 @@ abstraction_element!(EcucLinkerSymbolDef, EcucLinkerSymbolDef);
 impl IdentifiableAbstractionElement for EcucLinkerSymbolDef {}
 impl EcucCommonAttributes for EcucLinkerSymbolDef {}
 impl EcucDefinitionElement for EcucLinkerSymbolDef {}
+impl EcucParamDef for EcucLinkerSymbolDef {}
 
 string_param!(
     EcucLinkerSymbolDef,
@@ -564,6 +575,7 @@ abstraction_element!(EcucMultilineStringParamDef, EcucMultilineStringParamDef);
 impl IdentifiableAbstractionElement for EcucMultilineStringParamDef {}
 impl EcucCommonAttributes for EcucMultilineStringParamDef {}
 impl EcucDefinitionElement for EcucMultilineStringParamDef {}
+impl EcucParamDef for EcucMultilineStringParamDef {}
 
 string_param!(
     EcucMultilineStringParamDef,
@@ -592,6 +604,8 @@ abstraction_element!(EcucStringParamDef, EcucStringParamDef);
 impl IdentifiableAbstractionElement for EcucStringParamDef {}
 impl EcucCommonAttributes for EcucStringParamDef {}
 impl EcucDefinitionElement for EcucStringParamDef {}
+impl EcucParamDef for EcucStringParamDef {}
+
 string_param!(
     EcucStringParamDef,
     EcucStringParamDefVariants,
@@ -675,6 +689,7 @@ impl TryFrom<Element> for EcucParameterDef {
 impl IdentifiableAbstractionElement for EcucParameterDef {}
 impl EcucDefinitionElement for EcucParameterDef {}
 impl EcucCommonAttributes for EcucParameterDef {}
+impl EcucParamDef for EcucParameterDef {}
 
 //#########################################################
 

@@ -1,6 +1,6 @@
 use crate::{
     abstraction_element,
-    ecu_configuration::{EcucNumericalParamDef, EcucParameterDef, EcucTextualParamDef},
+    ecu_configuration::{EcucParamDef, EcucParameterDef},
     AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement,
 };
 use autosar_data::{Element, ElementName};
@@ -25,7 +25,7 @@ pub struct EcucNumericalParamValue(Element);
 abstraction_element!(EcucNumericalParamValue, EcucNumericalParamValue);
 
 impl EcucNumericalParamValue {
-    pub(crate) fn new<T: EcucNumericalParamDef>(
+    pub(crate) fn new<T: EcucParamDef>(
         parent: &Element,
         definition: &T,
         value: &str,
@@ -40,7 +40,7 @@ impl EcucNumericalParamValue {
     }
 
     /// set the parameter definition reference
-    pub fn set_definition<T: EcucNumericalParamDef>(&self, definition: &T) -> Result<(), AutosarAbstractionError> {
+    pub fn set_definition<T: EcucParamDef>(&self, definition: &T) -> Result<(), AutosarAbstractionError> {
         self.element()
             .get_or_create_sub_element(ElementName::DefinitionRef)?
             .set_reference_target(definition.element())?;
@@ -174,7 +174,7 @@ pub struct EcucTextualParamValue(Element);
 abstraction_element!(EcucTextualParamValue, EcucTextualParamValue);
 
 impl EcucTextualParamValue {
-    pub(crate) fn new<T: EcucTextualParamDef>(
+    pub(crate) fn new<T: EcucParamDef>(
         parent: &Element,
         definition: &T,
         value: &str,
@@ -189,7 +189,7 @@ impl EcucTextualParamValue {
     }
 
     /// set the parameter definition reference
-    pub fn set_definition<T: EcucTextualParamDef>(&self, definition: &T) -> Result<(), AutosarAbstractionError> {
+    pub fn set_definition<T: EcucParamDef>(&self, definition: &T) -> Result<(), AutosarAbstractionError> {
         self.element()
             .get_or_create_sub_element(ElementName::DefinitionRef)?
             .set_reference_target(definition.element())?;

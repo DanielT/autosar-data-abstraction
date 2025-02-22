@@ -2,7 +2,6 @@ use crate::{
     abstraction_element,
     ecu_configuration::{
         AbstractEcucContainerDef, AbstractEcucReferenceDef, EcucContainerDef, EcucInstanceReferenceDef, EcucModuleDef,
-        EcucNumericalParamDef, EcucTextualParamDef,
     },
     AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, System,
 };
@@ -13,6 +12,8 @@ mod reference;
 
 pub use parameter::*;
 pub use reference::*;
+
+use super::EcucParamDef;
 
 //#########################################################
 
@@ -254,9 +255,8 @@ impl EcucContainerValue {
             .character_data()?
             .parse_integer()
     }
-
     /// create a new `EcucNumericalParamValue` in the container
-    pub fn create_numerical_param_value<T: EcucNumericalParamDef>(
+    pub fn create_numerical_param_value<T: EcucParamDef>(
         &self,
         definition: &T,
         value: &str,
@@ -266,7 +266,7 @@ impl EcucContainerValue {
     }
 
     /// create a new `EcucTextualParamValue` in the container
-    pub fn create_textual_param_value<T: EcucTextualParamDef>(
+    pub fn create_textual_param_value<T: EcucParamDef>(
         &self,
         definition: &T,
         value: &str,

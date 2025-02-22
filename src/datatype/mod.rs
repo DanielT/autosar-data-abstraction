@@ -78,6 +78,7 @@ impl TryFrom<Element> for AutosarDataType {
 }
 
 impl IdentifiableAbstractionElement for AutosarDataType {}
+impl AbstractAutosarDataType for AutosarDataType {}
 
 //#########################################################
 
