@@ -12,10 +12,12 @@ use datatype::DataTypeMappingSet;
 
 mod connector;
 mod interface;
+mod internal_behavior;
 mod port;
 
 pub use connector::*;
 pub use interface::*;
+pub use internal_behavior::*;
 pub use port::*;
 
 //##################################################################
@@ -100,6 +102,27 @@ pub trait AbstractSwComponentType: IdentifiableAbstractionElement {
     fn create_port_group(&self, name: &str) -> Result<PortGroup, AutosarAbstractionError> {
         let port_groups = self.element().get_or_create_sub_element(ElementName::PortGroups)?;
         PortGroup::new(name, &port_groups)
+    }
+
+    /// create an SwcInternalBehavior for the component
+    ///
+    /// A component can have only one internal behavior, but since the internal behavior is a variation point,
+    /// more than one internal behavior can be created. In this case the variation point settings must ensure that only one
+    /// internal behavior is active.
+    fn create_swc_internal_behavior(&self, name: &str) -> Result<SwcInternalBehavior, AutosarAbstractionError> {
+        let internal_behaviors = self
+            .element()
+            .get_or_create_sub_element(ElementName::InternalBehaviors)?;
+        SwcInternalBehavior::new(name, &internal_behaviors)
+    }
+
+    /// iterate over all swc internal behaviors - typically zero or one
+    fn swc_internal_behaviors(&self) -> impl Iterator<Item = SwcInternalBehavior> + Send + 'static {
+        self.element()
+            .get_sub_element(ElementName::InternalBehaviors)
+            .into_iter()
+            .flat_map(|internal_behaviors| internal_behaviors.sub_elements())
+            .filter_map(|elem| SwcInternalBehavior::try_from(elem).ok())
     }
 }
 

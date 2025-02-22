@@ -107,7 +107,7 @@ pub trait AbstractImplementationDataType: IdentifiableAbstractionElement {
     }
 
     /// apply the settings to this implementation data type
-    /// 
+    ///
     /// Calling this method completely replaces the existing settings of the implementation data type,
     /// deleting existing sub-elements and creating new ones according to the settings
     fn apply_settings(&self, settings: &ImplementationDataTypeSettings) -> Result<(), AutosarAbstractionError> {
@@ -577,7 +577,6 @@ mod tests {
         impl_data_type.apply_settings(&settings2).unwrap();
         let settings_read = impl_data_type.settings().unwrap();
         assert_eq!(settings2, settings_read);
-
     }
 
     #[test]
