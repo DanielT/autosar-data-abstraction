@@ -80,7 +80,7 @@ impl ISignalIPdu {
 
         // add a pdu triggering for the newly mapped PDU to each frame triggering of this frame
         for pt in self.pdu_triggerings() {
-            let st = pt.add_signal_triggering(signal)?;
+            let st = pt.create_signal_triggering(signal)?;
             for pdu_port in pt.pdu_ports() {
                 if let (Some(ecu), Some(direction)) = (pdu_port.ecu(), pdu_port.communication_direction()) {
                     st.connect_to_ecu(&ecu, direction)?;
@@ -119,7 +119,7 @@ impl ISignalIPdu {
 
         // add a pdu triggering for the newly mapped PDU to each frame triggering of this frame
         for pt in self.pdu_triggerings() {
-            let st = pt.add_signal_group_triggering(signal_group)?;
+            let st = pt.create_signal_group_triggering(signal_group)?;
             for pdu_port in pt.pdu_ports() {
                 if let (Some(ecu), Some(direction)) = (pdu_port.ecu(), pdu_port.communication_direction()) {
                     st.connect_to_ecu(&ecu, direction)?;

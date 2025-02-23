@@ -612,9 +612,9 @@ impl PduTriggering {
         if let Pdu::ISignalIPdu(isignal_ipdu) = pdu {
             for signal_mapping in isignal_ipdu.mapped_signals() {
                 if let Some(signal) = signal_mapping.signal() {
-                    pt.add_signal_triggering(&signal)?;
+                    pt.create_signal_triggering(&signal)?;
                 } else if let Some(signal_group) = signal_mapping.signal_group() {
-                    pt.add_signal_group_triggering(&signal_group)?;
+                    pt.create_signal_group_triggering(&signal_group)?;
                 }
             }
         }
@@ -714,8 +714,8 @@ impl PduTriggering {
             })
     }
 
-    /// add a signal triggering for a signal to this `PduTriggering`
-    pub fn add_signal_triggering(&self, signal: &ISignal) -> Result<ISignalTriggering, AutosarAbstractionError> {
+    /// create a signal triggering for a signal and connect it to this `PduTriggering`
+    pub fn create_signal_triggering(&self, signal: &ISignal) -> Result<ISignalTriggering, AutosarAbstractionError> {
         let channel = self.physical_channel()?;
         let st = ISignalTriggering::new(signal, &channel)?;
         let triggerings = self
@@ -735,8 +735,8 @@ impl PduTriggering {
         Ok(st)
     }
 
-    /// add a signal triggering for a signal group to this `PduTriggering`
-    pub fn add_signal_group_triggering(
+    /// create a signal triggering for a signal group and connect it to this `PduTriggering`
+    pub fn create_signal_group_triggering(
         &self,
         signal_group: &ISignalGroup,
     ) -> Result<ISignalTriggering, AutosarAbstractionError> {
