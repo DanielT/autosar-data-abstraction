@@ -5,10 +5,9 @@
 
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, Element, IdentifiableAbstractionElement,
-    abstraction_element, datatype, reflist_iterator,
+    abstraction_element, reflist_iterator,
 };
 use autosar_data::ElementName;
-use datatype::DataTypeMappingSet;
 
 mod connector;
 mod interface;
@@ -41,22 +40,6 @@ pub trait AbstractSwComponentType: IdentifiableAbstractionElement {
         self.instances()
             .filter_map(|swcp| swcp.element().named_parent().ok().flatten())
             .filter_map(|elem| CompositionSwComponentType::try_from(elem).ok())
-    }
-
-    /// add a data type mapping to the SWC, by referencing an existing `DataTypeMappingSet`
-    fn add_data_type_mapping(&self, data_type_mapping_set: &DataTypeMappingSet) -> Result<(), AutosarAbstractionError> {
-        // this default implementation applies to component variants that have internal behaviors.
-        // specifically, this means that it is NOT valid for the CompositionSwComponentType
-        let name = self.name().unwrap();
-        let data_type_mapping_refs = self
-            .element()
-            .get_or_create_sub_element(ElementName::InternalBehaviors)?
-            .get_or_create_named_sub_element(ElementName::SwcInternalBehavior, &format!("{name}_InternalBehavior"))?
-            .get_or_create_sub_element(ElementName::DataTypeMappingRefs)?;
-        data_type_mapping_refs
-            .create_sub_element(ElementName::DataTypeMappingRef)?
-            .set_reference_target(data_type_mapping_set.element())?;
-        Ok(())
     }
 
     /// create a new required port with the given name and port interface
@@ -395,18 +378,7 @@ impl CompositionSwComponentType {
     }
 }
 
-impl AbstractSwComponentType for CompositionSwComponentType {
-    /// add a data type mapping, by referencing an existing `DataTypeMappingSet`
-    fn add_data_type_mapping(&self, data_type_mapping_set: &DataTypeMappingSet) -> Result<(), AutosarAbstractionError> {
-        let data_type_mapping_refs = self
-            .element()
-            .get_or_create_sub_element(ElementName::DataTypeMappingRefs)?;
-        data_type_mapping_refs
-            .create_sub_element(ElementName::DataTypeMappingRef)?
-            .set_reference_target(data_type_mapping_set.element())?;
-        Ok(())
-    }
-}
+impl AbstractSwComponentType for CompositionSwComponentType {}
 
 //##################################################################
 
@@ -614,22 +586,7 @@ impl From<EcuAbstractionSwComponentType> for SwComponentType {
     }
 }
 
-impl AbstractSwComponentType for SwComponentType {
-    fn add_data_type_mapping(&self, data_type_mapping_set: &DataTypeMappingSet) -> Result<(), AutosarAbstractionError> {
-        match self {
-            SwComponentType::Composition(comp) => comp.add_data_type_mapping(data_type_mapping_set),
-            SwComponentType::Application(app) => app.add_data_type_mapping(data_type_mapping_set),
-            SwComponentType::ComplexDeviceDriver(cdd) => cdd.add_data_type_mapping(data_type_mapping_set),
-            SwComponentType::Service(service) => service.add_data_type_mapping(data_type_mapping_set),
-            SwComponentType::SensorActuator(sensor_actuator) => {
-                sensor_actuator.add_data_type_mapping(data_type_mapping_set)
-            }
-            SwComponentType::EcuAbstraction(ecu_abstraction) => {
-                ecu_abstraction.add_data_type_mapping(data_type_mapping_set)
-            }
-        }
-    }
-}
+impl AbstractSwComponentType for SwComponentType {}
 
 //##################################################################
 
@@ -828,34 +785,6 @@ mod test {
             comp.instances().next().unwrap()
         );
         assert_eq!(comp.instances().count(), 1);
-    }
-
-    #[test]
-    fn data_type_mapping() {
-        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
-        let package = model.get_or_create_package("/package").unwrap();
-
-        let mapping_set = DataTypeMappingSet::new("mapping_set", &package).unwrap();
-        let composition = CompositionSwComponentType::new("comp", &package).unwrap();
-        composition.add_data_type_mapping(&mapping_set).unwrap();
-
-        let app = ApplicationSwComponentType::new("app", &package).unwrap();
-        app.add_data_type_mapping(&mapping_set).unwrap();
-
-        let cdd = ComplexDeviceDriverSwComponentType::new("cdd", &package).unwrap();
-        cdd.add_data_type_mapping(&mapping_set).unwrap();
-
-        let service = ServiceSwComponentType::new("service", &package).unwrap();
-        service.add_data_type_mapping(&mapping_set).unwrap();
-
-        let sensor_actuator = SensorActuatorSwComponentType::new("sensor_actuator", &package).unwrap();
-        sensor_actuator.add_data_type_mapping(&mapping_set).unwrap();
-
-        let ecu_abstraction = EcuAbstractionSwComponentType::new("ecu_abstraction", &package).unwrap();
-        ecu_abstraction.add_data_type_mapping(&mapping_set).unwrap();
-
-        let sw_component_type = SwComponentType::Composition(composition);
-        sw_component_type.add_data_type_mapping(&mapping_set).unwrap();
     }
 
     #[test]

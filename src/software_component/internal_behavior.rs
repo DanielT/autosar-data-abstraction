@@ -55,7 +55,7 @@ impl SwcInternalBehavior {
         Ok(())
     }
 
-    /// Get an iterator over all `DataTypeMappingSet` references in the `SwcInternalBehavior`
+    /// create an iterator over all `DataTypeMappingSet` references in the `SwcInternalBehavior`
     pub fn data_type_mapping_sets(&self) -> impl Iterator<Item = DataTypeMappingSet> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::DataTypeMappingRefs)
@@ -100,7 +100,7 @@ impl SwcInternalBehavior {
         TimingEvent::new(name, &timing_events, runnable, period)
     }
 
-    /// Get an iterator over all events in the `SwcInternalBehavior`
+    /// create an iterator over all events in the `SwcInternalBehavior`
     pub fn events(&self) -> impl Iterator<Item = RTEEvent> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::Events)
