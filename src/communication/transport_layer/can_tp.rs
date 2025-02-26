@@ -230,10 +230,27 @@ impl IdentifiableAbstractionElement for CanTpAddress {}
 impl CanTpAddress {
     pub(crate) fn new(name: &str, parent: &Element, tp_address: u32) -> Result<Self, AutosarAbstractionError> {
         let address_elem = parent.create_named_sub_element(ElementName::CanTpAddress, name)?;
-        address_elem
-            .create_sub_element(ElementName::TpAddress)?
+        let address = Self(address_elem);
+        address.set_tp_address(tp_address)?;
+
+        Ok(address)
+    }
+
+    /// set the address value of the `CanTpAddress`
+    pub fn set_tp_address(&self, tp_address: u32) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::TpAddress)?
             .set_character_data(u64::from(tp_address))?;
-        Ok(Self(address_elem))
+        Ok(())
+    }
+
+    /// get the address value of the `CanTpAddress`
+    #[must_use]
+    pub fn tp_address(&self) -> Option<u32> {
+        self.element()
+            .get_sub_element(ElementName::TpAddress)
+            .and_then(|elem| elem.character_data())
+            .and_then(|cdata| cdata.parse_integer())
     }
 }
 
@@ -664,6 +681,7 @@ mod test {
         assert_eq!(tp_ecu.cycle_time_main_function().unwrap(), 1.0);
 
         let address = can_tp_config.create_can_tp_address("address", 0x1234).unwrap();
+        assert_eq!(address.tp_address().unwrap(), 0x1234);
         assert_eq!(can_tp_config.can_tp_addresses().count(), 1);
         assert_eq!(can_tp_config.can_tp_addresses().next().unwrap(), address);
 
