@@ -837,7 +837,7 @@ impl System {
     /// Create a `SomeipTpConfig` in the SYSTEM
     ///
     /// `SomeipTpConfig`s contain the configuration how to segment or reassemble large `SomeipTp` PDUs.
-    pub fn create_somip_tp_config<T: Into<Cluster> + Clone>(
+    pub fn create_someip_tp_config<T: Into<Cluster> + Clone>(
         &self,
         name: &str,
         package: &ArPackage,

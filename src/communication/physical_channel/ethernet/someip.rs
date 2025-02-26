@@ -2247,7 +2247,7 @@ mod test {
         let transport_pdu_triggering = ipdu_identifier.pdu_triggering().unwrap();
 
         let tp_config = system
-            .create_somip_tp_config("someip_tp_config", &package, &cluster)
+            .create_someip_tp_config("someip_tp_config", &package, &cluster)
             .unwrap();
 
         let tp_channel = tp_config.create_someip_tp_channel("someip_tp_channel").unwrap();
