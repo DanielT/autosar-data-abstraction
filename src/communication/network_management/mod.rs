@@ -468,11 +468,19 @@ impl NmEcu {
         parent: &Element,
         ecu_instance: &EcuInstance,
     ) -> Result<Self, AutosarAbstractionError> {
-        let nm_ecu = parent.create_named_sub_element(ElementName::NmEcu, name)?;
-        nm_ecu
-            .create_sub_element(ElementName::EcuInstanceRef)?
+        let nm_ecu_elem = parent.create_named_sub_element(ElementName::NmEcu, name)?;
+        let nm_ecu = Self(nm_ecu_elem);
+        nm_ecu.set_ecu_instance(ecu_instance)?;
+
+        Ok(nm_ecu)
+    }
+
+    /// set the referenced `EcuInstance`
+    pub fn set_ecu_instance(&self, ecu_instance: &EcuInstance) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::EcuInstanceRef)?
             .set_reference_target(ecu_instance.element())?;
-        Ok(Self(nm_ecu))
+        Ok(())
     }
 
     /// get the referenced `EcuInstance`
