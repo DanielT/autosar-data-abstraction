@@ -874,9 +874,21 @@ impl PduActivationRoutingGroup {
         event_group_control_type: EventGroupControlType,
     ) -> Result<Self, AutosarAbstractionError> {
         let elem = parent.create_named_sub_element(ElementName::PduActivationRoutingGroup, name)?;
-        elem.create_sub_element(ElementName::EventGroupControlType)?
+        let parg = Self(elem);
+        parg.set_event_group_control_type(event_group_control_type)?;
+
+        Ok(parg)
+    }
+
+    /// set the event group control type of this `PduActivationRoutingGroup`
+    pub fn set_event_group_control_type(
+        &self,
+        event_group_control_type: EventGroupControlType,
+    ) -> Result<(), AutosarAbstractionError> {
+        self.0
+            .get_or_create_sub_element(ElementName::EventGroupControlType)?
             .set_character_data::<EnumItem>(event_group_control_type.into())?;
-        Ok(Self(elem))
+        Ok(())
     }
 
     /// get the event group control type of this `PduActivationRoutingGroup`
