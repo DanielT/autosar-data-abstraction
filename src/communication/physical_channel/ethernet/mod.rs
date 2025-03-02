@@ -42,6 +42,95 @@ abstraction_element!(EthernetPhysicalChannel, EthernetPhysicalChannel);
 impl IdentifiableAbstractionElement for EthernetPhysicalChannel {}
 
 impl EthernetPhysicalChannel {
+    /// create a new physical channel for the cluster
+    pub(crate) fn new(
+        name: &str,
+        parent: &Element,
+        vlan_info: Option<&EthernetVlanInfo>,
+    ) -> Result<EthernetPhysicalChannel, AutosarAbstractionError> {
+        let physical_channel_elem = parent.create_named_sub_element(ElementName::EthernetPhysicalChannel, name)?;
+        let physical_channel = Self(physical_channel_elem);
+
+        // set the VLAN info and remove the physical_channel if the VLAN info is invalid
+        let result = physical_channel.set_vlan_info(vlan_info);
+        if let Err(error) = result {
+            // remove the created element if the VLAN info is invalid
+            let _ = parent.remove_sub_element(physical_channel.element().clone());
+            return Err(error);
+        }
+
+        // always set CATEGORY = WIRED, since this is the common case
+        let _ = physical_channel
+            .0
+            .create_sub_element(ElementName::Category)
+            .and_then(|cat| cat.set_character_data("WIRED"));
+
+        Ok(physical_channel)
+    }
+
+    /// set the VLAN information for this channel
+    ///
+    /// The supplied VLAN info must be unique - there cannot be two VLANs with the same vlan identifier.
+    /// One channel may be created without VLAN information; it carries untagged traffic.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::*;
+    /// # use autosar_data_abstraction::communication::*;
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let cluster = system.create_ethernet_cluster("Cluster", &package)?;
+    /// # let vlan_info_orig = EthernetVlanInfo {
+    /// #     vlan_name: "VLAN_1".to_string(),
+    /// #     vlan_id: 1,
+    /// # };
+    /// # let channel = cluster.create_physical_channel("Channel", Some(&vlan_info_orig))?;
+    /// let vlan_info = EthernetVlanInfo {
+    ///     vlan_name: "VLAN_2".to_string(),
+    ///     vlan_id: 2,
+    /// };
+    /// channel.set_vlan_info(Some(&vlan_info))?;
+    /// let info = channel.vlan_info().unwrap();
+    /// assert_eq!(info.vlan_id, 2);
+    /// # Ok(())}
+    /// ```
+    pub fn set_vlan_info(&self, vlan_info: Option<&EthernetVlanInfo>) -> Result<(), AutosarAbstractionError> {
+        let cluster = self.cluster()?;
+        // make sure there is no other channel with the same VLAN info
+        // If vlan_info is None, then there must be no existing channel without VLAN info
+        for channel in cluster.physical_channels() {
+            if &channel != self {
+                let other_vlan_info = channel.vlan_info();
+                if let (Some(v1), Some(v2)) = (&vlan_info, &other_vlan_info) {
+                    if v1.vlan_id == v2.vlan_id {
+                        // the vlan identifier of another channel matches the new vlan identifier
+                        return Err(AutosarAbstractionError::ItemAlreadyExists);
+                    }
+                } else if other_vlan_info.is_none() && vlan_info.is_none() {
+                    // there is already a channel for untagged traffic
+                    return Err(AutosarAbstractionError::ItemAlreadyExists);
+                }
+            }
+        }
+
+        // remove existing vlan info
+        let _ = self.element().remove_sub_element_kind(ElementName::Vlan);
+        // set the new vlan info
+        if let Some(vlan_info) = vlan_info {
+            let _ = self
+                .element()
+                .create_named_sub_element(ElementName::Vlan, &vlan_info.vlan_name)
+                .and_then(|vlan| vlan.create_sub_element(ElementName::VlanIdentifier))
+                .and_then(|vlan_id| vlan_id.set_character_data(vlan_info.vlan_id.to_string()));
+        }
+
+        Ok(())
+    }
+
     /// Retrieves the VLAN information from a channel
     ///
     /// An ethernet physical channel that represents untagged traffic has no VLAN information and returns None.
@@ -61,7 +150,7 @@ impl EthernetPhysicalChannel {
     ///     vlan_name: "VLAN_1".to_string(),
     ///     vlan_id: 1,
     /// };
-    /// let channel = cluster.create_physical_channel("Channel", Some(vlan_info))?;
+    /// let channel = cluster.create_physical_channel("Channel", Some(&vlan_info))?;
     /// let info = channel.vlan_info().unwrap();
     /// assert_eq!(info.vlan_id, 1);
     /// # Ok(())}

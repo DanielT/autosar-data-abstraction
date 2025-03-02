@@ -236,7 +236,7 @@ impl System {
     /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// let cluster = system.create_ethernet_cluster("ethernet_cluster", &package)?;
     /// let vlan_info = EthernetVlanInfo { vlan_name: "VLAN_1".to_string(), vlan_id: 1};
-    /// cluster.create_physical_channel("ethernet_channel", Some(vlan_info));
+    /// cluster.create_physical_channel("ethernet_channel", Some(&vlan_info));
     /// # Ok(())}
     /// ```
     ///

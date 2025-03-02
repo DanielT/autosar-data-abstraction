@@ -46,7 +46,7 @@ impl EthernetCluster {
     ///     vlan_name: "VLAN_1".to_string(),
     ///     vlan_id: 1,
     /// };
-    /// let channel = cluster.create_physical_channel("Channel", Some(vlan_info))?;
+    /// let channel = cluster.create_physical_channel("Channel", Some(&vlan_info))?;
     /// # Ok(())}
     /// ```
     ///
@@ -57,7 +57,7 @@ impl EthernetCluster {
     pub fn create_physical_channel(
         &self,
         channel_name: &str,
-        vlan_info: Option<EthernetVlanInfo>,
+        vlan_info: Option<&EthernetVlanInfo>,
     ) -> Result<EthernetPhysicalChannel, AutosarAbstractionError> {
         let phys_channels = self
             .0
@@ -65,37 +65,7 @@ impl EthernetCluster {
             .get_or_create_sub_element(ElementName::EthernetClusterConditional)?
             .get_or_create_sub_element(ElementName::PhysicalChannels)?;
 
-        // make sure there is no other channel with the same VLAN info
-        // If vlan_info is None, then there must be no existing channel without VLAN info
-        for existing_channel in phys_channels.sub_elements() {
-            let existing_vlan_info = EthernetPhysicalChannel::try_from(existing_channel)
-                .ok()
-                .and_then(|channel| channel.vlan_info());
-            if let (Some(v1), Some(v2)) = (&vlan_info, &existing_vlan_info) {
-                if v1.vlan_id == v2.vlan_id {
-                    // the vlan identifier of an existing channel matches the new vlan identifier
-                    return Err(AutosarAbstractionError::ItemAlreadyExists);
-                }
-            } else if existing_vlan_info.is_none() && vlan_info.is_none() {
-                // the new channel is for untagged traffic (no VLAN), but there is already a channel for untagged traffic
-                return Err(AutosarAbstractionError::ItemAlreadyExists);
-            }
-        }
-
-        let channel = phys_channels.create_named_sub_element(ElementName::EthernetPhysicalChannel, channel_name)?;
-        // set the vlan info
-        if let Some(vlan_info) = vlan_info {
-            let _ = channel
-                .create_named_sub_element(ElementName::Vlan, &vlan_info.vlan_name)
-                .and_then(|vlan| vlan.create_sub_element(ElementName::VlanIdentifier))
-                .and_then(|vlan_id| vlan_id.set_character_data(vlan_info.vlan_id.to_string()));
-        }
-        // always set CATEGORY = WIRED, since this is the common case
-        let _ = channel
-            .create_sub_element(ElementName::Category)
-            .and_then(|cat| cat.set_character_data("WIRED"));
-
-        EthernetPhysicalChannel::try_from(channel)
+        EthernetPhysicalChannel::new(channel_name, &phys_channels, vlan_info)
     }
 
     /// returns an iterator over all [`EthernetPhysicalChannel`]s in the cluster
@@ -170,7 +140,7 @@ mod test {
             vlan_name: "VLAN_1".to_string(),
             vlan_id: 1,
         };
-        let result = cluster.create_physical_channel("Channel3", Some(vlan_info));
+        let result = cluster.create_physical_channel("Channel3", Some(&vlan_info));
         assert!(result.is_ok());
 
         // can't create a second channel called Channel3
@@ -178,7 +148,7 @@ mod test {
             vlan_name: "VLAN_2".to_string(),
             vlan_id: 2,
         };
-        let result = cluster.create_physical_channel("Channel3", Some(vlan_info));
+        let result = cluster.create_physical_channel("Channel3", Some(&vlan_info));
         assert!(result.is_err());
 
         // create a channel for VLAN 2
@@ -186,7 +156,7 @@ mod test {
             vlan_name: "VLAN_2".to_string(),
             vlan_id: 2,
         };
-        let result = cluster.create_physical_channel("Channel4", Some(vlan_info));
+        let result = cluster.create_physical_channel("Channel4", Some(&vlan_info));
         assert!(result.is_ok());
 
         // can't create a second channel for VLAN 2
@@ -194,7 +164,7 @@ mod test {
             vlan_name: "VLAN_2".to_string(),
             vlan_id: 2,
         };
-        let result = cluster.create_physical_channel("Channel5", Some(vlan_info));
+        let result = cluster.create_physical_channel("Channel5", Some(&vlan_info));
         assert!(result.is_err());
 
         let count = cluster.physical_channels().count();

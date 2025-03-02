@@ -768,7 +768,7 @@ mod test {
         let channel = cluster
             .create_physical_channel(
                 "channel",
-                Some(EthernetVlanInfo {
+                Some(&EthernetVlanInfo {
                     vlan_name: "VLAN_02".to_string(),
                     vlan_id: 2,
                 }),

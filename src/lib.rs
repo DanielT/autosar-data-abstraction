@@ -29,7 +29,7 @@
 //!     vlan_id: 33,
 //!     vlan_name: "VLAN_33".to_string(),
 //! };
-//! let eth_channel = eth_cluster.create_physical_channel("EthChannel", Some(vlan_info))?;
+//! let eth_channel = eth_cluster.create_physical_channel("EthChannel", Some(&vlan_info))?;
 //! let vlan_info_2 = eth_channel.vlan_info().unwrap();
 //!
 //! // create an ECU instance and connect it to the Ethernet channel

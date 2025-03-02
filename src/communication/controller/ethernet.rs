@@ -307,7 +307,7 @@ mod test {
             vlan_name: "VLAN_1".to_string(),
             vlan_id: 1,
         };
-        let channel2 = cluster.create_physical_channel("C2", Some(vlan_info)).unwrap();
+        let channel2 = cluster.create_physical_channel("C2", Some(&vlan_info)).unwrap();
 
         // connect the controller to channel1
         let connector = controller

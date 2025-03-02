@@ -30,7 +30,7 @@ mod test {
             vlan_id: 33,
             vlan_name: "VLAN_33".to_string(),
         };
-        let eth_channel = eth_cluster.create_physical_channel("EthChannel", Some(vlan_info))?;
+        let eth_channel = eth_cluster.create_physical_channel("EthChannel", Some(&vlan_info))?;
         let vlan_info_2 = eth_channel.vlan_info().unwrap();
         assert_eq!(vlan_info_2.vlan_id, 33);
 
