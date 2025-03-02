@@ -6,7 +6,7 @@ use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder, EcuInstance, IdentifiableAbstractionElement,
     abstraction_element, make_unique_name, reflist_iterator,
 };
-use autosar_data::{AutosarDataError, Element, ElementName, EnumItem};
+use autosar_data::{Element, ElementName, EnumItem};
 
 /// A frame on a CAN bus
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -181,7 +181,7 @@ impl CanFrameTriggering {
 
     /// get the physical channel that contains this frame triggering
     pub fn physical_channel(&self) -> Result<CanPhysicalChannel, AutosarAbstractionError> {
-        let channel_elem = self.element().named_parent()?.ok_or(AutosarDataError::ItemDeleted)?;
+        let channel_elem = self.element().named_parent()?.unwrap();
         CanPhysicalChannel::try_from(channel_elem)
     }
 

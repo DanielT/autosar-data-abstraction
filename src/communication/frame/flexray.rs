@@ -197,6 +197,12 @@ impl FlexrayFrameTriggering {
         FrameTriggering::Flexray(self.clone()).add_pdu_triggering(pdu)
     }
 
+    /// get the physical channel that contains this frame triggering
+    pub fn physical_channel(&self) -> Result<FlexrayPhysicalChannel, AutosarAbstractionError> {
+        let channel_elem = self.element().named_parent()?.unwrap();
+        FlexrayPhysicalChannel::try_from(channel_elem)
+    }
+
     /// connect this frame triggering to an ECU
     ///
     /// The frame triggering may be connected to any number of ECUs.
@@ -414,12 +420,14 @@ mod test {
                 cycle_repetition: CycleRepetition::C1
             }
         );
+        assert_eq!(frame_triggering1.physical_channel().unwrap(), channel);
         assert_eq!(frame_triggering2.frame().unwrap(), frame2);
         assert_eq!(frame_triggering2.slot().unwrap(), 2);
         assert_eq!(
             frame_triggering2.timing().unwrap(),
             FlexrayCommunicationCycle::Counter { cycle_counter: 2 }
         );
+        assert_eq!(frame_triggering2.physical_channel().unwrap(), channel);
 
         assert_eq!(mapping.pdu().unwrap(), pdu1.into());
         assert_eq!(mapping.byte_order().unwrap(), ByteOrder::MostSignificantByteFirst);
