@@ -166,15 +166,21 @@ impl GeneralPurposePdu {
         category: GeneralPurposePduCategory,
     ) -> Result<Self, AutosarAbstractionError> {
         let pkg_elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
-        let elem_pdu = pkg_elements.create_named_sub_element(ElementName::GeneralPurposePdu, name)?;
-        elem_pdu
-            .create_sub_element(ElementName::Category)?
-            .set_character_data(category.to_string())?;
-        elem_pdu
-            .create_sub_element(ElementName::Length)?
-            .set_character_data(length.to_string())?;
+        let pdu_elem = pkg_elements.create_named_sub_element(ElementName::GeneralPurposePdu, name)?;
+        let pdu = Self(pdu_elem);
 
-        Ok(Self(elem_pdu))
+        pdu.set_length(length)?;
+        pdu.set_category(category)?;
+
+        Ok(pdu)
+    }
+
+    /// set the category of this PDU
+    pub fn set_category(&self, category: GeneralPurposePduCategory) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::Category)?
+            .set_character_data(category.to_string())?;
+        Ok(())
     }
 
     /// get the category of this PDU
@@ -254,15 +260,21 @@ impl GeneralPurposeIPdu {
         category: GeneralPurposeIPduCategory,
     ) -> Result<Self, AutosarAbstractionError> {
         let pkg_elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
-        let elem_pdu = pkg_elements.create_named_sub_element(ElementName::GeneralPurposeIPdu, name)?;
-        elem_pdu
-            .create_sub_element(ElementName::Length)?
-            .set_character_data(length.to_string())?;
-        elem_pdu
-            .create_sub_element(ElementName::Category)?
-            .set_character_data(category.to_string())?;
+        let pdu_elem = pkg_elements.create_named_sub_element(ElementName::GeneralPurposeIPdu, name)?;
+        let pdu = Self(pdu_elem);
 
-        Ok(Self(elem_pdu))
+        pdu.set_length(length)?;
+        pdu.set_category(category)?;
+
+        Ok(pdu)
+    }
+
+    /// set the category of this PDU
+    pub fn set_category(&self, category: GeneralPurposeIPduCategory) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::Category)?
+            .set_character_data(category.to_string())?;
+        Ok(())
     }
 
     /// get the category of this PDU
