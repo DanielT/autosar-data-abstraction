@@ -300,30 +300,24 @@ impl SocketConnection {
             .and_then(|cdata| cdata.parse_bool())
     }
 
-    /// set or remove the RuntimeIpAddressConfiguration/RuntimePortConfiguration attributes for this socket connection
+    /// set the RuntimeIpAddressConfiguration attribute for this socket connection
     ///
-    /// If `state` is true, the attributes are set to "Sd"
-    /// If `state` is false, the attributes are removed
-    pub fn set_runtime_address_configuration(&self, state: bool) -> Result<(), AutosarAbstractionError> {
+    /// If `state` is true, the attribute is set to "Sd"
+    /// If `state` is false, the attribute is removed
+    pub fn set_runtime_ip_address_configuration(&self, state: bool) -> Result<(), AutosarAbstractionError> {
         if state {
             self.element()
                 .get_or_create_sub_element(ElementName::RuntimeIpAddressConfiguration)?
-                .set_character_data(EnumItem::Sd)?;
-            self.element()
-                .get_or_create_sub_element(ElementName::RuntimePortConfiguration)?
                 .set_character_data(EnumItem::Sd)?;
         } else {
             let _ = self
                 .element()
                 .remove_sub_element_kind(ElementName::RuntimeIpAddressConfiguration);
-            let _ = self
-                .element()
-                .remove_sub_element_kind(ElementName::RuntimePortConfiguration);
         }
         Ok(())
     }
 
-    /// get the value of the RuntimeIpAddressConfiguration attribute for this socket connection
+    /// check if the value of the RuntimeIpAddressConfiguration attribute is "SD"
     #[must_use]
     pub fn runtime_ip_address_configuration(&self) -> bool {
         let enum_value = self
@@ -334,7 +328,24 @@ impl SocketConnection {
         enum_value == Some(EnumItem::Sd)
     }
 
-    /// get the value of the RuntimePortConfiguration attribute for this socket connection
+    /// set the RuntimePortConfiguration attributes for this socket connection
+    ///
+    /// If `state` is true, the attribute is set to "Sd"
+    /// If `state` is false, the attributes is removed
+    pub fn set_runtime_port_configuration(&self, state: bool) -> Result<(), AutosarAbstractionError> {
+        if state {
+            self.element()
+                .get_or_create_sub_element(ElementName::RuntimePortConfiguration)?
+                .set_character_data(EnumItem::Sd)?;
+        } else {
+            let _ = self
+                .element()
+                .remove_sub_element_kind(ElementName::RuntimePortConfiguration);
+        }
+        Ok(())
+    }
+
+    /// check if the value of the RuntimePortConfiguration attribute is "SD"
     #[must_use]
     pub fn runtime_port_configuration(&self) -> bool {
         let enum_value = self
@@ -655,11 +666,13 @@ mod test {
         assert_eq!(connection.client_port_from_connection_request(), Some(false));
         connection.set_client_port_from_connection_request(None).unwrap();
         assert_eq!(connection.client_port_from_connection_request(), None);
-        connection.set_runtime_address_configuration(true).unwrap();
+        connection.set_runtime_ip_address_configuration(true).unwrap();
         assert_eq!(connection.runtime_ip_address_configuration(), true);
+        connection.set_runtime_port_configuration(true).unwrap();
         assert_eq!(connection.runtime_port_configuration(), true);
-        connection.set_runtime_address_configuration(false).unwrap();
+        connection.set_runtime_ip_address_configuration(false).unwrap();
         assert_eq!(connection.runtime_ip_address_configuration(), false);
+        connection.set_runtime_port_configuration(false).unwrap();
         assert_eq!(connection.runtime_port_configuration(), false);
 
         let routing_group = system

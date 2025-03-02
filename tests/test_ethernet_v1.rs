@@ -465,7 +465,8 @@ mod test {
         let connection = someip_socket_connection_bundle.create_bundled_connection(&socket_address_udp_remote)?;
         connection.set_client_ip_addr_from_connection_request(Some(true))?;
         connection.set_client_port_from_connection_request(Some(true))?;
-        connection.set_runtime_address_configuration(true)?;
+        connection.set_runtime_ip_address_configuration(true)?;
+        connection.set_runtime_port_configuration(true)?;
 
         // note: for SomeIp the service id forms the upper 16 bits of the PDU header id
         // the lower 16 bits are the method id (0x0 - 0x7fff) or event id (0x8000 - 0xffff)
