@@ -646,8 +646,7 @@ impl PduTriggering {
         direction: CommunicationDirection,
     ) -> Result<IPduPort, AutosarAbstractionError> {
         for pdu_port in self.pdu_ports() {
-            if let (Some(existing_ecu), Some(existing_direction)) = (pdu_port.ecu(), pdu_port.communication_direction())
-            {
+            if let (Ok(existing_ecu), Some(existing_direction)) = (pdu_port.ecu(), pdu_port.communication_direction()) {
                 if existing_ecu == *ecu && existing_direction == direction {
                     return Ok(pdu_port);
                 }
@@ -727,7 +726,7 @@ impl PduTriggering {
             .set_reference_target(st.element())?;
 
         for pdu_port in self.pdu_ports() {
-            if let (Some(ecu), Some(direction)) = (pdu_port.ecu(), pdu_port.communication_direction()) {
+            if let (Ok(ecu), Some(direction)) = (pdu_port.ecu(), pdu_port.communication_direction()) {
                 st.connect_to_ecu(&ecu, direction)?;
             }
         }
@@ -751,7 +750,7 @@ impl PduTriggering {
             .set_reference_target(st.element())?;
 
         for pdu_port in self.pdu_ports() {
-            if let (Some(ecu), Some(direction)) = (pdu_port.ecu(), pdu_port.communication_direction()) {
+            if let (Ok(ecu), Some(direction)) = (pdu_port.ecu(), pdu_port.communication_direction()) {
                 st.connect_to_ecu(&ecu, direction)?;
             }
         }
@@ -770,11 +769,21 @@ impl IdentifiableAbstractionElement for IPduPort {}
 
 impl IPduPort {
     /// get the ECU instance that contains this `IPduPort`
-    #[must_use]
-    pub fn ecu(&self) -> Option<EcuInstance> {
-        let comm_connector_elem = self.element().named_parent().ok()??;
-        let ecu_elem = comm_connector_elem.named_parent().ok()??;
-        EcuInstance::try_from(ecu_elem).ok()
+    pub fn ecu(&self) -> Result<EcuInstance, AutosarAbstractionError> {
+        let comm_connector_elem = self.element().named_parent()?.unwrap();
+        let ecu_elem = comm_connector_elem.named_parent()?.unwrap();
+        EcuInstance::try_from(ecu_elem)
+    }
+
+    /// set the communication direction of this `IPduPort`
+    pub fn set_communication_direction(
+        &self,
+        direction: CommunicationDirection,
+    ) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::CommunicationDirection)?
+            .set_character_data::<EnumItem>(direction.into())?;
+        Ok(())
     }
 
     /// get the communication direction of this `IPduPort`
@@ -985,6 +994,10 @@ mod test {
         let pdu_port = pdu_triggering.pdu_ports().next().unwrap();
         assert_eq!(pdu_port.ecu().unwrap().name().unwrap(), "ecu");
         assert_eq!(pdu_port.communication_direction().unwrap(), CommunicationDirection::In);
+        pdu_port
+            .set_communication_direction(CommunicationDirection::Out)
+            .unwrap();
+        assert_eq!(pdu_port.communication_direction().unwrap(), CommunicationDirection::Out);
         pdu_port.set_name("new_name").unwrap();
         assert_eq!(pdu_port.name().unwrap(), "new_name");
     }

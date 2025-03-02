@@ -549,7 +549,7 @@ impl ISignalTriggering {
         direction: CommunicationDirection,
     ) -> Result<ISignalPort, AutosarAbstractionError> {
         for signal_port in self.signal_ports() {
-            if let (Some(existing_ecu), Some(existing_direction)) =
+            if let (Ok(existing_ecu), Some(existing_direction)) =
                 (signal_port.ecu(), signal_port.communication_direction())
             {
                 if existing_ecu == *ecu && existing_direction == direction {
@@ -611,11 +611,21 @@ impl IdentifiableAbstractionElement for ISignalPort {}
 
 impl ISignalPort {
     /// get the ECU that is connected to this signal port
-    #[must_use]
-    pub fn ecu(&self) -> Option<EcuInstance> {
-        let comm_connector_elem = self.element().named_parent().ok()??;
-        let ecu_elem = comm_connector_elem.named_parent().ok()??;
-        EcuInstance::try_from(ecu_elem).ok()
+    pub fn ecu(&self) -> Result<EcuInstance, AutosarAbstractionError> {
+        let comm_connector_elem = self.element().named_parent()?.unwrap();
+        let ecu_elem = comm_connector_elem.named_parent()?.unwrap();
+        EcuInstance::try_from(ecu_elem)
+    }
+
+    /// set the communication direction of this port
+    pub fn set_communication_direction(
+        &self,
+        direction: CommunicationDirection,
+    ) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::CommunicationDirection)?
+            .set_character_data::<EnumItem>(direction.into())?;
+        Ok(())
     }
 
     /// get the communication direction of this port
@@ -878,8 +888,12 @@ mod tests {
         assert_eq!(st.signal_ports().count(), 0);
         let signal_port = st.connect_to_ecu(&ecuinstance, CommunicationDirection::In).unwrap();
         assert_eq!(st.signal_ports().count(), 1);
-        assert_eq!(signal_port.ecu(), Some(ecuinstance));
+        assert_eq!(signal_port.ecu().unwrap(), ecuinstance);
         assert_eq!(signal_port.communication_direction(), Some(CommunicationDirection::In));
+        signal_port
+            .set_communication_direction(CommunicationDirection::Out)
+            .unwrap();
+        assert_eq!(signal_port.communication_direction(), Some(CommunicationDirection::Out));
         signal_port.set_name("new_name").unwrap();
         assert_eq!(signal_port.name().unwrap(), "new_name");
     }

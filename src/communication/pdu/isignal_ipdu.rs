@@ -82,7 +82,7 @@ impl ISignalIPdu {
         for pt in self.pdu_triggerings() {
             let st = pt.create_signal_triggering(signal)?;
             for pdu_port in pt.pdu_ports() {
-                if let (Some(ecu), Some(direction)) = (pdu_port.ecu(), pdu_port.communication_direction()) {
+                if let (Ok(ecu), Some(direction)) = (pdu_port.ecu(), pdu_port.communication_direction()) {
                     st.connect_to_ecu(&ecu, direction)?;
                 }
             }
@@ -121,7 +121,7 @@ impl ISignalIPdu {
         for pt in self.pdu_triggerings() {
             let st = pt.create_signal_group_triggering(signal_group)?;
             for pdu_port in pt.pdu_ports() {
-                if let (Some(ecu), Some(direction)) = (pdu_port.ecu(), pdu_port.communication_direction()) {
+                if let (Ok(ecu), Some(direction)) = (pdu_port.ecu(), pdu_port.communication_direction()) {
                     st.connect_to_ecu(&ecu, direction)?;
                 }
             }

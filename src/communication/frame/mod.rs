@@ -152,7 +152,7 @@ impl Frame {
         for ft in self.frame_triggerings() {
             let pt = ft.add_pdu_triggering(pdu)?;
             for frame_port in ft.frame_ports() {
-                if let (Some(ecu), Some(direction)) = (frame_port.ecu(), frame_port.communication_direction()) {
+                if let (Ok(ecu), Some(direction)) = (frame_port.ecu(), frame_port.communication_direction()) {
                     pt.create_pdu_port(&ecu, direction)?;
                 }
             }
@@ -302,7 +302,7 @@ impl FrameTriggering {
         direction: CommunicationDirection,
     ) -> Result<FramePort, AutosarAbstractionError> {
         for frame_port in self.frame_ports() {
-            if let (Some(existing_ecu), Some(existing_direction)) =
+            if let (Ok(existing_ecu), Some(existing_direction)) =
                 (frame_port.ecu(), frame_port.communication_direction())
             {
                 if existing_ecu == *ecu && existing_direction == direction {
@@ -354,7 +354,7 @@ impl FrameTriggering {
             .set_reference_target(pt.element())?;
 
         for frame_port in self.frame_ports() {
-            if let (Some(ecu), Some(direction)) = (frame_port.ecu(), frame_port.communication_direction()) {
+            if let (Ok(ecu), Some(direction)) = (frame_port.ecu(), frame_port.communication_direction()) {
                 pt.create_pdu_port(&ecu, direction)?;
             }
         }
@@ -503,11 +503,21 @@ impl IdentifiableAbstractionElement for FramePort {}
 
 impl FramePort {
     /// get the ECU instance that contains this frame port
-    #[must_use]
-    pub fn ecu(&self) -> Option<EcuInstance> {
-        let comm_connector_elem = self.element().named_parent().ok()??;
-        let ecu_elem = comm_connector_elem.named_parent().ok()??;
-        EcuInstance::try_from(ecu_elem).ok()
+    pub fn ecu(&self) -> Result<EcuInstance, AutosarAbstractionError> {
+        let comm_connector_elem = self.element().named_parent()?.unwrap();
+        let ecu_elem = comm_connector_elem.named_parent()?.unwrap();
+        EcuInstance::try_from(ecu_elem)
+    }
+
+    /// set the communication direction of the frame port
+    pub fn set_communication_direction(
+        &self,
+        direction: CommunicationDirection,
+    ) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::CommunicationDirection)?
+            .set_character_data::<EnumItem>(direction.into())?;
+        Ok(())
     }
 
     /// get the communication direction of the frame port

@@ -386,5 +386,7 @@ mod test {
         assert_eq!(port1.communication_direction().unwrap(), CommunicationDirection::Out);
         assert_eq!(port2.ecu().unwrap(), ecu_instance);
         assert_eq!(port2.communication_direction().unwrap(), CommunicationDirection::In);
+        port2.set_communication_direction(CommunicationDirection::Out).unwrap();
+        assert_eq!(port2.communication_direction().unwrap(), CommunicationDirection::Out);
     }
 }
