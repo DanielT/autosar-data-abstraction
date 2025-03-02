@@ -65,18 +65,18 @@ impl CanCluster {
             .and_then(|ccv| ccv.get_or_create_sub_element(ElementName::CanClusterConditional))
         {
             let _ = cluster_content
-                .create_sub_element(ElementName::Baudrate)
+                .get_or_create_sub_element(ElementName::Baudrate)
                 .and_then(|br| br.set_character_data(settings.baudrate.to_string()));
             if let Some(can_fd_baudrate) = settings.can_fd_baudrate {
                 let _ = cluster_content
-                    .create_sub_element(ElementName::CanFdBaudrate)
+                    .get_or_create_sub_element(ElementName::CanFdBaudrate)
                     .and_then(|cfbr| cfbr.set_character_data(can_fd_baudrate.to_string()));
             } else if let Some(cfbr) = cluster_content.get_sub_element(ElementName::CanFdBaudrate) {
                 let _ = cluster_content.remove_sub_element(cfbr);
             }
             if let Some(can_xl_baudrate) = settings.can_xl_baudrate {
                 cluster_content
-                    .create_sub_element(ElementName::CanXlBaudrate)
+                    .get_or_create_sub_element(ElementName::CanXlBaudrate)
                     .and_then(|cxbr| cxbr.set_character_data(can_xl_baudrate.to_string()))
                     .unwrap();
             } else if let Some(cxbr) = cluster_content.get_sub_element(ElementName::CanXlBaudrate) {
