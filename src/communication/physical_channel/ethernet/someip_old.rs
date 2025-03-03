@@ -1,5 +1,5 @@
 use crate::communication::{SoAdRoutingGroup, SocketAddress};
-use crate::{AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement};
+use crate::{AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement, reflist_iterator};
 use autosar_data::{Element, ElementName};
 
 //##################################################################
@@ -269,6 +269,19 @@ impl EventHandlerV1 {
         Ok(Self(elem))
     }
 
+    /// add a reference to a `ConsumedEventGroupV1` to this `EventHandlerV1`
+    pub fn add_consumed_event_group(
+        &self,
+        consumed_event_group: &ConsumedEventGroupV1,
+    ) -> Result<(), AutosarAbstractionError> {
+        let elem = self
+            .element()
+            .get_or_create_sub_element(ElementName::ConsumedEventGroupRefs)?;
+        elem.create_sub_element(ElementName::ConsumedEventGroupRef)?
+            .set_reference_target(consumed_event_group.element())?;
+        Ok(())
+    }
+
     /// add a reference to a `SoAdRoutingGroup` to this `EventHandler`
     pub fn add_routing_group(&self, routing_group: &SoAdRoutingGroup) -> Result<(), AutosarAbstractionError> {
         let elem = self
@@ -289,7 +302,7 @@ impl EventHandlerV1 {
             .filter_map(|rg| SoAdRoutingGroup::try_from(rg).ok())
     }
 
-    /// set the SD server configuration for this `EventHandler`
+    /// set the SD server event configuration for this `EventHandler`
     pub fn set_sd_server_config(&self, server_config: &SdEventConfig) -> Result<(), AutosarAbstractionError> {
         // remove any existing SdServerConfig, so that we can start fresh
         let _ = self.element().remove_sub_element_kind(ElementName::SdServerConfig);
@@ -576,16 +589,24 @@ impl ConsumedEventGroupV1 {
         ceg_elem
             .create_sub_element(ElementName::ApplicationEndpointRef)?
             .set_reference_target(&ae)?;
-        event_handler
-            .element()
-            .get_or_create_sub_element(ElementName::ConsumedEventGroupRefs)?
-            .create_sub_element(ElementName::ConsumedEventGroupRef)?
-            .set_reference_target(&ceg_elem)?;
-
         let ceg = Self(ceg_elem);
+        event_handler.add_consumed_event_group(&ceg)?;
+
         ceg.set_event_group_identifier(event_group_identifier)?;
 
         Ok(ceg)
+    }
+
+    /// iterate over any `EventHandlerV1`s that reference this `ConsumedEventGroupV1`
+    pub fn event_handlers(&self) -> impl Iterator<Item = EventHandlerV1> + Send + 'static {
+        let model_result = self.element().model();
+        let path_result = self.element().path();
+        if let (Ok(model), Ok(path)) = (model_result, path_result) {
+            let reflist = model.get_references_to(&path);
+            EventHandlerV1Iterator::new(reflist)
+        } else {
+            EventHandlerV1Iterator::new(vec![])
+        }
     }
 
     /// set the `SocketAddress` that receives events from this `ConsumedEventGroup`
@@ -653,7 +674,7 @@ impl ConsumedEventGroupV1 {
             .filter_map(|rg| SoAdRoutingGroup::try_from(rg).ok())
     }
 
-    /// set the SD client configuration for this `ConsumedEventGroup`
+    /// set the SD client event configuration for this `ConsumedEventGroup`
     pub fn set_sd_client_config(&self, sd_client_config: &SdEventConfig) -> Result<(), AutosarAbstractionError> {
         // remove any existing SdClientConfig, so that we can start fresh
         let _ = self.element().remove_sub_element_kind(ElementName::SdClientConfig);
@@ -700,6 +721,10 @@ impl ConsumedEventGroupV1 {
         })
     }
 }
+
+//##################################################################
+
+reflist_iterator!(EventHandlerV1Iterator, EventHandlerV1);
 
 //##################################################################
 
@@ -919,6 +944,8 @@ mod test {
         ceg.add_routing_group(&rg).unwrap();
         assert_eq!(ceg.routing_groups().count(), 1);
         assert_eq!(ceg.routing_groups().next().unwrap(), rg);
+        assert_eq!(ceg.event_handlers().count(), 1);
+        assert_eq!(ceg.event_handlers().next().unwrap(), eh);
     }
 
     #[test]
