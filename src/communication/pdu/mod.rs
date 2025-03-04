@@ -733,7 +733,7 @@ impl PduTriggering {
     }
 
     /// create a signal triggering for a signal and connect it to this `PduTriggering`
-    pub fn create_signal_triggering(&self, signal: &ISignal) -> Result<ISignalTriggering, AutosarAbstractionError> {
+    pub(crate) fn create_signal_triggering(&self, signal: &ISignal) -> Result<ISignalTriggering, AutosarAbstractionError> {
         let channel = self.physical_channel()?;
         let st = ISignalTriggering::new(signal, &channel)?;
         let triggerings = self
@@ -754,7 +754,7 @@ impl PduTriggering {
     }
 
     /// create a signal triggering for a signal group and connect it to this `PduTriggering`
-    pub fn create_signal_group_triggering(
+    pub(crate) fn create_signal_group_triggering(
         &self,
         signal_group: &ISignalGroup,
     ) -> Result<ISignalTriggering, AutosarAbstractionError> {
