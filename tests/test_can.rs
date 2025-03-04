@@ -61,7 +61,7 @@ mod test {
             None,
         )?;
         let ft_1 = can_channel.trigger_frame(&frame1, 0x100, CanAddressingMode::Standard, CanFrameType::Can20)?;
-        assert_eq!(frame1.frame_triggerings().count(), 1);
+        assert_eq!(frame1.frame_triggerings().len(), 1);
         assert_eq!(ft_1.pdu_triggerings().count(), 1);
 
         // create Frame_2 which contains Pdu_2: Id 0x101, length 8

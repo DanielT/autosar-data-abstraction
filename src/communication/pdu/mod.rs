@@ -3,7 +3,7 @@ use crate::communication::{
 };
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement,
-    abstraction_element, make_unique_name, reflist_iterator,
+    abstraction_element, make_unique_name,
 };
 use autosar_data::{AutosarDataError, Element, ElementName, EnumItem};
 use std::str::FromStr;
@@ -33,14 +33,21 @@ pub trait AbstractPdu: AbstractionElement + Into<Pdu> {
     }
 
     /// iterate over the `PduTriggerings` that trigger this PDU
-    fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> + Send + 'static {
+    fn pdu_triggerings(&self) -> Vec<PduTriggering> {
         let model_result = self.element().model();
         let path_result = self.element().path();
         if let (Ok(model), Ok(path)) = (model_result, path_result) {
-            let reflist = model.get_references_to(&path);
-            PduTriggeringsIterator::new(reflist)
+            model
+                .get_references_to(&path)
+                .iter()
+                .filter_map(|e| {
+                    e.upgrade()
+                        .and_then(|ref_elem| ref_elem.named_parent().ok().flatten())
+                        .and_then(|elem| PduTriggering::try_from(elem).ok())
+                })
+                .collect()
         } else {
-            PduTriggeringsIterator::new(vec![])
+            vec![]
         }
     }
 }
@@ -845,10 +852,6 @@ impl TryFrom<EnumItem> for PduCollectionTrigger {
         }
     }
 }
-
-//##################################################################
-
-reflist_iterator!(PduTriggeringsIterator, PduTriggering);
 
 //##################################################################
 

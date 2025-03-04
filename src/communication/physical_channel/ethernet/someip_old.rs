@@ -1,5 +1,5 @@
 use crate::communication::{SoAdRoutingGroup, SocketAddress};
-use crate::{AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement, reflist_iterator};
+use crate::{AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement};
 use autosar_data::{Element, ElementName};
 
 //##################################################################
@@ -598,14 +598,21 @@ impl ConsumedEventGroupV1 {
     }
 
     /// iterate over any `EventHandlerV1`s that reference this `ConsumedEventGroupV1`
-    pub fn event_handlers(&self) -> impl Iterator<Item = EventHandlerV1> + Send + 'static {
+    pub fn event_handlers(&self) -> Vec<EventHandlerV1> {
         let model_result = self.element().model();
         let path_result = self.element().path();
         if let (Ok(model), Ok(path)) = (model_result, path_result) {
-            let reflist = model.get_references_to(&path);
-            EventHandlerV1Iterator::new(reflist)
+            model
+                .get_references_to(&path)
+                .iter()
+                .filter_map(|e| {
+                    e.upgrade()
+                        .and_then(|ref_elem| ref_elem.named_parent().ok().flatten())
+                        .and_then(|elem| EventHandlerV1::try_from(elem).ok())
+                })
+                .collect()
         } else {
-            EventHandlerV1Iterator::new(vec![])
+            vec![]
         }
     }
 
@@ -721,10 +728,6 @@ impl ConsumedEventGroupV1 {
         })
     }
 }
-
-//##################################################################
-
-reflist_iterator!(EventHandlerV1Iterator, EventHandlerV1);
 
 //##################################################################
 
@@ -944,8 +947,8 @@ mod test {
         ceg.add_routing_group(&rg).unwrap();
         assert_eq!(ceg.routing_groups().count(), 1);
         assert_eq!(ceg.routing_groups().next().unwrap(), rg);
-        assert_eq!(ceg.event_handlers().count(), 1);
-        assert_eq!(ceg.event_handlers().next().unwrap(), eh);
+        assert_eq!(ceg.event_handlers().len(), 1);
+        assert_eq!(ceg.event_handlers()[0], eh);
     }
 
     #[test]

@@ -6,7 +6,7 @@ use crate::communication::{
 use crate::datatype::{CompuMethod, DataConstr, SwBaseType, Unit};
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance, abstraction_element,
-    communication::ISignalToIPduMapping, make_unique_name, reflist_iterator,
+    communication::ISignalToIPduMapping, make_unique_name,
 };
 use autosar_data::{AutosarDataError, Element, ElementName, EnumItem, WeakElement};
 
@@ -115,14 +115,21 @@ impl ISignal {
     ///
     /// Usually a signal should only be mapped to a single PDU,
     /// so this iterator is expected to return either zero or one item in ordinary cases.
-    pub fn mappings(&self) -> impl Iterator<Item = ISignalToIPduMapping> + Send + 'static {
+    pub fn mappings(&self) -> Vec<ISignalToIPduMapping> {
         let model_result = self.element().model();
         let path_result = self.element().path();
         if let (Ok(model), Ok(path)) = (model_result, path_result) {
-            let reflist = model.get_references_to(&path);
-            ISignalToIPduMappingsIterator::new(reflist)
+            model
+                .get_references_to(&path)
+                .iter()
+                .filter_map(|e| {
+                    e.upgrade()
+                        .and_then(|ref_elem| ref_elem.named_parent().ok().flatten())
+                        .and_then(|elem| ISignalToIPduMapping::try_from(elem).ok())
+                })
+                .collect()
         } else {
-            ISignalToIPduMappingsIterator::new(vec![])
+            vec![]
         }
     }
 
@@ -689,10 +696,6 @@ impl TryFrom<EnumItem> for TransferProperty {
 
 //##################################################################
 
-reflist_iterator!(ISignalToIPduMappingsIterator, ISignalToIPduMapping);
-
-//##################################################################
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -734,7 +737,7 @@ mod tests {
         assert_eq!(sys_signal.data_constr(), Some(data_constr));
 
         // mappings
-        assert_eq!(signal.mappings().count(), 0);
+        assert_eq!(signal.mappings().len(), 0);
         let ipdu = system.create_isignal_ipdu("ipdu", &package, 8).unwrap();
         let mapping = ipdu
             .map_signal(
@@ -745,8 +748,8 @@ mod tests {
                 TransferProperty::Triggered,
             )
             .unwrap();
-        assert_eq!(signal.mappings().count(), 1);
-        assert_eq!(signal.mappings().next(), Some(mapping.clone()));
+        assert_eq!(signal.mappings().len(), 1);
+        assert_eq!(signal.mappings()[0], mapping.clone());
         assert_eq!(mapping.signal().unwrap(), signal);
     }
 

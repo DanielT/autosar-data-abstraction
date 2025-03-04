@@ -3,7 +3,7 @@ use crate::communication::{
 };
 use crate::{
     AbstractionElement, AutosarAbstractionError, ByteOrder, EcuInstance, IdentifiableAbstractionElement,
-    abstraction_element, make_unique_name, reflist_iterator,
+    abstraction_element, make_unique_name,
 };
 
 mod can;
@@ -31,7 +31,7 @@ pub trait AbstractFrame: AbstractionElement {
     }
 
     /// Iterator over all [`FrameTriggering`]s using this frame
-    fn frame_triggerings(&self) -> impl Iterator<Item = Self::FrameTriggeringType> + Send + 'static;
+    fn frame_triggerings(&self) -> Vec<Self::FrameTriggeringType>;
 
     /// map a PDU to the frame
     fn map_pdu<T: AbstractPdu>(
@@ -85,14 +85,21 @@ impl IdentifiableAbstractionElement for Frame {}
 impl AbstractFrame for Frame {
     type FrameTriggeringType = FrameTriggering;
 
-    fn frame_triggerings(&self) -> impl Iterator<Item = FrameTriggering> + Send + 'static {
+    fn frame_triggerings(&self) -> Vec<FrameTriggering> {
         let model_result = self.element().model();
         let path_result = self.element().path();
         if let (Ok(model), Ok(path)) = (model_result, path_result) {
-            let reflist = model.get_references_to(&path);
-            FrameTriggeringsIterator::new(reflist)
+            model
+                .get_references_to(&path)
+                .iter()
+                .filter_map(|e| {
+                    e.upgrade()
+                        .and_then(|ref_elem| ref_elem.named_parent().ok().flatten())
+                        .and_then(|elem| FrameTriggering::try_from(elem).ok())
+                })
+                .collect()
         } else {
-            FrameTriggeringsIterator::new(vec![])
+            vec![]
         }
     }
 
@@ -531,10 +538,6 @@ impl FramePort {
             .ok()
     }
 }
-
-//##################################################################
-
-reflist_iterator!(FrameTriggeringsIterator, FrameTriggering);
 
 //##################################################################
 

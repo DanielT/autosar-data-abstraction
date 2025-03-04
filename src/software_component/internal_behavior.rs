@@ -1,6 +1,6 @@
 use crate::{
     AbstractionElement, AutosarAbstractionError, Element, IdentifiableAbstractionElement, abstraction_element,
-    datatype::DataTypeMappingSet, reflist_iterator,
+    datatype::DataTypeMappingSet,
 };
 use autosar_data::ElementName;
 
@@ -132,21 +132,24 @@ impl RunnableEntity {
     }
 
     /// Iterate over all events that can trigger the `RunnableEntity`
-    pub fn events(&self) -> impl Iterator<Item = RTEEvent> + Send + 'static {
+    pub fn events(&self) -> Vec<RTEEvent> {
         let model_result = self.element().model();
         let path_result = self.element().path();
         if let (Ok(model), Ok(path)) = (model_result, path_result) {
-            let reflist = model.get_references_to(&path);
-            RTEEventIterator::new(reflist)
+            model
+                .get_references_to(&path)
+                .iter()
+                .filter_map(|e| {
+                    e.upgrade()
+                        .and_then(|ref_elem| ref_elem.named_parent().ok().flatten())
+                        .and_then(|elem| RTEEvent::try_from(elem).ok())
+                })
+                .collect()
         } else {
-            RTEEventIterator::new(vec![])
+            vec![]
         }
     }
 }
-
-//##################################################################
-
-reflist_iterator!(RTEEventIterator, RTEEvent);
 
 //##################################################################
 
@@ -596,9 +599,9 @@ mod test {
         assert_eq!(events_iter.next().unwrap().element(), timing_event.element());
 
         // runnable1 should be triggered by 2 events
-        assert_eq!(runnable1.events().count(), 2);
+        assert_eq!(runnable1.events().len(), 2);
         // runnable2 should be triggered by 1 event
-        assert_eq!(runnable2.events().count(), 1);
+        assert_eq!(runnable2.events().len(), 1);
 
         // add a data type mapping set to the swc_internal_behavior
         let data_type_mapping_set = package.create_data_type_mapping_set("MappingSet").unwrap();

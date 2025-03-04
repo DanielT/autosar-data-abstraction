@@ -54,7 +54,7 @@ mod test {
             cycle_repetition: autosar_data_abstraction::communication::CycleRepetition::C1,
         };
         let ft_1 = flx_channel.trigger_frame(&frame1, 1, &frame_timing_1)?;
-        assert_eq!(frame1.frame_triggerings().count(), 1);
+        assert_eq!(frame1.frame_triggerings().len(), 1);
         assert_eq!(ft_1.pdu_triggerings().count(), 1);
 
         // create Frame_2 which contains Pdu_2: Id 0x101, length 8

@@ -4,7 +4,7 @@ use crate::communication::{
 };
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder, EcuInstance, IdentifiableAbstractionElement,
-    abstraction_element, make_unique_name, reflist_iterator,
+    abstraction_element, make_unique_name,
 };
 use autosar_data::{Element, ElementName, EnumItem};
 
@@ -30,15 +30,22 @@ impl CanFrame {
 impl AbstractFrame for CanFrame {
     type FrameTriggeringType = CanFrameTriggering;
 
-    /// Iterator over all [`CanFrameTriggering`]s using this frame
-    fn frame_triggerings(&self) -> impl Iterator<Item = CanFrameTriggering> + Send + 'static {
+    /// List all [`CanFrameTriggering`]s using this frame
+    fn frame_triggerings(&self) -> Vec<CanFrameTriggering> {
         let model_result = self.element().model();
         let path_result = self.element().path();
         if let (Ok(model), Ok(path)) = (model_result, path_result) {
-            let reflist = model.get_references_to(&path);
-            CanFrameTriggeringsIterator::new(reflist)
+            model
+                .get_references_to(&path)
+                .iter()
+                .filter_map(|e| {
+                    e.upgrade()
+                        .and_then(|ref_elem| ref_elem.named_parent().ok().flatten())
+                        .and_then(|elem| CanFrameTriggering::try_from(elem).ok())
+                })
+                .collect()
         } else {
-            CanFrameTriggeringsIterator::new(vec![])
+            vec![]
         }
     }
 
@@ -283,10 +290,6 @@ impl From<CanFrameType> for EnumItem {
 
 //##################################################################
 
-reflist_iterator!(CanFrameTriggeringsIterator, CanFrameTriggering);
-
-//##################################################################
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -334,11 +337,11 @@ mod test {
         let frame_triggering1 = channel
             .trigger_frame(&frame1, 0x123, CanAddressingMode::Standard, CanFrameType::Can20)
             .unwrap();
-        assert_eq!(frame1.frame_triggerings().count(), 1);
+        assert_eq!(frame1.frame_triggerings().len(), 1);
         let frame_triggering2 = channel
             .trigger_frame(&frame2, 0x456, CanAddressingMode::Standard, CanFrameType::Can20)
             .unwrap();
-        assert_eq!(frame2.frame_triggerings().count(), 1);
+        assert_eq!(frame2.frame_triggerings().len(), 1);
         assert_eq!(channel.frame_triggerings().count(), 2);
 
         // try to set an invalid identifier

@@ -320,49 +320,6 @@ impl From<ByteOrder> for EnumItem {
     }
 }
 
-//#########################################################
-
-macro_rules! reflist_iterator {
-    ($name: ident, $output: ident) => {
-        #[doc(hidden)]
-        pub struct $name {
-            items: Vec<autosar_data::WeakElement>,
-            position: usize,
-        }
-
-        impl $name {
-            pub(crate) fn new(items: Vec<autosar_data::WeakElement>) -> Self {
-                Self { items, position: 0 }
-            }
-        }
-
-        impl Iterator for $name {
-            type Item = $output;
-
-            fn next(&mut self) -> Option<Self::Item> {
-                while self.position < self.items.len() {
-                    if let Some(out) = self.items[self.position]
-                        .upgrade()
-                        .and_then(|ref_elem| ref_elem.named_parent().ok().flatten())
-                        .and_then(|elem| $output::try_from(elem).ok())
-                    {
-                        self.position += 1;
-                        return Some(out);
-                    }
-                    self.position += 1;
-                }
-
-                self.position = usize::MAX;
-                None
-            }
-        }
-
-        impl std::iter::FusedIterator for $name {}
-    };
-}
-
-pub(crate) use reflist_iterator;
-
 //##################################################################
 
 pub(crate) fn make_unique_name(model: &AutosarModel, base_path: &str, initial_name: &str) -> String {
