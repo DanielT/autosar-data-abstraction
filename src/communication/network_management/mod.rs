@@ -157,7 +157,7 @@ pub trait AbstractNmCluster: AbstractionElement {
         cluster: &Self::CommunicationClusterType,
     ) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::CommunicationClusterRef)?
+            .get_or_create_sub_element(ElementName::CommunicationClusterRef)?
             .set_reference_target(cluster.element())?;
         Ok(())
     }
@@ -582,7 +582,7 @@ pub trait AbstractNmNode: AbstractionElement {
         controller: &Self::CommunicationControllerType,
     ) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::ControllerRef)?
+            .get_or_create_sub_element(ElementName::ControllerRef)?
             .set_reference_target(controller.element())?;
         Ok(())
     }
@@ -598,7 +598,7 @@ pub trait AbstractNmNode: AbstractionElement {
     /// set the referenced `NmEcu`
     fn set_nm_ecu(&self, ecu: &NmEcu) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::NmIfEcuRef)?
+            .get_or_create_sub_element(ElementName::NmIfEcuRef)?
             .set_reference_target(ecu.element())?;
         Ok(())
     }

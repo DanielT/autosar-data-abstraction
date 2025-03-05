@@ -41,7 +41,7 @@ impl CanNmCluster {
         nm_busload_reduction_active: bool,
     ) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::NmBusloadReductionActive)?
+            .get_or_create_sub_element(ElementName::NmBusloadReductionActive)?
             .set_character_data(nm_busload_reduction_active)?;
         Ok(())
     }
@@ -61,7 +61,7 @@ impl CanNmCluster {
         nm_immediate_nm_transmissions: u32,
     ) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::NmImmediateNmTransmissions)?
+            .get_or_create_sub_element(ElementName::NmImmediateNmTransmissions)?
             .set_character_data(u64::from(nm_immediate_nm_transmissions))?;
         Ok(())
     }
@@ -78,7 +78,7 @@ impl CanNmCluster {
     /// set the nmMessageTimeoutTime
     pub fn set_nm_message_timeout_time(&self, nm_message_timeout_time: f64) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::NmMessageTimeoutTime)?
+            .get_or_create_sub_element(ElementName::NmMessageTimeoutTime)?
             .set_character_data(nm_message_timeout_time)?;
         Ok(())
     }
@@ -95,7 +95,7 @@ impl CanNmCluster {
     /// set the nmMsgCycleTime
     pub fn set_nm_msg_cycle_time(&self, nm_msg_cycle_time: f64) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::NmMsgCycleTime)?
+            .get_or_create_sub_element(ElementName::NmMsgCycleTime)?
             .set_character_data(nm_msg_cycle_time)?;
         Ok(())
     }
@@ -112,7 +112,7 @@ impl CanNmCluster {
     /// set the nmNetworkTimeout
     pub fn set_nm_network_timeout(&self, nm_network_timeout: f64) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::NmNetworkTimeout)?
+            .get_or_create_sub_element(ElementName::NmNetworkTimeout)?
             .set_character_data(nm_network_timeout)?;
         Ok(())
     }
@@ -132,7 +132,7 @@ impl CanNmCluster {
         nm_remote_sleep_indication_time: f64,
     ) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::NmRemoteSleepIndicationTime)?
+            .get_or_create_sub_element(ElementName::NmRemoteSleepIndicationTime)?
             .set_character_data(nm_remote_sleep_indication_time)?;
         Ok(())
     }
@@ -149,7 +149,7 @@ impl CanNmCluster {
     /// set the nmRepeatMessageTime
     pub fn set_nm_repeat_message_time(&self, nm_repeat_message_time: f64) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::NmRepeatMessageTime)?
+            .get_or_create_sub_element(ElementName::NmRepeatMessageTime)?
             .set_character_data(nm_repeat_message_time)?;
         Ok(())
     }
@@ -166,7 +166,7 @@ impl CanNmCluster {
     /// set the nmWaitBusSleepTime
     pub fn set_nm_wait_bus_sleep_time(&self, nm_wait_bus_sleep_time: f64) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::NmWaitBusSleepTime)?
+            .get_or_create_sub_element(ElementName::NmWaitBusSleepTime)?
             .set_character_data(nm_wait_bus_sleep_time)?;
         Ok(())
     }
@@ -251,7 +251,7 @@ impl CanNmClusterCoupling {
         nm_busload_reduction_enabled: bool,
     ) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::NmBusloadReductionEnabled)?
+            .get_or_create_sub_element(ElementName::NmBusloadReductionEnabled)?
             .set_character_data(nm_busload_reduction_enabled)?;
         Ok(())
     }
@@ -271,7 +271,7 @@ impl CanNmClusterCoupling {
         nm_immediate_restart_enabled: bool,
     ) -> Result<(), AutosarAbstractionError> {
         self.element()
-            .create_sub_element(ElementName::NmImmediateRestartEnabled)?
+            .get_or_create_sub_element(ElementName::NmImmediateRestartEnabled)?
             .set_character_data(nm_immediate_restart_enabled)?;
         Ok(())
     }
