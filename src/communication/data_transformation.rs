@@ -718,8 +718,9 @@ impl TransformationTechnology {
                     .get_sub_element(ElementName::BufferComputation)?
                     .get_sub_element(ElementName::CompuRationalCoeffs)?
                     .get_sub_element(ElementName::CompuNumerator)?
+                    .get_sub_element(ElementName::V)?
                     .character_data()?
-                    .unsigned_integer_value()? as u32,
+                    .parse_integer()?,
             };
             Some(TransformationTechnologyConfig::Com(com_config))
         } else {
@@ -1640,69 +1641,68 @@ mod test {
 
     #[test]
     fn data_transformation() {
-        let model = AutosarModelAbstraction::create("test", AutosarVersion::Autosar_4_2_1);
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::Autosar_00049);
         let package = model.get_or_create_package("/package").unwrap();
         let dts = DataTransformationSet::new("test_dts", &package).unwrap();
 
+        let e2e_transformation_config = TransformationTechnologyConfig::E2E(E2ETransformationTechnologyConfig {
+            profile: E2EProfile::P01,
+            zero_header_length: false,
+            transform_in_place: true,
+            offset: 0,
+            max_delta_counter: 0,
+            max_error_state_init: 0,
+            max_error_state_invalid: 0,
+            max_error_state_valid: 0,
+            max_no_new_or_repeated_data: 0,
+            min_ok_state_init: 0,
+            min_ok_state_invalid: 0,
+            min_ok_state_valid: 0,
+            window_size: 11,
+            window_size_init: Some(11),
+            window_size_invalid: Some(12),
+            window_size_valid: Some(13),
+            profile_behavior: Some(E2EProfileBehavior::R4_2),
+            sync_counter_init: Some(0),
+            data_id_mode: Some(DataIdMode::All16Bit),
+            data_id_nibble_offset: None,
+            crc_offset: Some(2),
+            counter_offset: Some(3),
+        });
         let e2e_transformation = dts
-            .create_transformation_technology(
-                "e2e",
-                &TransformationTechnologyConfig::E2E(E2ETransformationTechnologyConfig {
-                    profile: E2EProfile::P01,
-                    zero_header_length: false,
-                    transform_in_place: true,
-                    offset: 0,
-                    max_delta_counter: 0,
-                    max_error_state_init: 0,
-                    max_error_state_invalid: 0,
-                    max_error_state_valid: 0,
-                    max_no_new_or_repeated_data: 0,
-                    min_ok_state_init: 0,
-                    min_ok_state_invalid: 0,
-                    min_ok_state_valid: 0,
-                    window_size: 10,
-                    window_size_init: Some(11),
-                    window_size_invalid: Some(12),
-                    window_size_valid: Some(13),
-                    profile_behavior: Some(E2EProfileBehavior::R4_2),
-                    sync_counter_init: Some(0),
-                    data_id_mode: Some(DataIdMode::All16Bit),
-                    data_id_nibble_offset: Some(1),
-                    crc_offset: Some(2),
-                    counter_offset: Some(3),
-                }),
-            )
+            .create_transformation_technology("e2e", &e2e_transformation_config)
             .unwrap();
+        assert_eq!(e2e_transformation.config().unwrap(), e2e_transformation_config);
 
+        let com_transformation_config =
+            TransformationTechnologyConfig::Com(ComTransformationTechnologyConfig { isignal_ipdu_length: 8 });
         let com_transformation = dts
-            .create_transformation_technology(
-                "com",
-                &TransformationTechnologyConfig::Com(ComTransformationTechnologyConfig { isignal_ipdu_length: 8 }),
-            )
+            .create_transformation_technology("com", &com_transformation_config)
             .unwrap();
+        assert_eq!(com_transformation.config().unwrap(), com_transformation_config);
 
+        let someip_transformation_config =
+            TransformationTechnologyConfig::SomeIp(SomeIpTransformationTechnologyConfig {
+                alignment: 8,
+                byte_order: ByteOrder::MostSignificantByteFirst,
+                interface_version: 1,
+            });
         let someip_transformation = dts
-            .create_transformation_technology(
-                "someip",
-                &TransformationTechnologyConfig::SomeIp(SomeIpTransformationTechnologyConfig {
-                    alignment: 8,
-                    byte_order: ByteOrder::MostSignificantByteFirst,
-                    interface_version: 1,
-                }),
-            )
+            .create_transformation_technology("someip", &someip_transformation_config)
             .unwrap();
+        assert_eq!(someip_transformation.config().unwrap(), someip_transformation_config);
 
+        let generic_transformation_config =
+            TransformationTechnologyConfig::Generic(GenericTransformationTechnologyConfig {
+                protocol_name: "test".to_string(),
+                protocol_version: "1.0.0".to_string(),
+                header_length: 16,
+                in_place: true,
+            });
         let generic_transformation = dts
-            .create_transformation_technology(
-                "generic",
-                &TransformationTechnologyConfig::Generic(GenericTransformationTechnologyConfig {
-                    protocol_name: "test".to_string(),
-                    protocol_version: "1.0.0".to_string(),
-                    header_length: 16,
-                    in_place: true,
-                }),
-            )
+            .create_transformation_technology("generic", &generic_transformation_config)
             .unwrap();
+        assert_eq!(someip_transformation.config().unwrap(), someip_transformation_config);
 
         // not allowed: empty transformation chain
         let result = dts.create_data_transformation("test1", &[], true);
