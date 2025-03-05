@@ -482,6 +482,19 @@ impl SystemSignalGroup {
 
         Ok(())
     }
+
+    /// Iterator over all [`SystemSignal`]s in this group
+    pub fn signals(&self) -> impl Iterator<Item = SystemSignal> + Send + 'static {
+        self.element()
+            .get_sub_element(ElementName::SystemSignalRefs)
+            .into_iter()
+            .flat_map(|elem| elem.sub_elements())
+            .filter_map(|elem| {
+                elem.get_reference_target()
+                    .ok()
+                    .and_then(|elem| SystemSignal::try_from(elem).ok())
+            })
+    }
 }
 
 //##################################################################
@@ -856,6 +869,7 @@ mod tests {
 
         sys_signal_group.add_signal(&sys_signal).unwrap();
         assert_eq!(sys_signal.signal_group(), Some(sys_signal_group.clone()));
+        assert_eq!(sys_signal_group.signals().count(), 1);
 
         signal_group.add_signal(&signal).unwrap();
         assert_eq!(signal_group.signals().count(), 1);
