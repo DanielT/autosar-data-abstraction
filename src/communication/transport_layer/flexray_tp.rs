@@ -170,7 +170,7 @@ impl FlexrayTpPduPool {
     }
 
     /// add an `NPdu` to the `PduPool`
-    pub fn add_npdu(&self, n_pdu: &NPdu) -> Result<(), AutosarAbstractionError> {
+    pub fn add_n_pdu(&self, n_pdu: &NPdu) -> Result<(), AutosarAbstractionError> {
         self.element()
             .get_or_create_sub_element(ElementName::NPduRefs)?
             .create_sub_element(ElementName::NPduRef)?
@@ -179,7 +179,7 @@ impl FlexrayTpPduPool {
     }
 
     /// iterate over all referenced `NPdus`
-    pub fn npdus(&self) -> impl Iterator<Item = NPdu> + Send + 'static {
+    pub fn n_pdus(&self) -> impl Iterator<Item = NPdu> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::NPduRefs)
             .into_iter()
@@ -714,11 +714,11 @@ mod test {
 
         // create a FlexrayTpPduPool
         let fr_tp_pdu_pool_tx = fr_tp_config.create_flexray_tp_pdu_pool("FrTpPduPool_Tx").unwrap();
-        fr_tp_pdu_pool_tx.add_npdu(&npdu1).unwrap();
-        assert_eq!(fr_tp_pdu_pool_tx.npdus().next(), Some(npdu1));
+        fr_tp_pdu_pool_tx.add_n_pdu(&npdu1).unwrap();
+        assert_eq!(fr_tp_pdu_pool_tx.n_pdus().next(), Some(npdu1));
         let fr_tp_pdu_pool_rx = fr_tp_config.create_flexray_tp_pdu_pool("FrTpPduPool_Rx").unwrap();
-        fr_tp_pdu_pool_rx.add_npdu(&npdu2).unwrap();
-        assert_eq!(fr_tp_pdu_pool_rx.npdus().next(), Some(npdu2));
+        fr_tp_pdu_pool_rx.add_n_pdu(&npdu2).unwrap();
+        assert_eq!(fr_tp_pdu_pool_rx.n_pdus().next(), Some(npdu2));
 
         assert!(fr_tp_config.flexray_tp_pdu_pools().count() == 2);
 

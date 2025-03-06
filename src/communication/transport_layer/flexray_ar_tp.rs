@@ -254,7 +254,7 @@ impl FlexrayArTpChannel {
     ///
     /// The `NPdus` are logically assembled into a pool of Rx `NPdus` and another pool of Tx `NPdus`.
     /// This function is supported on autosar 4.1 and later, while Autosar 4.0 uses a different approach.
-    pub fn add_npdu(&self, n_pdu: &NPdu) -> Result<(), AutosarAbstractionError> {
+    pub fn add_n_pdu(&self, n_pdu: &NPdu) -> Result<(), AutosarAbstractionError> {
         let npdu_refs_elem = self.element().get_or_create_sub_element(ElementName::NPduRefs)?;
         npdu_refs_elem
             .create_sub_element(ElementName::NPduRef)?
@@ -263,7 +263,7 @@ impl FlexrayArTpChannel {
     }
 
     /// get the `NPdus` of the channel
-    pub fn npdus(&self) -> impl Iterator<Item = NPdu> + Send + 'static {
+    pub fn n_pdus(&self) -> impl Iterator<Item = NPdu> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::NPduRefs)
             .into_iter()
@@ -629,9 +629,9 @@ mod test {
         assert_eq!(fr_ar_tp_channel.minimum_separation_time(), Some(0.001));
         assert_eq!(fr_ar_tp_channel.multicast_segmentation(), Some(false));
 
-        fr_ar_tp_channel.add_npdu(&npdu1).unwrap();
-        fr_ar_tp_channel.add_npdu(&npdu2).unwrap();
-        assert_eq!(fr_ar_tp_channel.npdus().count(), 2);
+        fr_ar_tp_channel.add_n_pdu(&npdu1).unwrap();
+        fr_ar_tp_channel.add_n_pdu(&npdu2).unwrap();
+        assert_eq!(fr_ar_tp_channel.n_pdus().count(), 2);
 
         let fr_ar_tp_node_source = fr_ar_tp_config.create_flexray_ar_tp_node("node_s").unwrap();
         let tp_address_source = fr_ar_tp_config.create_tp_address("tp_address_s", 1).unwrap();
