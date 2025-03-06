@@ -241,6 +241,15 @@ impl FlexrayArTpChannel {
         FlexrayArTpConnection::new(name, &parent, &direct_tp_sdu.clone().into(), source, target)
     }
 
+    /// get an iterator over the connections in the channel
+    pub fn flexray_ar_tp_connections(&self) -> impl Iterator<Item = FlexrayArTpConnection> + Send + 'static {
+        self.element()
+            .get_sub_element(ElementName::TpConnections)
+            .into_iter()
+            .flat_map(|tp_connections_elem| tp_connections_elem.sub_elements())
+            .filter_map(|tp_connection_elem| tp_connection_elem.try_into().ok())
+    }
+
     /// add an N-PDU to the channel
     ///
     /// The `NPdus` are logically assembled into a pool of Rx `NPdus` and another pool of Tx `NPdus`.
@@ -643,6 +652,7 @@ mod test {
         let flexray_ar_tp_connection = fr_ar_tp_channel
             .create_flexray_ar_tp_connection(Some("conn"), &tp_sdu, &fr_ar_tp_node_source, &fr_ar_tp_node_target)
             .unwrap();
+        assert_eq!(fr_ar_tp_channel.flexray_ar_tp_connections().count(), 1);
         assert_eq!(flexray_ar_tp_connection.direct_tp_sdu(), Some(tp_sdu.into()));
         assert_eq!(flexray_ar_tp_connection.source(), Some(fr_ar_tp_node_source));
         assert_eq!(flexray_ar_tp_connection.targets().count(), 1);
