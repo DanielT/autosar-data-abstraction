@@ -32,7 +32,7 @@ pub trait AbstractPdu: AbstractionElement + Into<Pdu> {
             .parse_integer()
     }
 
-    /// iterate over the `PduTriggerings` that trigger this PDU
+    /// list all `PduTriggerings` that trigger this PDU
     fn pdu_triggerings(&self) -> Vec<PduTriggering> {
         let model_result = self.element().model();
         let path_result = self.element().path();

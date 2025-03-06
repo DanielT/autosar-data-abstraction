@@ -149,6 +149,25 @@ impl ISignal {
         None
     }
 
+    /// list all `ISignalTriggering`s that trigger this signal
+    pub fn signal_triggerings(&self) -> Vec<ISignalTriggering> {
+        let model_result = self.element().model();
+        let path_result = self.element().path();
+        if let (Ok(model), Ok(path)) = (model_result, path_result) {
+            model
+                .get_references_to(&path)
+                .iter()
+                .filter_map(|e| {
+                    e.upgrade()
+                        .and_then(|ref_elem| ref_elem.named_parent().ok().flatten())
+                        .and_then(|elem| ISignalTriggering::try_from(elem).ok())
+                })
+                .collect()
+        } else {
+            vec![]
+        }
+    }
+
     /// add a data transformation to this signal
     pub fn add_data_transformation(
         &self,
@@ -715,8 +734,8 @@ mod tests {
     use crate::{
         AutosarModelAbstraction, ByteOrder, SystemCategory,
         communication::{
-            CanClusterSettings, DataTransformationSet, SomeIpMessageType, SomeIpTransformationTechnologyConfig,
-            TransformationTechnologyConfig,
+            AbstractFrame, AbstractPdu, CanAddressingMode, CanClusterSettings, CanFrameType, DataTransformationSet,
+            SomeIpMessageType, SomeIpTransformationTechnologyConfig, TransformationTechnologyConfig,
         },
         datatype::{BaseTypeEncoding, CompuMethodContent, SwBaseType, Unit},
     };
@@ -880,6 +899,19 @@ mod tests {
         let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/test").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
+        let cluster = system
+            .create_can_cluster("cluster", &package, &CanClusterSettings::default())
+            .unwrap();
+        let channel = cluster.create_physical_channel("channel").unwrap();
+
+        let can_frame = system.create_can_frame("frame", &package, 8).unwrap();
+        channel
+            .trigger_frame(&can_frame, 0x100, CanAddressingMode::Standard, CanFrameType::Can20)
+            .unwrap();
+        let pdu = system.create_isignal_ipdu("pdu", &package, 8).unwrap();
+        can_frame
+            .map_pdu(&pdu, 0, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
 
         let sw_base_type =
             SwBaseType::new("sw_base_type", &package, 8, BaseTypeEncoding::None, None, None, None).unwrap();
@@ -889,12 +921,19 @@ mod tests {
             .create_isignal("signal", &package, 8, &sys_signal, Some(&sw_base_type))
             .unwrap();
 
+        pdu.map_signal(
+            &signal,
+            0,
+            ByteOrder::MostSignificantByteLast,
+            None,
+            TransferProperty::Pending,
+        )
+        .unwrap();
+        let pt = pdu.pdu_triggerings()[0].clone();
+
         // signal triggering
-        let cluster = system
-            .create_can_cluster("cluster", &package, &CanClusterSettings::default())
-            .unwrap();
-        let channel = cluster.create_physical_channel("channel").unwrap();
-        let st = ISignalTriggering::new(&signal, &channel.clone()).unwrap();
+        let st = signal.signal_triggerings()[0].clone();
+        assert_eq!(st, pt.signal_triggerings().next().unwrap());
 
         assert_eq!(st.physical_channel().unwrap(), PhysicalChannel::Can(channel.clone()));
 
