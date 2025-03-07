@@ -734,8 +734,8 @@ mod tests {
     use crate::{
         AutosarModelAbstraction, ByteOrder, SystemCategory,
         communication::{
-            AbstractFrame, AbstractPdu, CanAddressingMode, CanClusterSettings, CanFrameType, DataTransformationSet,
-            SomeIpMessageType, SomeIpTransformationTechnologyConfig, TransformationTechnologyConfig,
+            AbstractFrame, AbstractPdu, CanAddressingMode, CanFrameType, DataTransformationSet, SomeIpMessageType,
+            SomeIpTransformationTechnologyConfig, TransformationTechnologyConfig,
         },
         datatype::{BaseTypeEncoding, CompuMethodContent, SwBaseType, Unit},
     };
@@ -899,9 +899,7 @@ mod tests {
         let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/test").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
-        let cluster = system
-            .create_can_cluster("cluster", &package, &CanClusterSettings::default())
-            .unwrap();
+        let cluster = system.create_can_cluster("cluster", &package, None).unwrap();
         let channel = cluster.create_physical_channel("channel").unwrap();
 
         let can_frame = system.create_can_frame("frame", &package, 8).unwrap();

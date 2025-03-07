@@ -192,7 +192,7 @@ mod tests {
     use super::*;
     use crate::{
         AutosarModelAbstraction, SystemCategory,
-        communication::{CanClusterSettings, FlexrayChannelName, FlexrayClusterSettings},
+        communication::{FlexrayChannelName, FlexrayClusterSettings},
     };
     use autosar_data::AutosarVersion;
 
@@ -211,9 +211,7 @@ mod tests {
         let ethernet_cc: CommunicationController = ethernet_ctrl.clone().into();
         let flexray_cc: CommunicationController = flexray_ctrl.clone().into();
 
-        let can_cluster = system
-            .create_can_cluster("can_cluster", &package, &CanClusterSettings::default())
-            .unwrap();
+        let can_cluster = system.create_can_cluster("can_cluster", &package, None).unwrap();
         let ethernet_cluster = system.create_ethernet_cluster("ethernet_cluster", &package).unwrap();
         let flexray_cluster = system
             .create_flexray_cluster("flexray_cluster", &package, &FlexrayClusterSettings::default())

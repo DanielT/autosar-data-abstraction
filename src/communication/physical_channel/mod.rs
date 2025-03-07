@@ -46,7 +46,7 @@ pub trait AbstractPhysicalChannel: AbstractionElement {
     /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
+    /// # let cluster = system.create_can_cluster("Cluster", &package, None)?;
     /// # let can_channel = cluster.create_physical_channel("Channel")?;
     /// # let ecu = system.create_ecu_instance("ECU", &package)?;
     /// # let can_controller = ecu.create_can_communication_controller("Controller")?;
@@ -139,7 +139,7 @@ mod test {
     use super::*;
     use crate::{
         AutosarModelAbstraction, ByteOrder, SystemCategory,
-        communication::{AbstractFrame, CanAddressingMode, CanClusterSettings, CanFrameType, TransferProperty},
+        communication::{AbstractFrame, CanAddressingMode, CanFrameType, TransferProperty},
     };
     use autosar_data::AutosarVersion;
 
@@ -148,8 +148,7 @@ mod test {
         let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
         let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
-        let settings = CanClusterSettings::default();
-        let cluster = system.create_can_cluster("CanCluster", &pkg, &settings).unwrap();
+        let cluster = system.create_can_cluster("CanCluster", &pkg, None).unwrap();
         let channel = cluster.create_physical_channel("channel_name").unwrap();
 
         let ecu = system.create_ecu_instance("ECU", &pkg).unwrap();

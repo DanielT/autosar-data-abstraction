@@ -4,8 +4,8 @@ mod test {
     use autosar_data_abstraction::{
         AbstractionElement, AutosarAbstractionError, AutosarModelAbstraction, SystemCategory,
         communication::{
-            AbstractFrame, AbstractFrameTriggering, CanAddressingMode, CanClusterSettings, CanFrameType,
-            CommunicationDirection, TransferProperty,
+            AbstractFrame, AbstractFrameTriggering, CanAddressingMode, CanFrameType, CommunicationDirection,
+            TransferProperty,
         },
         datatype::BaseTypeEncoding,
     };
@@ -17,12 +17,9 @@ mod test {
         let system = system_package.create_system("System", SystemCategory::SystemExtract)?;
         let cluster_package = model.get_or_create_package("/Network/Clusters")?;
 
-        let settings = CanClusterSettings {
-            can_fd_baudrate: Some(2000000),
-            ..Default::default()
-        };
-        let can_cluster = system.create_can_cluster("CanCluster", &cluster_package, &settings)?;
+        let can_cluster = system.create_can_cluster("CanCluster", &cluster_package, None)?;
         assert_eq!(can_cluster.element().element_name(), ElementName::CanCluster);
+        can_cluster.set_can_fd_baudrate(Some(2_000_000))?;
         let can_channel = can_cluster.create_physical_channel("CanChannel")?;
 
         let ecu_package = model.get_or_create_package("/Ecus")?;

@@ -1,10 +1,9 @@
 use crate::communication::{
-    CanCluster, CanClusterSettings, CanFrame, CanTpConfig, Cluster, ContainerIPdu, DcmIPdu, DoIpTpConfig,
-    EthernetCluster, EventGroupControlType, FlexrayArTpConfig, FlexrayCluster, FlexrayClusterSettings, FlexrayFrame,
-    FlexrayTpConfig, Frame, GeneralPurposeIPdu, GeneralPurposeIPduCategory, GeneralPurposePdu,
-    GeneralPurposePduCategory, ISignal, ISignalGroup, ISignalIPdu, MultiplexedIPdu, NPdu, NmConfig, NmPdu, Pdu,
-    SecuredIPdu, ServiceInstanceCollectionSet, SoAdRoutingGroup, SocketConnectionIpduIdentifierSet, SomeipTpConfig,
-    SystemSignal, SystemSignalGroup,
+    CanCluster, CanFrame, CanTpConfig, Cluster, ContainerIPdu, DcmIPdu, DoIpTpConfig, EthernetCluster,
+    EventGroupControlType, FlexrayArTpConfig, FlexrayCluster, FlexrayClusterSettings, FlexrayFrame, FlexrayTpConfig,
+    Frame, GeneralPurposeIPdu, GeneralPurposeIPduCategory, GeneralPurposePdu, GeneralPurposePduCategory, ISignal,
+    ISignalGroup, ISignalIPdu, MultiplexedIPdu, NPdu, NmConfig, NmPdu, Pdu, SecuredIPdu, ServiceInstanceCollectionSet,
+    SoAdRoutingGroup, SocketConnectionIpduIdentifierSet, SomeipTpConfig, SystemSignal, SystemSignalGroup,
 };
 use crate::datatype::SwBaseType;
 use crate::software_component::{CompositionSwComponentType, RootSwCompositionPrototype};
@@ -187,8 +186,6 @@ impl System {
     /// The cluster must have a channel to be valid, but this channel is not created automatically.
     /// Call [`CanCluster::create_physical_channel`] to create it.
     ///
-    /// Use the [`CanClusterSettings`] to define the baudrates for Can, `CanFD`, and `CanXL`.
-    ///
     /// # Example
     ///
     /// ```
@@ -199,7 +196,7 @@ impl System {
     /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// let cluster = system.create_can_cluster("can_cluster", &package, &CanClusterSettings::default())?;
+    /// let cluster = system.create_can_cluster("can_cluster", &package, None)?;
     /// cluster.create_physical_channel("can_channel");
     /// # Ok(())}
     /// ```
@@ -211,9 +208,9 @@ impl System {
         &self,
         cluster_name: &str,
         package: &ArPackage,
-        settings: &CanClusterSettings,
+        can_baudrate: Option<u32>,
     ) -> Result<CanCluster, AutosarAbstractionError> {
-        let cluster = CanCluster::new(cluster_name, package, settings)?;
+        let cluster = CanCluster::new(cluster_name, package, can_baudrate)?;
         self.create_fibex_element_ref_unchecked(cluster.element())?;
 
         Ok(cluster)
@@ -303,7 +300,7 @@ impl System {
     /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// system.create_can_cluster("can_cluster", &package, &CanClusterSettings::default())?;
+    /// system.create_can_cluster("can_cluster", &package, None)?;
     /// system.create_flexray_cluster("flexray_cluster", &package, &FlexrayClusterSettings::default())?;
     /// for cluster in system.clusters() {
     ///     // do something
@@ -1125,9 +1122,7 @@ impl FusedIterator for EcuInstanceIterator {}
 mod test {
     use crate::{
         AbstractionElement, AutosarModelAbstraction, IdentifiableAbstractionElement, System,
-        communication::{
-            CanClusterSettings, FlexrayClusterSettings, GeneralPurposeIPduCategory, GeneralPurposePduCategory,
-        },
+        communication::{FlexrayClusterSettings, GeneralPurposeIPduCategory, GeneralPurposePduCategory},
         software_component::CompositionSwComponentType,
         system::SystemCategory,
     };
@@ -1276,8 +1271,7 @@ mod test {
             .unwrap();
         let package_2 = model.get_or_create_package("/Clusters").unwrap();
 
-        let settings = CanClusterSettings::new();
-        system.create_can_cluster("CanCluster", &package_2, &settings).unwrap();
+        system.create_can_cluster("CanCluster", &package_2, None).unwrap();
 
         let settings = FlexrayClusterSettings::new();
         system

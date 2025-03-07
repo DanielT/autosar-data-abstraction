@@ -26,7 +26,7 @@ impl CanPhysicalChannel {
     /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
+    /// # let cluster = system.create_can_cluster("Cluster", &package, None)?;
     /// let channel = cluster.create_physical_channel("Channel")?;
     /// let cluster_2 = channel.cluster()?;
     /// assert_eq!(cluster, cluster_2);
@@ -50,7 +50,7 @@ impl CanPhysicalChannel {
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let frame_package = model.get_or_create_package("/Frames")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
+    /// # let cluster = system.create_can_cluster("Cluster", &package, None)?;
     /// let channel = cluster.create_physical_channel("Channel")?;
     /// let frame = system.create_can_frame("Frame", &frame_package, 8)?;
     /// channel.trigger_frame(&frame, 0x100, CanAddressingMode::Standard, CanFrameType::Can20)?;
@@ -77,7 +77,7 @@ impl CanPhysicalChannel {
     /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
+    /// # let cluster = system.create_can_cluster("Cluster", &package, None)?;
     /// # let channel = cluster.create_physical_channel("Channel")?;
     /// # let frame = system.create_can_frame("Frame", &package, 8)?;
     /// channel.trigger_frame(&frame, 0x100, CanAddressingMode::Standard, CanFrameType::Can20)?;
@@ -103,7 +103,7 @@ impl AbstractPhysicalChannel for CanPhysicalChannel {
 
 #[cfg(test)]
 mod test {
-    use crate::{AutosarModelAbstraction, SystemCategory, communication::CanClusterSettings};
+    use crate::{AutosarModelAbstraction, SystemCategory};
     use autosar_data::AutosarVersion;
 
     #[test]
@@ -111,8 +111,7 @@ mod test {
         let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
         let pkg = model.get_or_create_package("/test").unwrap();
         let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
-        let settings = CanClusterSettings::default();
-        let cluster = system.create_can_cluster("CanCluster", &pkg, &settings).unwrap();
+        let cluster = system.create_can_cluster("CanCluster", &pkg, None).unwrap();
 
         let channel = cluster.create_physical_channel("channel_name").unwrap();
         let c2 = channel.cluster().unwrap();

@@ -209,7 +209,7 @@ pub trait AbstractFrameTriggering: AbstractionElement {
     /// # let package = model.get_or_create_package("/pkg")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let ecu = system.create_ecu_instance("ECU", &package)?;
-    /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
+    /// # let cluster = system.create_can_cluster("Cluster", &package, None)?;
     /// # let channel = cluster.create_physical_channel("Channel")?;
     /// # let ecu_instance = system.create_ecu_instance("Ecu", &package)?;
     /// # let canctrl = ecu_instance.create_can_communication_controller("CanCtrl")?;

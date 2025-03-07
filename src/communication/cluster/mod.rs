@@ -111,8 +111,7 @@ mod tests {
         let system = package
             .create_system("System", crate::SystemCategory::EcuExtract)
             .unwrap();
-        let settings = CanClusterSettings::default();
-        let can_cluster = CanCluster::new("CanCluster", &package, &settings).unwrap();
+        let can_cluster = CanCluster::new("CanCluster", &package, None).unwrap();
 
         assert!(can_cluster.system().is_none());
         system.create_fibex_element_ref(can_cluster.element()).unwrap();
@@ -123,8 +122,7 @@ mod tests {
     fn cluster_conversion() {
         let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/Test").unwrap();
-        let can_settings = CanClusterSettings::default();
-        let can_cluster = CanCluster::new("CanCluster", &package, &can_settings).unwrap();
+        let can_cluster = CanCluster::new("CanCluster", &package, None).unwrap();
         let ethernet_cluster = EthernetCluster::new("EthernetCluster", &package).unwrap();
         let flexray_settings = FlexrayClusterSettings::default();
         let flexray_cluster = FlexrayCluster::new("FlexrayCluster", &package, &flexray_settings).unwrap();

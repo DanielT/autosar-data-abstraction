@@ -293,10 +293,7 @@ impl From<CanFrameType> for EnumItem {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{
-        AutosarModelAbstraction, ByteOrder, SystemCategory,
-        communication::{AbstractPhysicalChannel, CanClusterSettings},
-    };
+    use crate::{AutosarModelAbstraction, ByteOrder, SystemCategory, communication::AbstractPhysicalChannel};
     use autosar_data::AutosarVersion;
 
     #[test]
@@ -304,9 +301,7 @@ mod test {
         let model = AutosarModelAbstraction::create("test", AutosarVersion::LATEST);
         let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("System", SystemCategory::EcuExtract).unwrap();
-        let can_cluster = system
-            .create_can_cluster("Cluster", &package, &CanClusterSettings::default())
-            .unwrap();
+        let can_cluster = system.create_can_cluster("Cluster", &package, None).unwrap();
         let channel = can_cluster.create_physical_channel("Channel").unwrap();
 
         let ecu_instance = system.create_ecu_instance("ECU", &package).unwrap();

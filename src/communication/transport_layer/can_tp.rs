@@ -650,7 +650,7 @@ impl CanTpNode {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{AutosarModelAbstraction, SystemCategory, communication::CanClusterSettings};
+    use crate::{AutosarModelAbstraction, SystemCategory};
     use autosar_data::AutosarVersion;
 
     #[test]
@@ -659,9 +659,7 @@ mod test {
         let package = model.get_or_create_package("/pkg1").unwrap();
 
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
-        let can_cluster = system
-            .create_can_cluster("can_cluster", &package, &CanClusterSettings::default())
-            .unwrap();
+        let can_cluster = system.create_can_cluster("can_cluster", &package, None).unwrap();
         let can_channel = can_cluster.create_physical_channel("can_channel").unwrap();
         let ecu_instance = system.create_ecu_instance("ecu_instance", &package).unwrap();
         let communication_controller = ecu_instance.create_can_communication_controller("can_ctrl").unwrap();

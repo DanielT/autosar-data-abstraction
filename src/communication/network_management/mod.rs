@@ -721,9 +721,7 @@ mod test {
         let package = model.get_or_create_package("/package").unwrap();
         let system = package.create_system("System", SystemCategory::SystemExtract).unwrap();
 
-        let can_cluster = system
-            .create_can_cluster("can_cluster", &package, &CanClusterSettings::default())
-            .unwrap();
+        let can_cluster = system.create_can_cluster("can_cluster", &package, None).unwrap();
         let can_physical_channel = can_cluster.create_physical_channel("can_channel").unwrap();
         let ecu1 = system.create_ecu_instance("ecu1", &package).unwrap();
         let ecu2 = system.create_ecu_instance("ecu2", &package).unwrap();

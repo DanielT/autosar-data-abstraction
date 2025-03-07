@@ -16,7 +16,7 @@ impl CanCluster {
     pub(crate) fn new(
         cluster_name: &str,
         package: &ArPackage,
-        settings: &CanClusterSettings,
+        can_baudrate: Option<u32>,
     ) -> Result<Self, AutosarAbstractionError> {
         let elem_pkg_elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let elem_cluster = elem_pkg_elements.create_named_sub_element(ElementName::CanCluster, cluster_name)?;
@@ -32,108 +32,88 @@ impl CanCluster {
         }
 
         let can_cluster = CanCluster(elem_cluster);
-        can_cluster.update_settings(settings);
+        can_cluster.set_baudrate(can_baudrate.unwrap_or(500_000))?;
 
         Ok(can_cluster)
     }
 
-    /// Update the settings of this `CanCluster` with new values for the baudrates
-    ///
-    /// The baudrates for `CanFD` and `CanXL` are optional.
-    /// If they are set to None in the settings, then corresponding elements in the model will be removed.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use autosar_data::*;
-    /// # use autosar_data_abstraction::*;
-    /// # use autosar_data_abstraction::communication::*;
-    /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
-    /// # let package = model.get_or_create_package("/pkg1")?;
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
-    /// let mut settings = cluster.settings();
-    /// settings.can_fd_baudrate = Some(2000000);
-    /// cluster.update_settings(&settings);
-    /// # Ok(())}
-    /// ```
-    pub fn update_settings(&self, settings: &CanClusterSettings) {
-        if let Ok(cluster_content) = self
-            .0
+    /// set the baudrate for this `CanCluster`
+    pub fn set_baudrate(&self, baudrate: u32) -> Result<(), AutosarAbstractionError> {
+        self.0
             .get_or_create_sub_element(ElementName::CanClusterVariants)
             .and_then(|ccv| ccv.get_or_create_sub_element(ElementName::CanClusterConditional))
-        {
-            let _ = cluster_content
-                .get_or_create_sub_element(ElementName::Baudrate)
-                .and_then(|br| br.set_character_data(settings.baudrate.to_string()));
-            if let Some(can_fd_baudrate) = settings.can_fd_baudrate {
-                let _ = cluster_content
-                    .get_or_create_sub_element(ElementName::CanFdBaudrate)
-                    .and_then(|cfbr| cfbr.set_character_data(can_fd_baudrate.to_string()));
-            } else if let Some(cfbr) = cluster_content.get_sub_element(ElementName::CanFdBaudrate) {
-                let _ = cluster_content.remove_sub_element(cfbr);
-            }
-            if let Some(can_xl_baudrate) = settings.can_xl_baudrate {
-                cluster_content
-                    .get_or_create_sub_element(ElementName::CanXlBaudrate)
-                    .and_then(|cxbr| cxbr.set_character_data(can_xl_baudrate.to_string()))
-                    .unwrap();
-            } else if let Some(cxbr) = cluster_content.get_sub_element(ElementName::CanXlBaudrate) {
-                let _ = cluster_content.remove_sub_element(cxbr);
-            }
-        }
+            .and_then(|cc| cc.get_or_create_sub_element(ElementName::Baudrate))
+            .and_then(|br| br.set_character_data(baudrate as u64))?;
+        Ok(())
     }
 
-    /// get the setings of this `CanCluster`
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use autosar_data::*;
-    /// # use autosar_data_abstraction::*;
-    /// # use autosar_data_abstraction::communication::*;
-    /// # fn main() -> Result<(), AutosarAbstractionError> {
-    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
-    /// # let package = model.get_or_create_package("/pkg1")?;
-    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// let settings = CanClusterSettings {baudrate: 500000, can_fd_baudrate: None, can_xl_baudrate: None};
-    /// let cluster = system.create_can_cluster("Cluster", &package, &settings)?;
-    /// let settings2 = cluster.settings();
-    /// assert_eq!(settings, settings2);
-    /// # Ok(())}
-    /// ```
+    /// get the baudrate for this `CanCluster`
     #[must_use]
-    pub fn settings(&self) -> CanClusterSettings {
-        let mut settings = CanClusterSettings {
-            baudrate: 0,
-            can_fd_baudrate: None,
-            can_xl_baudrate: None,
-        };
-        if let Some(cluster_content) = self
-            .0
+    pub fn baudrate(&self) -> Option<u32> {
+        self.0
             .get_sub_element(ElementName::CanClusterVariants)
             .and_then(|ccv| ccv.get_sub_element(ElementName::CanClusterConditional))
-        {
-            if let Some(baudrate) = cluster_content
-                .get_sub_element(ElementName::Baudrate)
-                .and_then(|br| br.character_data())
-                .and_then(|cdata| cdata.parse_integer())
-            {
-                settings.baudrate = baudrate;
-            }
+            .and_then(|cc| cc.get_sub_element(ElementName::Baudrate))
+            .and_then(|br| br.character_data())
+            .and_then(|cdata| cdata.parse_integer())
+    }
 
-            settings.can_fd_baudrate = cluster_content
-                .get_sub_element(ElementName::CanFdBaudrate)
-                .and_then(|br| br.character_data())
-                .and_then(|cdata| cdata.parse_integer());
-
-            settings.can_xl_baudrate = cluster_content
-                .get_sub_element(ElementName::CanXlBaudrate)
-                .and_then(|br| br.character_data())
-                .and_then(|cdata| cdata.parse_integer());
+    /// set the baudrate for CAN FD for this `CanCluster`
+    pub fn set_can_fd_baudrate(&self, baudrate: Option<u32>) -> Result<(), AutosarAbstractionError> {
+        if let Some(baudrate) = baudrate {
+            self.0
+                .get_or_create_sub_element(ElementName::CanClusterVariants)
+                .and_then(|ccv| ccv.get_or_create_sub_element(ElementName::CanClusterConditional))
+                .and_then(|cc| cc.get_or_create_sub_element(ElementName::CanFdBaudrate))
+                .and_then(|br| br.set_character_data(baudrate as u64))?;
+        } else {
+            let _ = self
+                .0
+                .get_sub_element(ElementName::CanClusterVariants)
+                .and_then(|ccv| ccv.get_sub_element(ElementName::CanClusterConditional))
+                .and_then(|cc| cc.remove_sub_element_kind(ElementName::CanFdBaudrate).ok());
         }
-        settings
+        Ok(())
+    }
+
+    /// get the baudrate for CAN FD for this `CanCluster`
+    #[must_use]
+    pub fn can_fd_baudrate(&self) -> Option<u32> {
+        self.0
+            .get_sub_element(ElementName::CanClusterVariants)
+            .and_then(|ccv| ccv.get_sub_element(ElementName::CanClusterConditional))
+            .and_then(|cc| cc.get_sub_element(ElementName::CanFdBaudrate))
+            .and_then(|br| br.character_data())
+            .and_then(|cdata| cdata.parse_integer())
+    }
+
+    /// set the baudrate for CAN XL for this `CanCluster`
+    pub fn set_can_xl_baudrate(&self, baudrate: Option<u32>) -> Result<(), AutosarAbstractionError> {
+        if let Some(baudrate) = baudrate {
+            self.0
+                .get_or_create_sub_element(ElementName::CanClusterVariants)
+                .and_then(|ccv| ccv.get_or_create_sub_element(ElementName::CanClusterConditional))
+                .and_then(|cc| cc.get_or_create_sub_element(ElementName::CanXlBaudrate))
+                .and_then(|br| br.set_character_data(baudrate as u64))?;
+        } else {
+            let _ = self
+                .0
+                .get_sub_element(ElementName::CanClusterVariants)
+                .and_then(|ccv| ccv.get_sub_element(ElementName::CanClusterConditional))
+                .and_then(|cc| cc.remove_sub_element_kind(ElementName::CanXlBaudrate).ok());
+        }
+        Ok(())
+    }
+
+    /// get the baudrate for CAN XL for this `CanCluster`
+    #[must_use]
+    pub fn can_xl_baudrate(&self) -> Option<u32> {
+        self.0
+            .get_sub_element(ElementName::CanClusterVariants)
+            .and_then(|ccv| ccv.get_sub_element(ElementName::CanClusterConditional))
+            .and_then(|cc| cc.get_sub_element(ElementName::CanXlBaudrate))
+            .and_then(|br| br.character_data())
+            .and_then(|cdata| cdata.parse_integer())
     }
 
     /// Create a new physical channel for the cluster
@@ -150,7 +130,7 @@ impl CanCluster {
     /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
+    /// let cluster = system.create_can_cluster("Cluster", &package, None)?;
     /// let channel = cluster.create_physical_channel("Channel")?;
     /// # Ok(())}
     /// ```
@@ -187,7 +167,7 @@ impl CanCluster {
     /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
+    /// # let cluster = system.create_can_cluster("Cluster", &package, None)?;
     /// # let can_channel = cluster.create_physical_channel("Channel")?;
     /// if let Some(channel) = cluster.physical_channel() {
     /// #   assert_eq!(channel, can_channel);
@@ -210,44 +190,9 @@ impl AbstractCluster for CanCluster {}
 
 //##################################################################
 
-/// Settings for a CAN cluster
-#[derive(Debug, Clone, PartialEq)]
-pub struct CanClusterSettings {
-    /// baudrate for the CAN cluster
-    pub baudrate: u32,
-    /// optional: baudrate for CAN FD, only needed if the cluster supports CAN FD
-    pub can_fd_baudrate: Option<u32>,
-    /// optional: baudrate for CAN XL, only needed if the cluster supports CAN XL
-    pub can_xl_baudrate: Option<u32>,
-}
-
-/// settings for a CAN cluster
-impl CanClusterSettings {
-    /// create a new `CanClusterSettings` object
-    #[must_use]
-    pub fn new() -> Self {
-        Self {
-            baudrate: 500_000,
-            can_fd_baudrate: None,
-            can_xl_baudrate: None,
-        }
-    }
-}
-
-impl Default for CanClusterSettings {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-//##################################################################
-
 #[cfg(test)]
 mod test {
-    use crate::{
-        AutosarModelAbstraction, SystemCategory,
-        communication::{AbstractCluster, CanClusterSettings},
-    };
+    use crate::{AutosarModelAbstraction, SystemCategory, communication::AbstractCluster};
     use autosar_data::AutosarVersion;
 
     #[test]
@@ -258,13 +203,11 @@ mod test {
 
         let pkg2 = model.get_or_create_package("/can").unwrap();
         // create the CAN cluster CanCluster
-        let settings = CanClusterSettings::default();
-        let result = system.create_can_cluster("CanCluster", &pkg2, &settings);
+        let result = system.create_can_cluster("CanCluster", &pkg2, None);
         assert!(result.is_ok());
         let cluster = result.unwrap();
         // creating the same cluster again is not possible
-        let settings = CanClusterSettings::default();
-        let result = system.create_can_cluster("CanCluster", &pkg2, &settings);
+        let result = system.create_can_cluster("CanCluster", &pkg2, None);
         assert!(result.is_err());
 
         // system link
@@ -272,25 +215,18 @@ mod test {
         assert_eq!(linked_system, system);
 
         // settings for CanFd
-        let mut settings = cluster.settings();
-        assert!(settings.can_fd_baudrate.is_none());
-        settings.can_fd_baudrate = Some(2_000_000);
-        cluster.update_settings(&settings);
-        let mut settings = cluster.settings();
-        assert!(settings.can_fd_baudrate.is_some());
-        // add setings for CanXL, remove CanFd
-        settings.can_fd_baudrate = None;
-        settings.can_xl_baudrate = Some(10_000_000);
-        cluster.update_settings(&settings);
-        let mut settings = cluster.settings();
-        assert!(settings.can_fd_baudrate.is_none());
-        assert!(settings.can_xl_baudrate.is_some());
+        cluster.set_baudrate(250_000).unwrap();
+        assert_eq!(cluster.baudrate().unwrap(), 250_000);
+        cluster.set_can_fd_baudrate(Some(2_000_000)).unwrap();
+        assert_eq!(cluster.can_fd_baudrate().unwrap(), 2_000_000);
+        cluster.set_can_xl_baudrate(Some(10_000_000)).unwrap();
+        assert_eq!(cluster.can_xl_baudrate().unwrap(), 10_000_000);
+        // remove CanFd settings
+        cluster.set_can_fd_baudrate(None).unwrap();
+        assert!(cluster.can_fd_baudrate().is_none());
         // remove CanXl settings
-        settings.can_xl_baudrate = None;
-        cluster.update_settings(&settings);
-        let settings = cluster.settings();
-        assert!(settings.can_fd_baudrate.is_none());
-        assert!(settings.can_xl_baudrate.is_none());
+        cluster.set_can_xl_baudrate(None).unwrap();
+        assert!(cluster.can_xl_baudrate().is_none());
 
         // create a channel
         let result = cluster.create_physical_channel("Channel1");

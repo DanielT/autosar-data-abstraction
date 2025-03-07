@@ -586,8 +586,8 @@ impl FlexrayCluster {
     /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
-    /// let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
-    /// let channel = cluster.create_physical_channel("Channel")?;
+    /// let cluster = system.create_flexray_cluster("Cluster", &package, &FlexrayClusterSettings::default())?;
+    /// let channel = cluster.create_physical_channel("Channel", FlexrayChannelName::A)?;
     /// # Ok(())}
     /// ```
     #[must_use]

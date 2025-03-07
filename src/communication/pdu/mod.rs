@@ -863,10 +863,7 @@ mod test {
     use super::*;
     use crate::{
         AutosarModelAbstraction, ByteOrder, SystemCategory,
-        communication::{
-            AbstractFrame, AbstractFrameTriggering, CanAddressingMode, CanClusterSettings, CanFrameType,
-            TransferProperty,
-        },
+        communication::{AbstractFrame, AbstractFrameTriggering, CanAddressingMode, CanFrameType, TransferProperty},
     };
     use autosar_data::AutosarVersion;
 
@@ -985,9 +982,7 @@ mod test {
             .unwrap();
 
         // create a frame and map the ISignalIPdu to it
-        let can_cluster = system
-            .create_can_cluster("Cluster", &package, &CanClusterSettings::default())
-            .unwrap();
+        let can_cluster = system.create_can_cluster("Cluster", &package, None).unwrap();
         let channel = can_cluster.create_physical_channel("Channel").unwrap();
         let frame = system.create_can_frame("frame", &package, 8).unwrap();
         let frame_triggering = channel

@@ -36,7 +36,7 @@ impl CanCommunicationController {
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package)?;
     /// let can_controller = ecu_instance.create_can_communication_controller("CanCtrl")?;
-    /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
+    /// # let cluster = system.create_can_cluster("Cluster", &package, None)?;
     /// # let physical_channel = cluster.create_physical_channel("Channel")?;
     /// can_controller.connect_physical_channel("connection", &physical_channel)?;
     /// for channel in can_controller.connected_channels() {
@@ -80,7 +80,7 @@ impl CanCommunicationController {
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// # let ecu_instance = system.create_ecu_instance("ecu_name", &package)?;
     /// let can_controller = ecu_instance.create_can_communication_controller("CanCtrl")?;
-    /// # let cluster = system.create_can_cluster("Cluster", &package, &CanClusterSettings::default())?;
+    /// # let cluster = system.create_can_cluster("Cluster", &package, None)?;
     /// # let physical_channel = cluster.create_physical_channel("Channel")?;
     /// can_controller.connect_physical_channel("connection", &physical_channel)?;
     /// # Ok(())}
@@ -228,7 +228,7 @@ impl Iterator for CanCtrlChannelsIterator {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{AutosarModelAbstraction, SystemCategory, communication::CanClusterSettings};
+    use crate::{AutosarModelAbstraction, SystemCategory};
     use autosar_data::AutosarVersion;
 
     #[test]
@@ -243,8 +243,7 @@ mod test {
         let controller = result.unwrap();
 
         // create some physical channels
-        let settings = CanClusterSettings::default();
-        let cluster = system.create_can_cluster("CanCluster", &pkg, &settings).unwrap();
+        let cluster = system.create_can_cluster("CanCluster", &pkg, None).unwrap();
         let channel1 = cluster.create_physical_channel("C1").unwrap();
 
         // connect the controller to channel1
@@ -278,8 +277,7 @@ mod test {
         assert_eq!(controller.ecu_instance().unwrap(), ecu);
 
         // create some physical channels
-        let settings = CanClusterSettings::default();
-        let cluster = system.create_can_cluster("CanCluster", &pkg, &settings).unwrap();
+        let cluster = system.create_can_cluster("CanCluster", &pkg, None).unwrap();
         let channel1 = cluster.create_physical_channel("C1").unwrap();
 
         // connect the controller to channel1
