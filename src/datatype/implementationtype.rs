@@ -106,6 +106,38 @@ pub trait AbstractImplementationDataType: IdentifiableAbstractionElement {
             .parse_integer()
     }
 
+    /// get the data pointer target of this implementation data type [category: DATA_REFERENCE]
+    fn data_pointer_target(&self) -> Option<DataPointerTarget> {
+        let category = self.category()?;
+        if category != ImplementationDataCategory::DataReference {
+            return None;
+        }
+        let sw_pointer_target_props = self
+            .element()
+            .get_sub_element(ElementName::SwDataDefProps)?
+            .get_sub_element(ElementName::SwDataDefPropsVariants)?
+            .get_sub_element(ElementName::SwDataDefPropsConditional)?
+            .get_sub_element(ElementName::SwPointerTargetProps)?
+            .get_sub_element(ElementName::SwDataDefProps)?
+            .get_sub_element(ElementName::SwDataDefPropsVariants)?
+            .get_sub_element(ElementName::SwDataDefPropsConditional)?;
+        if let Some(base_type) = sw_pointer_target_props
+            .get_sub_element(ElementName::BaseTypeRef)
+            .and_then(|elem| elem.get_reference_target().ok())
+        {
+            Some(DataPointerTarget::BaseType(base_type.try_into().ok()?))
+        } else if let Some(impl_data_type) = sw_pointer_target_props
+            .get_sub_element(ElementName::ImplementationDataTypeRef)
+            .and_then(|elem| elem.get_reference_target().ok())
+        {
+            Some(DataPointerTarget::ImplementationDataType(
+                impl_data_type.try_into().ok()?,
+            ))
+        } else {
+            None
+        }
+    }
+
     /// apply the settings to this implementation data type
     ///
     /// Calling this method completely replaces the existing settings of the implementation data type,
@@ -154,7 +186,32 @@ pub trait AbstractImplementationDataType: IdentifiableAbstractionElement {
                 })
             }
             ImplementationDataCategory::DataReference => {
-                Some(ImplementationDataTypeSettings::DataReference { name: self.name()? })
+                let sw_pointer_target_props = self
+                    .element()
+                    .get_sub_element(ElementName::SwDataDefProps)?
+                    .get_sub_element(ElementName::SwDataDefPropsVariants)?
+                    .get_sub_element(ElementName::SwDataDefPropsConditional)?
+                    .get_sub_element(ElementName::SwPointerTargetProps)?
+                    .get_sub_element(ElementName::SwDataDefProps)?
+                    .get_sub_element(ElementName::SwDataDefPropsVariants)?
+                    .get_sub_element(ElementName::SwDataDefPropsConditional)?;
+                let target = if let Some(base_type) = sw_pointer_target_props
+                    .get_sub_element(ElementName::BaseTypeRef)
+                    .and_then(|elem| elem.get_reference_target().ok())
+                {
+                    DataPointerTarget::BaseType(base_type.try_into().ok()?)
+                } else if let Some(impl_data_type) = sw_pointer_target_props
+                    .get_sub_element(ElementName::ImplementationDataTypeRef)
+                    .and_then(|elem| elem.get_reference_target().ok())
+                {
+                    DataPointerTarget::ImplementationDataType(impl_data_type.try_into().ok()?)
+                } else {
+                    return None;
+                };
+                Some(ImplementationDataTypeSettings::DataReference {
+                    name: self.name()?,
+                    target,
+                })
             }
             ImplementationDataCategory::FunctionReference => {
                 Some(ImplementationDataTypeSettings::FunctionReference { name: self.name()? })
@@ -296,10 +353,42 @@ fn apply_impl_data_settings(
                 ImplementationDataTypeElement::new(&sub_elements, sub_element)?;
             }
         }
-        ImplementationDataTypeSettings::DataReference { .. } => {
+        ImplementationDataTypeSettings::DataReference { target, .. } => {
             element
                 .create_sub_element(ElementName::Category)?
                 .set_character_data("DATA_REFERENCE")?;
+            let pointer_props = element
+                .create_sub_element(ElementName::SwDataDefProps)?
+                .create_sub_element(ElementName::SwDataDefPropsVariants)?
+                .create_sub_element(ElementName::SwDataDefPropsConditional)?
+                .create_sub_element(ElementName::SwPointerTargetProps)?;
+            let contained_props = pointer_props
+                .create_sub_element(ElementName::SwDataDefProps)?
+                .create_sub_element(ElementName::SwDataDefPropsVariants)?
+                .create_sub_element(ElementName::SwDataDefPropsConditional)?;
+            match target {
+                DataPointerTarget::BaseType(base_type) => {
+                    contained_props
+                        .create_sub_element(ElementName::BaseTypeRef)?
+                        .set_reference_target(base_type.element())?;
+                    pointer_props
+                        .create_sub_element(ElementName::TargetCategory)
+                        .and_then(|elem| elem.set_character_data("VALUE"))?;
+                }
+                DataPointerTarget::ImplementationDataType(impl_data_type) => {
+                    contained_props
+                        .create_sub_element(ElementName::ImplementationDataTypeRef)?
+                        .set_reference_target(impl_data_type.element())?;
+                    let target_category = impl_data_type
+                        .category()
+                        .as_ref()
+                        .map(|item| item.to_string())
+                        .unwrap_or("VALUE".to_string());
+                    pointer_props
+                        .create_sub_element(ElementName::TargetCategory)?
+                        .set_character_data(target_category)?;
+                }
+            }
         }
         ImplementationDataTypeSettings::FunctionReference { .. } => {
             element
@@ -438,7 +527,8 @@ pub enum ImplementationDataTypeSettings {
     DataReference {
         /// the name of the data type
         name: String,
-        // TODO: Add reference to the referenced data type
+        /// the target of the data pointer; either an SwBaseType or an ImplementationDataType
+        target: DataPointerTarget,
     },
     /// A pointer to a function
     FunctionReference {
@@ -473,6 +563,17 @@ impl ImplementationDataTypeSettings {
             ImplementationDataTypeSettings::TypeReference { name, .. } => name,
         }
     }
+}
+
+//#########################################################
+
+/// The target of an ImplementationDataType with category DataReference
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum DataPointerTarget {
+    /// A base type
+    BaseType(SwBaseType),
+    /// An implementation data type
+    ImplementationDataType(ImplementationDataType),
 }
 
 //#########################################################
@@ -548,6 +649,14 @@ mod tests {
                     compu_method: Some(compu_method.clone()),
                     data_constraint: Some(data_constraint.clone()),
                 },
+                ImplementationDataTypeSettings::DataReference {
+                    name: "DataReferenceToBase".to_string(),
+                    target: DataPointerTarget::BaseType(base_type.clone()),
+                },
+                ImplementationDataTypeSettings::DataReference {
+                    name: "DataReferenceToImpl".to_string(),
+                    target: DataPointerTarget::ImplementationDataType(other_impl_data_type.clone()),
+                },
             ],
         };
         let impl_data_type = ImplementationDataType::new(&package, &settings).unwrap();
@@ -555,13 +664,29 @@ mod tests {
         assert_eq!(impl_data_type.category(), Some(ImplementationDataCategory::Structure));
 
         let sub_elements = impl_data_type.sub_elements().collect::<Vec<_>>();
-        assert_eq!(sub_elements.len(), 4);
+        assert_eq!(sub_elements.len(), 6);
         assert_eq!(sub_elements[0].category(), Some(ImplementationDataCategory::Union));
         assert_eq!(sub_elements[1].category(), Some(ImplementationDataCategory::Value));
         assert_eq!(sub_elements[2].category(), Some(ImplementationDataCategory::Array));
         assert_eq!(
             sub_elements[3].category(),
             Some(ImplementationDataCategory::TypeReference)
+        );
+        assert_eq!(
+            sub_elements[4].category(),
+            Some(ImplementationDataCategory::DataReference)
+        );
+        assert_eq!(
+            sub_elements[4].data_pointer_target(),
+            Some(DataPointerTarget::BaseType(base_type.clone()))
+        );
+        assert_eq!(
+            sub_elements[5].category(),
+            Some(ImplementationDataCategory::DataReference)
+        );
+        assert_eq!(
+            sub_elements[5].data_pointer_target(),
+            Some(DataPointerTarget::ImplementationDataType(other_impl_data_type.clone()))
         );
 
         let settings_read = impl_data_type.settings().unwrap();
