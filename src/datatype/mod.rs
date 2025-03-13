@@ -98,14 +98,34 @@ impl Unit {
         display_name: Option<&str>,
     ) -> Result<Self, AutosarAbstractionError> {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
-        let unit = elements.create_named_sub_element(ElementName::Unit, name)?;
+        let unit_elem = elements.create_named_sub_element(ElementName::Unit, name)?;
+        let unit = Unit(unit_elem);
 
+        unit.set_display_name(display_name)?;
+
+        Ok(unit)
+    }
+
+    /// Set the display name of the unit
+    pub fn set_display_name(&self, display_name: Option<&str>) -> Result<(), AutosarAbstractionError> {
         if let Some(display_name) = display_name {
-            unit.create_sub_element(ElementName::DisplayName)?
+            self.element()
+                .get_or_create_sub_element(ElementName::DisplayName)?
                 .set_character_data(display_name)?;
+        } else {
+            let _ = self.element().remove_sub_element_kind(ElementName::DisplayName);
         }
 
-        Ok(Self(unit))
+        Ok(())
+    }
+
+    /// Get the display name of the unit
+    #[must_use]
+    pub fn display_name(&self) -> Option<String> {
+        self.element()
+            .get_sub_element(ElementName::DisplayName)?
+            .character_data()?
+            .string_value()
     }
 }
 
@@ -234,6 +254,15 @@ mod test {
     use super::*;
     use crate::AutosarModelAbstraction;
     use autosar_data::AutosarVersion;
+
+    #[test]
+    fn unit() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/Units").unwrap();
+
+        let unit = Unit::new("Unit", &package, Some("Unit Display")).unwrap();
+        assert_eq!(unit.display_name(), Some("Unit Display".to_string()));
+    }
 
     #[test]
     fn data_constr() {
