@@ -1,6 +1,8 @@
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, Element, IdentifiableAbstractionElement,
-    abstraction_element, datatype::AbstractAutosarDataType, software_component::AbstractPortInterface,
+    abstraction_element,
+    datatype::{AbstractAutosarDataType, AutosarDataType},
+    software_component::AbstractPortInterface,
 };
 use autosar_data::ElementName;
 
@@ -68,6 +70,20 @@ impl VariableDataPrototype {
         let named_parent = self.element().named_parent()?.unwrap();
         SenderReceiverInterface::try_from(named_parent)
     }
+
+    /// Set the data type of the data element
+    pub fn set_data_type<T: AbstractAutosarDataType>(&self, data_type: &T) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::TypeTref)?
+            .set_reference_target(data_type.element())?;
+        Ok(())
+    }
+
+    /// Get the data type of the data element
+    pub fn data_type(&self) -> Option<AutosarDataType> {
+        let type_tref = self.element().get_sub_element(ElementName::TypeTref)?;
+        AutosarDataType::try_from(type_tref.get_reference_target().ok()?).ok()
+    }
 }
 
 //##################################################################
@@ -76,7 +92,7 @@ impl VariableDataPrototype {
 mod test {
     use crate::{
         AutosarModelAbstraction,
-        datatype::{BaseTypeEncoding, ImplementationDataTypeSettings},
+        datatype::{AutosarDataType, BaseTypeEncoding, ImplementationDataTypeSettings},
     };
     use autosar_data::AutosarVersion;
 
@@ -94,14 +110,30 @@ mod test {
             .unwrap();
         let impl_settings = ImplementationDataTypeSettings::Value {
             name: "ImplementationValue".to_string(),
-            base_type,
+            base_type: base_type.clone(),
             compu_method: None,
             data_constraint: None,
         };
         let datatype = package.create_implementation_data_type(&impl_settings).unwrap();
+        let impl_settings2 = ImplementationDataTypeSettings::Value {
+            name: "ImplementationValue2".to_string(),
+            base_type,
+            compu_method: None,
+            data_constraint: None,
+        };
+        let datatype2 = package.create_implementation_data_type(&impl_settings2).unwrap();
 
         let data_element = sr_interface.create_data_element("data_element", &datatype).unwrap();
         assert_eq!(sr_interface.data_elements().count(), 1);
         assert_eq!(data_element.interface().unwrap(), sr_interface);
+        assert_eq!(
+            data_element.data_type().unwrap(),
+            AutosarDataType::ImplementationDataType(datatype)
+        );
+        data_element.set_data_type(&datatype2).unwrap();
+        assert_eq!(
+            data_element.data_type().unwrap(),
+            AutosarDataType::ImplementationDataType(datatype2)
+        );
     }
 }
