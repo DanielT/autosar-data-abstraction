@@ -21,7 +21,7 @@ pub trait EcucCommonAttributes: EcucDefinitionElement {
     /// This setting is required if the containing EcucModuleDef has the category VENDOR_SPECIFIC_MODULE_DEFINITION.
     fn set_multiplicity_config_classes(
         &self,
-        config: &[(EcucConfigurationClassEnum, EcucConfigurationVariantEnum)],
+        config: &[(EcucConfigurationClass, EcucConfigurationVariant)],
     ) -> Result<(), AutosarAbstractionError> {
         set_config_classes(
             self.element(),
@@ -34,7 +34,7 @@ pub trait EcucCommonAttributes: EcucDefinitionElement {
 
     /// get the multiplicity config classes of the parameter definition
     #[must_use]
-    fn multiplicity_config_classes(&self) -> Vec<(EcucConfigurationClassEnum, EcucConfigurationVariantEnum)> {
+    fn multiplicity_config_classes(&self) -> Vec<(EcucConfigurationClass, EcucConfigurationVariant)> {
         get_config_classes(self.element(), ElementName::MultiplicityConfigClasses)
     }
 
@@ -156,7 +156,7 @@ pub trait EcucCommonAttributes: EcucDefinitionElement {
     /// has the category VENDOR_SPECIFIC_MODULE_DEFINITION, but in practice it is rarely used.
     fn set_value_config_classes(
         &self,
-        config: &[(EcucConfigurationClassEnum, EcucConfigurationVariantEnum)],
+        config: &[(EcucConfigurationClass, EcucConfigurationVariant)],
     ) -> Result<(), AutosarAbstractionError> {
         set_config_classes(
             self.element(),
@@ -172,7 +172,7 @@ pub trait EcucCommonAttributes: EcucDefinitionElement {
     /// According to the specification setting is required if the containing EcucModuleDef
     /// has the category VENDOR_SPECIFIC_MODULE_DEFINITION, but in practice it is rarely used.
     #[must_use]
-    fn value_config_classes(&self) -> Vec<(EcucConfigurationClassEnum, EcucConfigurationVariantEnum)> {
+    fn value_config_classes(&self) -> Vec<(EcucConfigurationClass, EcucConfigurationVariant)> {
         get_config_classes(self.element(), ElementName::ValueConfigClasses)
     }
 
@@ -250,12 +250,15 @@ pub trait EcucDefinitionElement: AbstractionElement {
     ///
     /// if this attribute is set to true, the upper multiplicity is infinite
     /// (i.e. the module definition can be used an arbitrary number of times)
-    /// When this attribute is true, the upper multiplicity attribute may not be used.
+    /// When this attribute is true, the upper multiplicity attribute automatically removed.
     fn set_upper_multiplicity_infinite(&self, infinite: Option<bool>) -> Result<(), AutosarAbstractionError> {
         if let Some(infinite) = infinite {
             self.element()
                 .get_or_create_sub_element(ElementName::UpperMultiplicityInfinite)?
                 .set_character_data(infinite)?;
+            if infinite {
+                let _ = self.element().remove_sub_element_kind(ElementName::UpperMultiplicity);
+            }
         } else {
             let _ = self
                 .element()
@@ -384,7 +387,7 @@ impl EcucModuleDef {
     /// set the supported configuration variants for the module
     pub fn set_supported_config_variants(
         &self,
-        variants: &[EcucConfigurationVariantEnum],
+        variants: &[EcucConfigurationVariant],
     ) -> Result<(), AutosarAbstractionError> {
         // remove the old supported configuration variants list
         let _ = self
@@ -406,7 +409,7 @@ impl EcucModuleDef {
 
     /// get the supported configuration variants for the module
     #[must_use]
-    pub fn supported_config_variants(&self) -> Vec<EcucConfigurationVariantEnum> {
+    pub fn supported_config_variants(&self) -> Vec<EcucConfigurationVariant> {
         self.element()
             .get_sub_element(ElementName::SupportedConfigVariants)
             .map(|elem| {
@@ -415,7 +418,7 @@ impl EcucModuleDef {
                         variant_elem
                             .character_data()
                             .and_then(|cdata| cdata.enum_value())
-                            .and_then(|enum_item| EcucConfigurationVariantEnum::try_from(enum_item).ok())
+                            .and_then(|enum_item| EcucConfigurationVariant::try_from(enum_item).ok())
                     })
                     .collect()
             })
@@ -503,7 +506,7 @@ impl EcucModuleDef {
 /// `EcucConfigurationVariant` provides the different configuration variants that
 /// can be used by the module definition.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum EcucConfigurationVariantEnum {
+pub enum EcucConfigurationVariant {
     /// Preconfigured (i.e. fixed) configuration which cannot be changed.
     PreconfiguredConfiguration,
     /// Recommended configuration
@@ -520,21 +523,21 @@ pub enum EcucConfigurationVariantEnum {
     VariantPostBuildSelectable,
 }
 
-impl From<EcucConfigurationVariantEnum> for EnumItem {
-    fn from(value: EcucConfigurationVariantEnum) -> Self {
+impl From<EcucConfigurationVariant> for EnumItem {
+    fn from(value: EcucConfigurationVariant) -> Self {
         match value {
-            EcucConfigurationVariantEnum::PreconfiguredConfiguration => Self::PreconfiguredConfiguration,
-            EcucConfigurationVariantEnum::RecommendedConfiguration => Self::RecommendedConfiguration,
-            EcucConfigurationVariantEnum::VariantLinkTime => Self::VariantLinkTime,
-            EcucConfigurationVariantEnum::VariantPostBuild => Self::VariantPostBuild,
-            EcucConfigurationVariantEnum::VariantPreCompile => Self::VariantPreCompile,
-            EcucConfigurationVariantEnum::VariantPostBuildLoadable => Self::VariantPostBuildLoadable,
-            EcucConfigurationVariantEnum::VariantPostBuildSelectable => Self::VariantPostBuildSelectable,
+            EcucConfigurationVariant::PreconfiguredConfiguration => Self::PreconfiguredConfiguration,
+            EcucConfigurationVariant::RecommendedConfiguration => Self::RecommendedConfiguration,
+            EcucConfigurationVariant::VariantLinkTime => Self::VariantLinkTime,
+            EcucConfigurationVariant::VariantPostBuild => Self::VariantPostBuild,
+            EcucConfigurationVariant::VariantPreCompile => Self::VariantPreCompile,
+            EcucConfigurationVariant::VariantPostBuildLoadable => Self::VariantPostBuildLoadable,
+            EcucConfigurationVariant::VariantPostBuildSelectable => Self::VariantPostBuildSelectable,
         }
     }
 }
 
-impl TryFrom<EnumItem> for EcucConfigurationVariantEnum {
+impl TryFrom<EnumItem> for EcucConfigurationVariant {
     type Error = AutosarAbstractionError;
 
     fn try_from(value: EnumItem) -> Result<Self, Self::Error> {
@@ -558,7 +561,7 @@ impl TryFrom<EnumItem> for EcucConfigurationVariantEnum {
 
 /// `EcucConfigurationClassEnum` provides the different configuration classes for Autosar configuration parameters
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum EcucConfigurationClassEnum {
+pub enum EcucConfigurationClass {
     /// Link Time: parts of configuration are delivered from another object code file
     Link,
     /// PostBuild: a configuration parameter can be changed after compilation
@@ -569,18 +572,18 @@ pub enum EcucConfigurationClassEnum {
     PublishedInformation,
 }
 
-impl From<EcucConfigurationClassEnum> for EnumItem {
-    fn from(value: EcucConfigurationClassEnum) -> Self {
+impl From<EcucConfigurationClass> for EnumItem {
+    fn from(value: EcucConfigurationClass) -> Self {
         match value {
-            EcucConfigurationClassEnum::Link => Self::Link,
-            EcucConfigurationClassEnum::PostBuild => Self::PostBuild,
-            EcucConfigurationClassEnum::PreCompile => Self::PreCompile,
-            EcucConfigurationClassEnum::PublishedInformation => Self::PublishedInformation,
+            EcucConfigurationClass::Link => Self::Link,
+            EcucConfigurationClass::PostBuild => Self::PostBuild,
+            EcucConfigurationClass::PreCompile => Self::PreCompile,
+            EcucConfigurationClass::PublishedInformation => Self::PublishedInformation,
         }
     }
 }
 
-impl TryFrom<EnumItem> for EcucConfigurationClassEnum {
+impl TryFrom<EnumItem> for EcucConfigurationClass {
     type Error = AutosarAbstractionError;
 
     fn try_from(value: EnumItem) -> Result<Self, Self::Error> {
@@ -639,7 +642,7 @@ fn set_config_classes(
     base: &Element,
     element_name_l1: ElementName,
     element_name_l2: ElementName,
-    config: &[(EcucConfigurationClassEnum, EcucConfigurationVariantEnum)],
+    config: &[(EcucConfigurationClass, EcucConfigurationVariant)],
 ) -> Result<(), AutosarAbstractionError> {
     // remove the existing multiplicity config classes, since we configure
     // the entire list instead of updating the existing one
@@ -666,7 +669,7 @@ fn set_config_classes(
 fn get_config_classes(
     base: &Element,
     element_name_l1: ElementName,
-) -> Vec<(EcucConfigurationClassEnum, EcucConfigurationVariantEnum)> {
+) -> Vec<(EcucConfigurationClass, EcucConfigurationVariant)> {
     base.get_sub_element(element_name_l1)
         .into_iter()
         .flat_map(|config_classes| config_classes.sub_elements())
@@ -680,8 +683,8 @@ fn get_config_classes(
                 .character_data()?
                 .enum_value()?;
             Some((
-                EcucConfigurationClassEnum::try_from(class).ok()?,
-                EcucConfigurationVariantEnum::try_from(variant).ok()?,
+                EcucConfigurationClass::try_from(class).ok()?,
+                EcucConfigurationVariant::try_from(variant).ok()?,
             ))
         })
         .collect()
@@ -870,7 +873,7 @@ mod test {
         assert_eq!(ecuc_module_def.api_service_prefix(), None);
         assert_eq!(
             ecuc_module_def.supported_config_variants(),
-            Vec::<EcucConfigurationVariantEnum>::new()
+            Vec::<EcucConfigurationVariant>::new()
         );
         assert_eq!(ecuc_module_def.post_build_variant_support(), None);
         assert_eq!(ecuc_module_def.category(), None);
@@ -888,15 +891,15 @@ mod test {
         assert_eq!(ecuc_module_def.api_service_prefix(), Some("prefix".to_string()));
         ecuc_module_def
             .set_supported_config_variants(&[
-                EcucConfigurationVariantEnum::PreconfiguredConfiguration,
-                EcucConfigurationVariantEnum::VariantLinkTime,
+                EcucConfigurationVariant::PreconfiguredConfiguration,
+                EcucConfigurationVariant::VariantLinkTime,
             ])
             .unwrap();
         assert_eq!(
             ecuc_module_def.supported_config_variants(),
             vec![
-                EcucConfigurationVariantEnum::PreconfiguredConfiguration,
-                EcucConfigurationVariantEnum::VariantLinkTime
+                EcucConfigurationVariant::PreconfiguredConfiguration,
+                EcucConfigurationVariant::VariantLinkTime
             ]
         );
         ecuc_module_def.set_post_build_variant_support(Some(true)).unwrap();
@@ -919,18 +922,18 @@ mod test {
     #[test]
     fn ecuc_configuration_variant_enum_conversion() {
         let variants = [
-            EcucConfigurationVariantEnum::PreconfiguredConfiguration,
-            EcucConfigurationVariantEnum::RecommendedConfiguration,
-            EcucConfigurationVariantEnum::VariantLinkTime,
-            EcucConfigurationVariantEnum::VariantPostBuild,
-            EcucConfigurationVariantEnum::VariantPreCompile,
-            EcucConfigurationVariantEnum::VariantPostBuildLoadable,
-            EcucConfigurationVariantEnum::VariantPostBuildSelectable,
+            EcucConfigurationVariant::PreconfiguredConfiguration,
+            EcucConfigurationVariant::RecommendedConfiguration,
+            EcucConfigurationVariant::VariantLinkTime,
+            EcucConfigurationVariant::VariantPostBuild,
+            EcucConfigurationVariant::VariantPreCompile,
+            EcucConfigurationVariant::VariantPostBuildLoadable,
+            EcucConfigurationVariant::VariantPostBuildSelectable,
         ];
 
         for variant in &variants {
             let enum_item: EnumItem = (*variant).into();
-            let converted_variant = EcucConfigurationVariantEnum::try_from(enum_item).unwrap();
+            let converted_variant = EcucConfigurationVariant::try_from(enum_item).unwrap();
             assert_eq!(*variant, converted_variant);
         }
     }

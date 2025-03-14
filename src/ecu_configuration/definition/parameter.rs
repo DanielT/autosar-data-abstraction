@@ -698,7 +698,7 @@ mod test {
     use super::*;
     use crate::{
         AutosarModelAbstraction,
-        ecu_configuration::{EcucConfigurationClassEnum, EcucConfigurationVariantEnum},
+        ecu_configuration::{EcucConfigurationClass, EcucConfigurationVariant},
     };
     use autosar_data::AutosarVersion;
 
@@ -714,8 +714,8 @@ mod test {
         let enumeration = container.create_enumeration_param_def("Enumeration", "origin").unwrap();
         let float = container.create_float_param_def("Float", "origin").unwrap();
         let integer = container.create_integer_param_def("Integer", "origin").unwrap();
-        let function_name = container.create_function_name_def("FunctionName", "origin").unwrap();
-        let linker_symbol = container.create_linker_symbol_def("LinkerSymbol", "origin").unwrap();
+        let function_name = container.create_function_name_param_def("FunctionName", "origin").unwrap();
+        let linker_symbol = container.create_linker_symbol_param_def("LinkerSymbol", "origin").unwrap();
         let multiline_string = container
             .create_multiline_string_param_def("MultilineString", "origin")
             .unwrap();
@@ -749,7 +749,7 @@ mod test {
         let ecuc_module = pkg.create_ecuc_module_def("EcucModule").unwrap();
         let container = ecuc_module.create_param_conf_container_def("Container").unwrap();
 
-        let function_name = container.create_function_name_def("FunctionName", "origin").unwrap();
+        let function_name = container.create_function_name_param_def("FunctionName", "origin").unwrap();
         function_name.set_max_length(Some(10)).unwrap();
         assert_eq!(function_name.max_length(), Some(10));
         function_name.set_max_length(None).unwrap();
@@ -767,7 +767,7 @@ mod test {
         function_name.set_default_value(None).unwrap();
         assert_eq!(function_name.default_value(), None);
 
-        let linker_symbol = container.create_linker_symbol_def("LinkerSymbol", "origin").unwrap();
+        let linker_symbol = container.create_linker_symbol_param_def("LinkerSymbol", "origin").unwrap();
         linker_symbol.set_max_length(Some(10)).unwrap();
         assert_eq!(linker_symbol.max_length(), Some(10));
         linker_symbol.set_max_length(None).unwrap();
@@ -825,8 +825,8 @@ mod test {
 
         // trait functions
         let mcc = [(
-            EcucConfigurationClassEnum::PreCompile,
-            EcucConfigurationVariantEnum::VariantPreCompile,
+            EcucConfigurationClass::PreCompile,
+            EcucConfigurationVariant::VariantPreCompile,
         )];
         string.set_multiplicity_config_classes(&mcc).unwrap();
         assert_eq!(string.multiplicity_config_classes(), mcc);
@@ -839,8 +839,8 @@ mod test {
         string.set_requires_index(Some(false)).unwrap();
         assert_eq!(string.requires_index(), Some(false));
         let vcc = [(
-            EcucConfigurationClassEnum::PostBuild,
-            EcucConfigurationVariantEnum::VariantPostBuild,
+            EcucConfigurationClass::PostBuild,
+            EcucConfigurationVariant::VariantPostBuild,
         )];
         string.set_value_config_classes(&vcc).unwrap();
         assert_eq!(string.value_config_classes(), vcc);

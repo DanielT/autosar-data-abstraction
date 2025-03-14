@@ -1,6 +1,6 @@
 use crate::{
     AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
-    ecu_configuration::{EcucParamDef, EcucParameterDef},
+    ecu_configuration::{EcucAddInfoParamDef, EcucParamDef, EcucParameterDef},
 };
 use autosar_data::{Element, ElementName};
 
@@ -11,7 +11,17 @@ use autosar_data::{Element, ElementName};
 pub struct EcucAddInfoParamValue(Element);
 abstraction_element!(EcucAddInfoParamValue, EcucAddInfoParamValue);
 
-// Stub - does anyone actually use this?
+impl EcucAddInfoParamValue {
+    pub(crate) fn new(parent: &Element, definition: &EcucAddInfoParamDef) -> Result<Self, AutosarAbstractionError> {
+        let add_info_param_elem = parent.create_sub_element(ElementName::EcucAddInfoParamValue)?;
+        add_info_param_elem
+            .get_or_create_sub_element(ElementName::DefinitionRef)?
+            .set_reference_target(definition.element())?;
+        Ok(Self(add_info_param_elem))
+    }
+
+    // Stub - does anyone actually use this?
+}
 
 //#########################################################
 
@@ -355,6 +365,9 @@ mod test {
         // create a definition for the ECU configuration
         let module_def = def_package.create_ecuc_module_def("ModuleDef").unwrap();
         let container_def = module_def.create_param_conf_container_def("ContainerDef").unwrap();
+        let add_info_param_def = container_def
+            .create_add_info_param_def("AddInfoParam", "AUTOSAR_ECUC")
+            .unwrap();
         let int_param_def = container_def
             .create_integer_param_def("IntParam", "AUTOSAR_ECUC")
             .unwrap();
@@ -368,10 +381,10 @@ mod test {
             .create_string_param_def("StringParam", "AUTOSAR_ECUC")
             .unwrap();
         let fnc_param_def = container_def
-            .create_function_name_def("FncParam", "AUTOSAR_ECUC")
+            .create_function_name_param_def("FncParam", "AUTOSAR_ECUC")
             .unwrap();
         let link_param_def = container_def
-            .create_linker_symbol_def("LinkParam", "AUTOSAR_ECUC")
+            .create_linker_symbol_param_def("LinkParam", "AUTOSAR_ECUC")
             .unwrap();
         let enum_param_def = container_def
             .create_enumeration_param_def("EnumParam", "AUTOSAR_ECUC")
@@ -391,6 +404,10 @@ mod test {
             .create_container_value("Container", &container_def)
             .unwrap();
 
+        let add_info_param_value = container_values
+            .create_add_info_param_value(&add_info_param_def)
+            .unwrap();
+        // no assertions for add_info_param_value, since it is a stub type without any functionality
         let int_param_value = container_values
             .create_numerical_param_value(&int_param_def, "42")
             .unwrap();
@@ -471,6 +488,10 @@ mod test {
         let mut parameters_iter = container_values.parameter_values();
         assert_eq!(
             parameters_iter.next().unwrap(),
+            EcucParameterValue::AddInfo(add_info_param_value.clone())
+        );
+        assert_eq!(
+            parameters_iter.next().unwrap(),
             EcucParameterValue::Numerical(int_param_value.clone())
         );
         assert_eq!(
@@ -497,9 +518,9 @@ mod test {
             parameters_iter.next().unwrap(),
             EcucParameterValue::Textual(enum_param_value.clone())
         );
-        assert_eq!(container_values.parameter_values().count(), 7);
+        assert_eq!(container_values.parameter_values().count(), 8);
         let ecuc_param = container_values.parameter_values().next().unwrap();
-        assert_eq!(ecuc_param.element(), int_param_value.element());
+        assert_eq!(ecuc_param.element(), add_info_param_value.element());
 
         // copy the definition into the value model
         // once the definition and values are in the same model, we can get the definition directly

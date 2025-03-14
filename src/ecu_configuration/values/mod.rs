@@ -2,7 +2,8 @@ use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, System,
     abstraction_element,
     ecu_configuration::{
-        AbstractEcucContainerDef, AbstractEcucReferenceDef, EcucContainerDef, EcucInstanceReferenceDef, EcucModuleDef,
+        AbstractEcucContainerDef, AbstractEcucReferenceDef, EcucAddInfoParamDef, EcucContainerDef,
+        EcucInstanceReferenceDef, EcucModuleDef,
     },
 };
 use autosar_data::{Element, ElementName};
@@ -273,6 +274,15 @@ impl EcucContainerValue {
     ) -> Result<EcucTextualParamValue, AutosarAbstractionError> {
         let parameter_values_elem = self.element().get_or_create_sub_element(ElementName::ParameterValues)?;
         EcucTextualParamValue::new(&parameter_values_elem, definition, value)
+    }
+
+    /// create a new `EcucAddInfoParamValue` in the container
+    pub fn create_add_info_param_value(
+        &self,
+        definition: &EcucAddInfoParamDef,
+    ) -> Result<EcucAddInfoParamValue, AutosarAbstractionError> {
+        let parameter_values_elem = self.element().get_or_create_sub_element(ElementName::ParameterValues)?;
+        EcucAddInfoParamValue::new(&parameter_values_elem, definition)
     }
 
     /// iterate over the parameter values in the container

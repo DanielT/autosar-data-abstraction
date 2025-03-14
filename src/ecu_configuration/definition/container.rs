@@ -145,7 +145,7 @@ impl EcucParamConfContainerDef {
     }
 
     /// create a new EcucFunctionNameDef in the container
-    pub fn create_function_name_def(
+    pub fn create_function_name_param_def(
         &self,
         name: &str,
         origin: &str,
@@ -155,7 +155,7 @@ impl EcucParamConfContainerDef {
     }
 
     /// create a new EcucLinkerSymbolDef in the container
-    pub fn create_linker_symbol_def(
+    pub fn create_linker_symbol_param_def(
         &self,
         name: &str,
         origin: &str,
@@ -338,10 +338,10 @@ mod test {
             .create_integer_param_def("IntegerParam", "origin")
             .unwrap();
         param_conf_container
-            .create_function_name_def("FunctionName", "origin")
+            .create_function_name_param_def("FunctionName", "origin")
             .unwrap();
         param_conf_container
-            .create_linker_symbol_def("LinkerSymbol", "origin")
+            .create_linker_symbol_param_def("LinkerSymbol", "origin")
             .unwrap();
         param_conf_container
             .create_multiline_string_param_def("MultilineStringParam", "origin")
