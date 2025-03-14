@@ -95,7 +95,14 @@ pub trait AbstractSwComponentType: IdentifiableAbstractionElement {
         let port_groups = self.element().get_or_create_sub_element(ElementName::PortGroups)?;
         PortGroup::new(name, &port_groups)
     }
+}
 
+//##################################################################
+
+/// Shared trait identifiying atomic software components
+/// 
+/// An atomic software component is atomic in the sense that it cannot be further decomposed
+pub trait AtomicSwComponentType: AbstractSwComponentType {
     /// create an SwcInternalBehavior for the component
     ///
     /// A component can have only one internal behavior, but since the internal behavior is a variation point,
@@ -409,6 +416,7 @@ impl ApplicationSwComponentType {
 }
 
 impl AbstractSwComponentType for ApplicationSwComponentType {}
+impl AtomicSwComponentType for ApplicationSwComponentType {}
 
 //##################################################################
 
@@ -430,6 +438,7 @@ impl ComplexDeviceDriverSwComponentType {
 }
 
 impl AbstractSwComponentType for ComplexDeviceDriverSwComponentType {}
+impl AtomicSwComponentType for ComplexDeviceDriverSwComponentType {}
 
 //##################################################################
 
@@ -452,6 +461,7 @@ impl ServiceSwComponentType {
 }
 
 impl AbstractSwComponentType for ServiceSwComponentType {}
+impl AtomicSwComponentType for ServiceSwComponentType {}
 
 //##################################################################
 
@@ -473,6 +483,7 @@ impl SensorActuatorSwComponentType {
 }
 
 impl AbstractSwComponentType for SensorActuatorSwComponentType {}
+impl AtomicSwComponentType for SensorActuatorSwComponentType {}
 
 //##################################################################
 
@@ -495,6 +506,7 @@ impl EcuAbstractionSwComponentType {
 }
 
 impl AbstractSwComponentType for EcuAbstractionSwComponentType {}
+impl AtomicSwComponentType for EcuAbstractionSwComponentType {}
 
 //##################################################################
 

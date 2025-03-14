@@ -1,10 +1,9 @@
 use crate::{
     AbstractionElement, AutosarAbstractionError, Element, IdentifiableAbstractionElement, abstraction_element,
     datatype::DataTypeMappingSet,
+    software_component::{ClientServerOperation, PPortPrototype, SwComponentType},
 };
 use autosar_data::ElementName;
-
-use super::{ClientServerOperation, PPortPrototype, SwComponentType};
 
 //##################################################################
 
@@ -537,7 +536,7 @@ impl AbstractRTEEvent for RTEEvent {}
 mod test {
     use crate::{
         AbstractionElement, AutosarModelAbstraction,
-        software_component::{AbstractRTEEvent, AbstractSwComponentType},
+        software_component::{AbstractRTEEvent, AbstractSwComponentType, AtomicSwComponentType},
     };
     use autosar_data::AutosarVersion;
 
