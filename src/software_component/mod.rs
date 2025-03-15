@@ -100,7 +100,7 @@ pub trait AbstractSwComponentType: IdentifiableAbstractionElement {
 //##################################################################
 
 /// Shared trait identifiying atomic software components
-/// 
+///
 /// An atomic software component is atomic in the sense that it cannot be further decomposed
 pub trait AtomicSwComponentType: AbstractSwComponentType {
     /// create an SwcInternalBehavior for the component
