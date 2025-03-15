@@ -90,6 +90,60 @@ impl DelegationSwConnector {
 
         Ok(Self(delegation_sw_connector))
     }
+
+    /// Get the inner port of the delegation connector
+    pub fn inner_port(&self) -> Option<PortPrototype> {
+        let inner_port_iref = self.element().get_sub_element(ElementName::InnerPortIref)?;
+        if let Some(r_port_in_instance) = inner_port_iref.get_sub_element(ElementName::RPortInCompositionInstanceRef) {
+            let inner_port_elem = r_port_in_instance
+                .get_sub_element(ElementName::TargetRPortRef)?
+                .get_reference_target()
+                .ok()?;
+            PortPrototype::try_from(inner_port_elem).ok()
+        } else if let Some(p_port_in_instance) =
+            inner_port_iref.get_sub_element(ElementName::PPortInCompositionInstanceRef)
+        {
+            let inner_port_elem = p_port_in_instance
+                .get_sub_element(ElementName::TargetPPortRef)?
+                .get_reference_target()
+                .ok()?;
+            PortPrototype::try_from(inner_port_elem).ok()
+        } else {
+            None
+        }
+    }
+
+    /// Get the component containing the inner port of the delegation connector
+    pub fn inner_sw_component(&self) -> Option<SwComponentPrototype> {
+        let inner_port_iref = self.element().get_sub_element(ElementName::InnerPortIref)?;
+        if let Some(r_port_in_instance) = inner_port_iref.get_sub_element(ElementName::RPortInCompositionInstanceRef) {
+            let inner_sw_component_elem = r_port_in_instance
+                .get_sub_element(ElementName::ContextComponentRef)?
+                .get_reference_target()
+                .ok()?;
+            SwComponentPrototype::try_from(inner_sw_component_elem).ok()
+        } else if let Some(p_port_in_instance) =
+            inner_port_iref.get_sub_element(ElementName::PPortInCompositionInstanceRef)
+        {
+            let inner_sw_component_elem = p_port_in_instance
+                .get_sub_element(ElementName::ContextComponentRef)?
+                .get_reference_target()
+                .ok()?;
+            SwComponentPrototype::try_from(inner_sw_component_elem).ok()
+        } else {
+            None
+        }
+    }
+
+    /// Get the outer port of the delegation connector
+    pub fn outer_port(&self) -> Option<PortPrototype> {
+        let outer_port_elem = self
+            .element()
+            .get_sub_element(ElementName::OuterPortRef)?
+            .get_reference_target()
+            .ok()?;
+        PortPrototype::try_from(outer_port_elem).ok()
+    }
 }
 
 //##################################################################
@@ -163,6 +217,46 @@ impl AssemblySwConnector {
 
         Ok(Self(assembly_sw_connector))
     }
+
+    /// Get the provider port of the assembly connector
+    pub fn p_port(&self) -> Option<PortPrototype> {
+        let provider_iref = self.element().get_sub_element(ElementName::ProviderIref)?;
+        let provider_port_elem = provider_iref
+            .get_sub_element(ElementName::TargetPPortRef)?
+            .get_reference_target()
+            .ok()?;
+        PortPrototype::try_from(provider_port_elem).ok()
+    }
+
+    /// get the component containing the p_port of the assembly connector
+    pub fn p_sw_component(&self) -> Option<SwComponentPrototype> {
+        let provider_iref = self.element().get_sub_element(ElementName::ProviderIref)?;
+        let provider_swc_elem = provider_iref
+            .get_sub_element(ElementName::ContextComponentRef)?
+            .get_reference_target()
+            .ok()?;
+        SwComponentPrototype::try_from(provider_swc_elem).ok()
+    }
+
+    /// Get the requester port of the assembly connector
+    pub fn r_port(&self) -> Option<PortPrototype> {
+        let requester_iref = self.element().get_sub_element(ElementName::RequesterIref)?;
+        let requester_port_elem = requester_iref
+            .get_sub_element(ElementName::TargetRPortRef)?
+            .get_reference_target()
+            .ok()?;
+        PortPrototype::try_from(requester_port_elem).ok()
+    }
+
+    /// get the component containing the r_port of the assembly connector
+    pub fn r_sw_component(&self) -> Option<SwComponentPrototype> {
+        let requester_iref = self.element().get_sub_element(ElementName::RequesterIref)?;
+        let requester_swc_elem = requester_iref
+            .get_sub_element(ElementName::ContextComponentRef)?
+            .get_reference_target()
+            .ok()?;
+        SwComponentPrototype::try_from(requester_swc_elem).ok()
+    }
 }
 
 //##################################################################
@@ -207,6 +301,26 @@ impl PassThroughSwConnector {
             .set_reference_target(required_port.element())?;
 
         Ok(Self(pass_through_sw_connector))
+    }
+
+    /// Get the provided port of the pass-through connector
+    pub fn p_port(&self) -> Option<PortPrototype> {
+        let provided_port_elem = self
+            .element()
+            .get_sub_element(ElementName::ProvidedOuterPortRef)?
+            .get_reference_target()
+            .ok()?;
+        PortPrototype::try_from(provided_port_elem).ok()
+    }
+
+    /// Get the required port of the pass-through connector
+    pub fn r_port(&self) -> Option<PortPrototype> {
+        let required_port_elem = self
+            .element()
+            .get_sub_element(ElementName::RequiredOuterPortRef)?
+            .get_reference_target()
+            .ok()?;
+        PortPrototype::try_from(required_port_elem).ok()
     }
 }
 
@@ -298,9 +412,15 @@ mod test {
         let sr_p_connector = composition
             .create_delegation_connector("sr_p_connector", &inner_sr_p_port, &app_prototype, &outer_sr_p_port)
             .unwrap();
-        let _sr_r_connector = composition
+        assert_eq!(sr_p_connector.inner_port().unwrap(), inner_sr_p_port.clone().into());
+        assert_eq!(sr_p_connector.outer_port().unwrap(), outer_sr_p_port.clone().into());
+        assert_eq!(sr_p_connector.inner_sw_component().unwrap(), app_prototype);
+        let sr_r_connector = composition
             .create_delegation_connector("sr_r_connector", &inner_sr_r_port, &app_prototype, &outer_sr_r_port)
             .unwrap();
+        assert_eq!(sr_r_connector.inner_port().unwrap(), inner_sr_r_port.clone().into());
+        assert_eq!(sr_r_connector.outer_port().unwrap(), outer_sr_r_port.clone().into());
+        assert_eq!(sr_r_connector.inner_sw_component().unwrap(), app_prototype);
         let _sr_pr_connector = composition
             .create_delegation_connector("sr_pr_connector", &inner_sr_pr_port, &app_prototype, &outer_sr_pr_port)
             .unwrap();
@@ -369,7 +489,7 @@ mod test {
 
         // connect the ports of the two application sw component types
         // SR: P -> R (valid)
-        let _sr_p_r_connector = composition
+        let sr_p_r_connector = composition
             .create_assembly_connector(
                 "sr_p_r_connector",
                 &swc1_sr_p_port,
@@ -378,6 +498,10 @@ mod test {
                 &app_prototype_2,
             )
             .unwrap();
+        assert_eq!(sr_p_r_connector.p_port().unwrap(), swc1_sr_p_port.clone().into());
+        assert_eq!(sr_p_r_connector.r_port().unwrap(), swc2_sr_r_port.clone().into());
+        assert_eq!(sr_p_r_connector.p_sw_component().unwrap(), app_prototype_1);
+        assert_eq!(sr_p_r_connector.r_sw_component().unwrap(), app_prototype_2);
         // SR: R -> P (valid)
         let _sr_r_p_connector = composition
             .create_assembly_connector(
@@ -537,9 +661,11 @@ mod test {
 
         // connect the ports of the composition
         // SR: P -> R (valid)
-        let _sr_p_r_connector = composition
+        let sr_p_r_connector = composition
             .create_pass_through_connector("sr_p_r_connector", &sr_p_port, &sr_r_port)
             .unwrap();
+        assert_eq!(sr_p_r_connector.p_port().unwrap(), sr_p_port.clone().into());
+        assert_eq!(sr_p_r_connector.r_port().unwrap(), sr_r_port.clone().into());
         // CS: R -> P (valid)
         let _cs_r_p_connector = composition
             .create_pass_through_connector("cs_r_p_connector", &cs_r_port, &cs_p_port)
