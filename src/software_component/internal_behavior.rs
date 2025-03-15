@@ -76,7 +76,7 @@ impl SwcInternalBehavior {
         InitEvent::new(name, &events, runnable)
     }
 
-    /// Create a new `OperationInvokedEvent` in the `SwcInternalBehavior`
+    /// Create a new `OperationInvokedEvent` in the `SwcInternalBehavior` when a server operation is invoked
     pub fn create_operation_invoked_event(
         &self,
         name: &str,
@@ -88,15 +88,35 @@ impl SwcInternalBehavior {
         OperationInvokedEvent::new(name, &events, runnable, client_server_operation, context_p_port)
     }
 
-    /// Create a timing event that triggers a runnable in the `SwcInternalBehavior`
+    /// Create a timing event that triggers a runnable in the `SwcInternalBehavior` based on a timer
     pub fn create_timing_event(
         &self,
         name: &str,
         runnable: &RunnableEntity,
         period: f64,
     ) -> Result<TimingEvent, AutosarAbstractionError> {
-        let timing_events = self.element().get_or_create_sub_element(ElementName::Events)?;
-        TimingEvent::new(name, &timing_events, runnable, period)
+        let events = self.element().get_or_create_sub_element(ElementName::Events)?;
+        TimingEvent::new(name, &events, runnable, period)
+    }
+
+    /// create a background event that triggers a runnable in the `SwcInternalBehavior` for background processing
+    pub fn create_background_event(
+        &self,
+        name: &str,
+        runnable: &RunnableEntity,
+    ) -> Result<BackgroundEvent, AutosarAbstractionError> {
+        let events = self.element().get_or_create_sub_element(ElementName::Events)?;
+        BackgroundEvent::new(name, &events, runnable)
+    }
+
+    /// create an os task execution event that triggers a runnable in the `SwcInternalBehavior` every time the task is executed
+    pub fn create_os_task_execution_event(
+        &self,
+        name: &str,
+        runnable: &RunnableEntity,
+    ) -> Result<OsTaskExecutionEvent, AutosarAbstractionError> {
+        let events = self.element().get_or_create_sub_element(ElementName::Events)?;
+        OsTaskExecutionEvent::new(name, &events, runnable)
     }
 
     /// create an iterator over all events in the `SwcInternalBehavior`
@@ -240,6 +260,20 @@ abstraction_element!(BackgroundEvent, BackgroundEvent);
 impl IdentifiableAbstractionElement for BackgroundEvent {}
 impl AbstractRTEEvent for BackgroundEvent {}
 
+impl BackgroundEvent {
+    pub(crate) fn new(
+        name: &str,
+        parent: &Element,
+        runnable: &RunnableEntity,
+    ) -> Result<Self, AutosarAbstractionError> {
+        let background_event = parent.create_named_sub_element(ElementName::BackgroundEvent, name)?;
+        let background_event = Self(background_event);
+        background_event.set_runnable_entity(runnable)?;
+
+        Ok(background_event)
+    }
+}
+
 //##################################################################
 
 /// raised in response to an error during data reception
@@ -361,10 +395,10 @@ impl OperationInvokedEvent {
 
         let op_iref = self.element().get_or_create_sub_element(ElementName::OperationIref)?;
         op_iref
-            .create_sub_element(ElementName::TargetProvidedOperationRef)?
+            .get_or_create_sub_element(ElementName::TargetProvidedOperationRef)?
             .set_reference_target(client_server_operation.element())?;
         op_iref
-            .create_sub_element(ElementName::ContextPPortRef)?
+            .get_or_create_sub_element(ElementName::ContextPPortRef)?
             .set_reference_target(context_p_port.element())?;
         Ok(())
     }
@@ -394,6 +428,20 @@ pub struct OsTaskExecutionEvent(Element);
 abstraction_element!(OsTaskExecutionEvent, OsTaskExecutionEvent);
 impl IdentifiableAbstractionElement for OsTaskExecutionEvent {}
 impl AbstractRTEEvent for OsTaskExecutionEvent {}
+
+impl OsTaskExecutionEvent {
+    pub(crate) fn new(
+        name: &str,
+        parent: &Element,
+        runnable_entity: &RunnableEntity,
+    ) -> Result<Self, AutosarAbstractionError> {
+        let os_task_execution_event_elem = parent.create_named_sub_element(ElementName::OsTaskExecutionEvent, name)?;
+        let os_task_execution_event = Self(os_task_execution_event_elem);
+        os_task_execution_event.set_runnable_entity(runnable_entity)?;
+
+        Ok(os_task_execution_event)
+    }
+}
 
 //##################################################################
 
@@ -581,6 +629,18 @@ mod test {
         assert_eq!(context_p_port, p_port);
         assert_eq!(op_invoked_event.runnable_entity().unwrap(), runnable1);
 
+        // create a background event, which triggers runnable1
+        let background_event = swc_internal_behavior
+            .create_background_event("BackgroundEvent", &runnable1)
+            .unwrap();
+        assert_eq!(background_event.runnable_entity().unwrap(), runnable1);
+
+        // create an os task execution event, which triggers runnable1
+        let os_task_execution_event = swc_internal_behavior
+            .create_os_task_execution_event("OsTaskExecutionEvent", &runnable1)
+            .unwrap();
+        assert_eq!(os_task_execution_event.runnable_entity().unwrap(), runnable1);
+
         // create a timing event, which triggers runnable2
         let timing_event = swc_internal_behavior
             .create_timing_event("TimingEvent", &runnable2, 0.1)
@@ -590,15 +650,17 @@ mod test {
         assert_eq!(timing_event.swc_internal_behavior().unwrap(), swc_internal_behavior);
 
         // there should be 3 events in the swc_internal_behavior
-        assert_eq!(swc_internal_behavior.events().count(), 3);
+        assert_eq!(swc_internal_behavior.events().count(), 5);
         // iterate over all events and check if they are the same as the ones we created
         let mut events_iter = swc_internal_behavior.events();
         assert_eq!(events_iter.next().unwrap().element(), init_event.element());
         assert_eq!(events_iter.next().unwrap().element(), op_invoked_event.element());
+        assert_eq!(events_iter.next().unwrap().element(), background_event.element());
+        assert_eq!(events_iter.next().unwrap().element(), os_task_execution_event.element());
         assert_eq!(events_iter.next().unwrap().element(), timing_event.element());
 
-        // runnable1 should be triggered by 2 events
-        assert_eq!(runnable1.events().len(), 2);
+        // runnable1 should be triggered by 4 events
+        assert_eq!(runnable1.events().len(), 4);
         // runnable2 should be triggered by 1 event
         assert_eq!(runnable2.events().len(), 1);
 
