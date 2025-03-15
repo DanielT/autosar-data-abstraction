@@ -136,7 +136,7 @@ impl ContainerIPdu {
     }
 
     /// iterate over all contained IPdu triggerings
-    pub fn contained_pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> + Send + 'static {
+    pub fn contained_ipdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ContainedPduTriggeringRefs)
             .into_iter()
@@ -516,7 +516,7 @@ mod test {
         assert_eq!(contained_ipdu.contained_ipdu_props(), None);
 
         let pdu_triggering = container_ipdu.map_ipdu(&contained_ipdu, &flexray_channel).unwrap();
-        assert_eq!(container_ipdu.contained_pdu_triggerings().count(), 1);
-        assert_eq!(container_ipdu.contained_pdu_triggerings().next(), Some(pdu_triggering));
+        assert_eq!(container_ipdu.contained_ipdu_triggerings().count(), 1);
+        assert_eq!(container_ipdu.contained_ipdu_triggerings().next(), Some(pdu_triggering));
     }
 }

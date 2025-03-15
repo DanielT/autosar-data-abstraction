@@ -3,7 +3,7 @@ use crate::communication::{
     EthernetCluster, EventGroupControlType, FlexrayArTpConfig, FlexrayCluster, FlexrayClusterSettings, FlexrayFrame,
     FlexrayTpConfig, Frame, GeneralPurposeIPdu, GeneralPurposeIPduCategory, GeneralPurposePdu,
     GeneralPurposePduCategory, ISignal, ISignalGroup, ISignalIPdu, MultiplexedIPdu, NPdu, NmConfig, NmPdu, Pdu,
-    RxAcceptContainedIPdu, SecuredIPdu, ServiceInstanceCollectionSet, SoAdRoutingGroup,
+    RxAcceptContainedIPdu, SecureCommunicationProps, SecuredIPdu, ServiceInstanceCollectionSet, SoAdRoutingGroup,
     SocketConnectionIpduIdentifierSet, SomeipTpConfig, SystemSignal, SystemSignalGroup,
 };
 use crate::datatype::SwBaseType;
@@ -709,7 +709,8 @@ impl System {
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// let package = model.get_or_create_package("/Pdus")?;
-    /// system.create_secured_ipdu("pdu", &package, 42)?;
+    /// let secure_communication_props = SecureCommunicationProps::default();
+    /// system.create_secured_ipdu("pdu", &package, 42, &secure_communication_props)?;
     /// # Ok(())}
     /// ```
     ///
@@ -721,8 +722,9 @@ impl System {
         name: &str,
         package: &ArPackage,
         length: u32,
+        secure_props: &SecureCommunicationProps,
     ) -> Result<SecuredIPdu, AutosarAbstractionError> {
-        let pdu = SecuredIPdu::new(name, package, length)?;
+        let pdu = SecuredIPdu::new(name, package, length, secure_props)?;
         self.create_fibex_element_ref_unchecked(pdu.element())?;
 
         Ok(pdu)
@@ -1128,7 +1130,7 @@ mod test {
         AbstractionElement, AutosarModelAbstraction, IdentifiableAbstractionElement, System,
         communication::{
             ContainerIPduHeaderType, FlexrayClusterSettings, GeneralPurposeIPduCategory, GeneralPurposePduCategory,
-            RxAcceptContainedIPdu,
+            RxAcceptContainedIPdu, SecureCommunicationProps,
         },
         software_component::CompositionSwComponentType,
         system::SystemCategory,
@@ -1384,7 +1386,9 @@ mod test {
                 RxAcceptContainedIPdu::AcceptAll,
             )
             .unwrap();
-        system.create_secured_ipdu("SecuredIpdu", &package_2, 8).unwrap();
+        system
+            .create_secured_ipdu("SecuredIpdu", &package_2, 8, &SecureCommunicationProps::default())
+            .unwrap();
         system
             .create_multiplexed_ipdu("MultiplexedIpdu", &package_2, 8)
             .unwrap();

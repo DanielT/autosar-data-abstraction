@@ -10,9 +10,11 @@ use std::str::FromStr;
 
 mod container_ipdu;
 mod isignal_ipdu;
+mod secured_ipdu;
 
 pub use container_ipdu::*;
 pub use isignal_ipdu::*;
+pub use secured_ipdu::*;
 
 //##################################################################
 
@@ -365,42 +367,6 @@ impl std::str::FromStr for GeneralPurposeIPduCategory {
             "DLT" => Ok(GeneralPurposeIPduCategory::Dlt),
             _ => Err(AutosarAbstractionError::InvalidParameter(s.to_string())),
         }
-    }
-}
-
-//##################################################################
-
-/// Wraps an `IPdu` to protect it from unauthorized manipulation
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SecuredIPdu(Element);
-abstraction_element!(SecuredIPdu, SecuredIPdu);
-impl IdentifiableAbstractionElement for SecuredIPdu {}
-
-impl SecuredIPdu {
-    pub(crate) fn new(name: &str, package: &ArPackage, length: u32) -> Result<Self, AutosarAbstractionError> {
-        let pkg_elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
-        let elem_pdu = pkg_elements.create_named_sub_element(ElementName::SecuredIPdu, name)?;
-        elem_pdu
-            .create_sub_element(ElementName::Length)?
-            .set_character_data(length.to_string())?;
-
-        Ok(Self(elem_pdu))
-    }
-}
-
-impl AbstractPdu for SecuredIPdu {}
-
-impl AbstractIpdu for SecuredIPdu {}
-
-impl From<SecuredIPdu> for Pdu {
-    fn from(value: SecuredIPdu) -> Self {
-        Pdu::SecuredIPdu(value)
-    }
-}
-
-impl From<SecuredIPdu> for IPdu {
-    fn from(value: SecuredIPdu) -> Self {
-        IPdu::SecuredIPdu(value)
     }
 }
 
@@ -871,7 +837,9 @@ mod test {
                 RxAcceptContainedIPdu::AcceptAll,
             )
             .unwrap();
-        let secured_ipdu = system.create_secured_ipdu("secured_ipdu", &package, 1).unwrap();
+        let secured_ipdu = system
+            .create_secured_ipdu("secured_ipdu", &package, 1, &SecureCommunicationProps::default())
+            .unwrap();
         let multiplexed_ipdu = system.create_multiplexed_ipdu("multiplexed_ipdu", &package, 1).unwrap();
 
         assert_eq!(isignal_ipdu.length().unwrap(), 1);
@@ -1100,7 +1068,9 @@ mod test {
                 RxAcceptContainedIPdu::AcceptConfigured,
             )
             .unwrap();
-        let secured_ipdu = system.create_secured_ipdu("secured_ipdu", &package, 1).unwrap();
+        let secured_ipdu = system
+            .create_secured_ipdu("secured_ipdu", &package, 1, &SecureCommunicationProps::default())
+            .unwrap();
         let multiplexed_ipdu = system.create_multiplexed_ipdu("multiplexed_ipdu", &package, 1).unwrap();
 
         let ipdu: IPdu = isignal_ipdu.clone().into();
