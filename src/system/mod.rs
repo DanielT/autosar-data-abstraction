@@ -11,7 +11,7 @@ use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement,
     abstraction_element,
 };
-use autosar_data::{AutosarDataError, AutosarModel, Element, ElementName, WeakElement};
+use autosar_data::{AutosarModel, Element, ElementName, WeakElement};
 use std::iter::FusedIterator;
 
 mod mapping;
@@ -957,7 +957,7 @@ impl System {
     /// # Errors
     ///
     /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model
-    pub fn create_fibex_element_ref(&self, elem: &Element) -> Result<(), AutosarDataError> {
+    pub fn create_fibex_element_ref(&self, elem: &Element) -> Result<(), AutosarAbstractionError> {
         let model = elem.model()?;
         let refs = model.get_references_to(&elem.path()?);
         for reference in refs.iter().filter_map(WeakElement::upgrade) {
@@ -969,12 +969,13 @@ impl System {
         self.create_fibex_element_ref_unchecked(elem)
     }
 
-    fn create_fibex_element_ref_unchecked(&self, elem: &Element) -> Result<(), AutosarDataError> {
+    fn create_fibex_element_ref_unchecked(&self, elem: &Element) -> Result<(), AutosarAbstractionError> {
         let fibex_elements = self.0.get_or_create_sub_element(ElementName::FibexElements)?;
         let fibex_element_ref = fibex_elements
             .create_sub_element(ElementName::FibexElementRefConditional)?
             .create_sub_element(ElementName::FibexElementRef)?;
-        fibex_element_ref.set_reference_target(elem)
+        fibex_element_ref.set_reference_target(elem)?;
+        Ok(())
     }
 
     /// set the root software composition of the system
