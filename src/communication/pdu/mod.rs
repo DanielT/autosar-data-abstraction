@@ -8,8 +8,10 @@ use crate::{
 use autosar_data::{AutosarDataError, Element, ElementName, EnumItem};
 use std::str::FromStr;
 
+mod container_ipdu;
 mod isignal_ipdu;
 
+pub use container_ipdu::*;
 pub use isignal_ipdu::*;
 
 //##################################################################
@@ -55,7 +57,20 @@ pub trait AbstractPdu: AbstractionElement + Into<Pdu> {
 //##################################################################
 
 /// for now this is a marker trait to identify `IPdus`
-pub trait AbstractIpdu: AbstractPdu + Into<IPdu> {}
+pub trait AbstractIpdu: AbstractPdu + Into<IPdu> {
+    /// set the ContainedIPduProps for this `IPdu`
+    ///
+    /// This is only relevant for IPdus that will be transmitted in `ContainerIPdus`
+    fn set_contained_ipdu_props(&self, props: Option<&ContainedIPduProps>) -> Result<(), AutosarAbstractionError> {
+        ContainedIPduProps::set_props(self.element(), props)
+    }
+
+    /// get the ContainedIPduProps for this `IPdu`
+    #[must_use]
+    fn contained_ipdu_props(&self) -> Option<ContainedIPduProps> {
+        ContainedIPduProps::get_props(self.element())
+    }
+}
 
 //##################################################################
 
@@ -350,42 +365,6 @@ impl std::str::FromStr for GeneralPurposeIPduCategory {
             "DLT" => Ok(GeneralPurposeIPduCategory::Dlt),
             _ => Err(AutosarAbstractionError::InvalidParameter(s.to_string())),
         }
-    }
-}
-
-//##################################################################
-
-/// Several `IPdus` can be collected in one `ContainerIPdu` based on the headerType
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ContainerIPdu(Element);
-abstraction_element!(ContainerIPdu, ContainerIPdu);
-impl IdentifiableAbstractionElement for ContainerIPdu {}
-
-impl ContainerIPdu {
-    pub(crate) fn new(name: &str, package: &ArPackage, length: u32) -> Result<Self, AutosarAbstractionError> {
-        let pkg_elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
-        let elem_pdu = pkg_elements.create_named_sub_element(ElementName::ContainerIPdu, name)?;
-        elem_pdu
-            .create_sub_element(ElementName::Length)?
-            .set_character_data(length.to_string())?;
-
-        Ok(Self(elem_pdu))
-    }
-}
-
-impl AbstractPdu for ContainerIPdu {}
-
-impl AbstractIpdu for ContainerIPdu {}
-
-impl From<ContainerIPdu> for Pdu {
-    fn from(value: ContainerIPdu) -> Self {
-        Pdu::ContainerIPdu(value)
-    }
-}
-
-impl From<ContainerIPdu> for IPdu {
-    fn from(value: ContainerIPdu) -> Self {
-        IPdu::ContainerIPdu(value)
     }
 }
 
@@ -883,7 +862,15 @@ mod test {
         let gp_ipdu = system
             .create_general_purpose_ipdu("gp_ipdu", &package, 1, GeneralPurposeIPduCategory::Xcp)
             .unwrap();
-        let container_ipdu = system.create_container_ipdu("container_ipdu", &package, 1).unwrap();
+        let container_ipdu = system
+            .create_container_ipdu(
+                "container_ipdu",
+                &package,
+                1,
+                ContainerIPduHeaderType::ShortHeader,
+                RxAcceptContainedIPdu::AcceptAll,
+            )
+            .unwrap();
         let secured_ipdu = system.create_secured_ipdu("secured_ipdu", &package, 1).unwrap();
         let multiplexed_ipdu = system.create_multiplexed_ipdu("multiplexed_ipdu", &package, 1).unwrap();
 
@@ -1104,7 +1091,15 @@ mod test {
         let gp_ipdu = system
             .create_general_purpose_ipdu("gp_ipdu", &package, 1, GeneralPurposeIPduCategory::Xcp)
             .unwrap();
-        let container_ipdu = system.create_container_ipdu("container_ipdu", &package, 1).unwrap();
+        let container_ipdu = system
+            .create_container_ipdu(
+                "container_ipdu",
+                &package,
+                1,
+                ContainerIPduHeaderType::LongHeader,
+                RxAcceptContainedIPdu::AcceptConfigured,
+            )
+            .unwrap();
         let secured_ipdu = system.create_secured_ipdu("secured_ipdu", &package, 1).unwrap();
         let multiplexed_ipdu = system.create_multiplexed_ipdu("multiplexed_ipdu", &package, 1).unwrap();
 

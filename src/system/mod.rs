@@ -1,9 +1,10 @@
 use crate::communication::{
-    CanCluster, CanFrame, CanTpConfig, Cluster, ContainerIPdu, DcmIPdu, DoIpTpConfig, EthernetCluster,
-    EventGroupControlType, FlexrayArTpConfig, FlexrayCluster, FlexrayClusterSettings, FlexrayFrame, FlexrayTpConfig,
-    Frame, GeneralPurposeIPdu, GeneralPurposeIPduCategory, GeneralPurposePdu, GeneralPurposePduCategory, ISignal,
-    ISignalGroup, ISignalIPdu, MultiplexedIPdu, NPdu, NmConfig, NmPdu, Pdu, SecuredIPdu, ServiceInstanceCollectionSet,
-    SoAdRoutingGroup, SocketConnectionIpduIdentifierSet, SomeipTpConfig, SystemSignal, SystemSignalGroup,
+    CanCluster, CanFrame, CanTpConfig, Cluster, ContainerIPdu, ContainerIPduHeaderType, DcmIPdu, DoIpTpConfig,
+    EthernetCluster, EventGroupControlType, FlexrayArTpConfig, FlexrayCluster, FlexrayClusterSettings, FlexrayFrame,
+    FlexrayTpConfig, Frame, GeneralPurposeIPdu, GeneralPurposeIPduCategory, GeneralPurposePdu,
+    GeneralPurposePduCategory, ISignal, ISignalGroup, ISignalIPdu, MultiplexedIPdu, NPdu, NmConfig, NmPdu, Pdu,
+    RxAcceptContainedIPdu, SecuredIPdu, ServiceInstanceCollectionSet, SoAdRoutingGroup,
+    SocketConnectionIpduIdentifierSet, SomeipTpConfig, SystemSignal, SystemSignalGroup,
 };
 use crate::datatype::SwBaseType;
 use crate::software_component::{CompositionSwComponentType, RootSwCompositionPrototype};
@@ -674,7 +675,7 @@ impl System {
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// let package = model.get_or_create_package("/Pdus")?;
-    /// system.create_container_ipdu("pdu", &package, 42)?;
+    /// system.create_container_ipdu("pdu", &package, 42, ContainerIPduHeaderType::ShortHeader, RxAcceptContainedIPdu::AcceptAll)?;
     /// # Ok(())}
     /// ```
     ///
@@ -686,8 +687,10 @@ impl System {
         name: &str,
         package: &ArPackage,
         length: u32,
+        header_type: ContainerIPduHeaderType,
+        rx_accept: RxAcceptContainedIPdu,
     ) -> Result<ContainerIPdu, AutosarAbstractionError> {
-        let pdu = ContainerIPdu::new(name, package, length)?;
+        let pdu = ContainerIPdu::new(name, package, length, header_type, rx_accept)?;
         self.create_fibex_element_ref_unchecked(pdu.element())?;
 
         Ok(pdu)
@@ -1123,7 +1126,10 @@ impl FusedIterator for EcuInstanceIterator {}
 mod test {
     use crate::{
         AbstractionElement, AutosarModelAbstraction, IdentifiableAbstractionElement, System,
-        communication::{FlexrayClusterSettings, GeneralPurposeIPduCategory, GeneralPurposePduCategory},
+        communication::{
+            ContainerIPduHeaderType, FlexrayClusterSettings, GeneralPurposeIPduCategory, GeneralPurposePduCategory,
+            RxAcceptContainedIPdu,
+        },
         software_component::CompositionSwComponentType,
         system::SystemCategory,
     };
@@ -1369,7 +1375,15 @@ mod test {
         system
             .create_general_purpose_ipdu("GeneralPurposeIpdu", &package_2, 8, GeneralPurposeIPduCategory::Xcp)
             .unwrap();
-        system.create_container_ipdu("ContainerIpdu", &package_2, 8).unwrap();
+        system
+            .create_container_ipdu(
+                "ContainerIpdu",
+                &package_2,
+                8,
+                ContainerIPduHeaderType::NoHeader,
+                RxAcceptContainedIPdu::AcceptAll,
+            )
+            .unwrap();
         system.create_secured_ipdu("SecuredIpdu", &package_2, 8).unwrap();
         system
             .create_multiplexed_ipdu("MultiplexedIpdu", &package_2, 8)

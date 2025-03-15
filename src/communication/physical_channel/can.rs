@@ -2,7 +2,7 @@ use crate::{
     AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
     communication::{
         AbstractPhysicalChannel, CanAddressingMode, CanCluster, CanCommunicationConnector, CanFrame,
-        CanFrameTriggering, CanFrameType,
+        CanFrameTriggering, CanFrameType, PhysicalChannel,
     },
 };
 use autosar_data::{Element, ElementName};
@@ -95,6 +95,12 @@ impl CanPhysicalChannel {
     }
 }
 
+impl From<CanPhysicalChannel> for PhysicalChannel {
+    fn from(channel: CanPhysicalChannel) -> Self {
+        PhysicalChannel::Can(channel)
+    }
+}
+
 impl AbstractPhysicalChannel for CanPhysicalChannel {
     type CommunicationConnectorType = CanCommunicationConnector;
 }
@@ -103,7 +109,7 @@ impl AbstractPhysicalChannel for CanPhysicalChannel {
 
 #[cfg(test)]
 mod test {
-    use crate::{AutosarModelAbstraction, SystemCategory};
+    use crate::{AutosarModelAbstraction, SystemCategory, communication::PhysicalChannel};
     use autosar_data::AutosarVersion;
 
     #[test]
@@ -116,5 +122,8 @@ mod test {
         let channel = cluster.create_physical_channel("channel_name").unwrap();
         let c2 = channel.cluster().unwrap();
         assert_eq!(cluster, c2);
+
+        let wrapped_channel: PhysicalChannel = channel.clone().into();
+        assert_eq!(wrapped_channel, PhysicalChannel::Can(channel));
     }
 }

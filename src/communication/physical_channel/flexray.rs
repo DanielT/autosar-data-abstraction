@@ -2,7 +2,7 @@ use crate::{
     AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
     communication::{
         AbstractPhysicalChannel, FlexrayCluster, FlexrayCommunicationConnector, FlexrayCommunicationCycle,
-        FlexrayFrame, FlexrayFrameTriggering,
+        FlexrayFrame, FlexrayFrameTriggering, PhysicalChannel,
     },
 };
 use autosar_data::{Element, ElementName, EnumItem};
@@ -115,6 +115,12 @@ impl FlexrayPhysicalChannel {
     }
 }
 
+impl From<FlexrayPhysicalChannel> for PhysicalChannel {
+    fn from(channel: FlexrayPhysicalChannel) -> Self {
+        PhysicalChannel::Flexray(channel)
+    }
+}
+
 impl AbstractPhysicalChannel for FlexrayPhysicalChannel {
     type CommunicationConnectorType = FlexrayCommunicationConnector;
 }
@@ -155,6 +161,9 @@ mod test {
             .unwrap();
         let c2 = channel.cluster().unwrap();
         assert_eq!(cluster, c2);
+
+        let wrapped_channel: super::PhysicalChannel = channel.clone().into();
+        assert_eq!(wrapped_channel, super::PhysicalChannel::Flexray(channel.clone()));
 
         // damage the channel info by removing the channel name
         let elem_channelname = channel.element().get_sub_element(ElementName::ChannelName).unwrap();

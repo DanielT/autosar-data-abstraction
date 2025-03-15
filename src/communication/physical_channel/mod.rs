@@ -13,7 +13,7 @@ pub use flexray::*;
 //##################################################################
 
 /// trait for physical channels
-pub trait AbstractPhysicalChannel: AbstractionElement {
+pub trait AbstractPhysicalChannel: AbstractionElement + Into<PhysicalChannel> {
     /// the type of communication connector used by this physical channel
     type CommunicationConnectorType: AbstractCommunicationConnector;
 
@@ -97,7 +97,7 @@ pub enum PhysicalChannel {
     /// An Ethernet physical channel
     Ethernet(EthernetPhysicalChannel),
     /// A `FlexRay` physical channel
-    FlexRay(FlexrayPhysicalChannel),
+    Flexray(FlexrayPhysicalChannel),
 }
 
 impl AbstractPhysicalChannel for PhysicalChannel {
@@ -109,7 +109,7 @@ impl AbstractionElement for PhysicalChannel {
         match self {
             PhysicalChannel::Can(cpc) => cpc.element(),
             PhysicalChannel::Ethernet(epc) => epc.element(),
-            PhysicalChannel::FlexRay(fpc) => fpc.element(),
+            PhysicalChannel::Flexray(fpc) => fpc.element(),
         }
     }
 }
@@ -123,7 +123,7 @@ impl TryFrom<Element> for PhysicalChannel {
         match element.element_name() {
             ElementName::CanPhysicalChannel => Ok(Self::Can(CanPhysicalChannel::try_from(element)?)),
             ElementName::EthernetPhysicalChannel => Ok(Self::Ethernet(EthernetPhysicalChannel::try_from(element)?)),
-            ElementName::FlexrayPhysicalChannel => Ok(Self::FlexRay(FlexrayPhysicalChannel::try_from(element)?)),
+            ElementName::FlexrayPhysicalChannel => Ok(Self::Flexray(FlexrayPhysicalChannel::try_from(element)?)),
             _ => Err(AutosarAbstractionError::ConversionError {
                 element,
                 dest: "PhysicalChannel".to_string(),

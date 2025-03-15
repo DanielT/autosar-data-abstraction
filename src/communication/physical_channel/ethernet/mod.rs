@@ -933,6 +933,12 @@ impl EthernetPhysicalChannel {
     }
 }
 
+impl From<EthernetPhysicalChannel> for PhysicalChannel {
+    fn from(channel: EthernetPhysicalChannel) -> Self {
+        PhysicalChannel::Ethernet(channel)
+    }
+}
+
 impl AbstractPhysicalChannel for EthernetPhysicalChannel {
     type CommunicationConnectorType = EthernetCommunicationConnector;
 }
@@ -1363,6 +1369,18 @@ mod test {
     use super::*;
     use crate::{ArPackage, AutosarModelAbstraction, System, SystemCategory, communication::GeneralPurposePduCategory};
     use autosar_data::AutosarVersion;
+
+    #[test]
+    fn channel_basic() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00044);
+        let pkg = model.get_or_create_package("/test").unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
+        let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
+        let channel = cluster.create_physical_channel("Channel", None).unwrap();
+
+        let wrapped_channel: PhysicalChannel = channel.clone().into();
+        assert_eq!(wrapped_channel, PhysicalChannel::Ethernet(channel));
+    }
 
     #[test]
     fn channel_network_endpoint() {
