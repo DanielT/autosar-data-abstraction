@@ -10,7 +10,7 @@ keywords = ["arxml", "automotive", "file-format", "Autosar"]
 repository = "https://github.com/DanielT/autosar-data-abstraction"
 
 [dependencies]
-autosar-data = "0.19"
+autosar-data = "0.20"
 thiserror = "2.0"
 
 [dev-dependencies]
