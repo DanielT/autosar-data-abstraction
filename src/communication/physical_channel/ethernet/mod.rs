@@ -511,7 +511,7 @@ impl EthernetPhysicalChannel {
     ///  - `remote_socket` is a socket whose IP is set to ANY with UDP port 0, acting as the remote address in the SD communication.
     ///  - `name_prefix` is an optional prefix for the names of the created elements.
     ///  - `prefer_static_socket_connections` is a flag that determines if `SocketConnectionBundles` should be used instead of `StaticSocketConnections`.
-    ///     This is only relevant if the type can't be detected automatically.
+    ///    This is only relevant if the type can't be detected automatically.
     ///  - `ipdu_identifier_set` is contains the `IPduIdentifiers` that are used in `StaticSocketConnections`.
     ///
     /// Note:
