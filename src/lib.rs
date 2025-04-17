@@ -243,6 +243,16 @@ impl AutosarModelAbstraction {
         Ok(arxml_file)
     }
 
+    /// Load a file into the model
+    pub fn load_file<P: AsRef<Path>>(
+        &self,
+        file_name: P,
+        strict: bool,
+    ) -> Result<(ArxmlFile, Vec<AutosarDataError>), AutosarAbstractionError> {
+        let value = self.0.load_file(file_name, strict)?;
+        Ok(value)
+    }
+
     /// iterate over all files in the model
     pub fn files(&self) -> impl Iterator<Item = ArxmlFile> + Send + 'static {
         self.0.files()
