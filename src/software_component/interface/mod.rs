@@ -2,6 +2,7 @@ use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, Element, IdentifiableAbstractionElement,
     abstraction_element,
     datatype::{AbstractAutosarDataType, ValueSpecification},
+    software_component::ModeDeclarationGroup,
 };
 use autosar_data::ElementName;
 
@@ -29,6 +30,69 @@ impl ModeSwitchInterface {
         let mode_switch_interface = elements.create_named_sub_element(ElementName::ModeSwitchInterface, name)?;
 
         Ok(Self(mode_switch_interface))
+    }
+
+    /// Create a mode group in this `ModeSwitchInterface`
+    ///
+    /// The `ModeSwitchInterface` can contain one mode group
+    pub fn create_mode_group(
+        &self,
+        name: &str,
+        mode_declaration_group: &ModeDeclarationGroup,
+    ) -> Result<ModeGroup, AutosarAbstractionError> {
+        ModeGroup::new(name, &self.element(), mode_declaration_group)
+    }
+
+    /// Get the mode group for this `ModeSwitchInterface`
+    #[must_use]
+    pub fn mode_group(&self) -> Option<ModeGroup> {
+        let mode_group_elem = self.element().get_sub_element(ElementName::ModeGroup)?;
+        ModeGroup::try_from(mode_group_elem).ok()
+    }
+}
+
+//##################################################################
+
+/// A `ModeGroup` represents a mode group in a `ModeSwitchInterface`
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModeGroup(Element);
+abstraction_element!(ModeGroup, ModeGroup);
+impl IdentifiableAbstractionElement for ModeGroup {}
+
+impl ModeGroup {
+    /// Create a new `ModeGroup`
+    fn new(
+        name: &str,
+        parent_element: &Element,
+        mode_declaration_group: &ModeDeclarationGroup,
+    ) -> Result<Self, AutosarAbstractionError> {
+        let mode_group_elem = parent_element.create_named_sub_element(ElementName::ModeGroup, name)?;
+        let mode_group = Self(mode_group_elem);
+        mode_group.set_mode_declaration_group(mode_declaration_group)?;
+
+        Ok(mode_group)
+    }
+
+    /// Set the mode declaration group for this `ModeGroup`
+    pub fn set_mode_declaration_group(
+        &self,
+        mode_declaration_group: &ModeDeclarationGroup,
+    ) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::TypeTref)?
+            .set_reference_target(mode_declaration_group.element())?;
+        Ok(())
+    }
+
+    /// Get the mode declaration group for this `ModeGroup`
+    #[must_use]
+    pub fn mode_declaration_group(&self) -> Option<ModeDeclarationGroup> {
+        let mode_declaration_group_elem = self
+            .element()
+            .get_sub_element(ElementName::TypeTref)?
+            .get_reference_target()
+            .ok()?;
+        ModeDeclarationGroup::try_from(mode_declaration_group_elem).ok()
     }
 }
 
@@ -337,5 +401,22 @@ mod test {
             }
             .into()
         );
+    }
+
+    #[test]
+    fn mode_switch_interface() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+
+        let mode_declaration_group = package
+            .create_mode_declaration_group("mode_declaration_group", None)
+            .unwrap();
+
+        let mode_switch_interface = package.create_mode_switch_interface("mode_switch_interface").unwrap();
+        let mode_group = mode_switch_interface
+            .create_mode_group("mode_group", &mode_declaration_group)
+            .unwrap();
+        assert_eq!(mode_switch_interface.mode_group().unwrap(), mode_group);
+        assert_eq!(mode_group.mode_declaration_group().unwrap(), mode_declaration_group);
     }
 }
