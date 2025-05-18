@@ -20,9 +20,9 @@ use crate::{
     },
     software_component::{
         ApplicationSwComponentType, ClientServerInterface, ComplexDeviceDriverSwComponentType,
-        CompositionSwComponentType, EcuAbstractionSwComponentType, ModeSwitchInterface, NvDataInterface,
-        ParameterInterface, SenderReceiverInterface, SensorActuatorSwComponentType, ServiceSwComponentType,
-        TriggerInterface,
+        CompositionSwComponentType, EcuAbstractionSwComponentType, ModeDeclarationGroup, ModeDeclarationGroupCategory,
+        ModeSwitchInterface, NvDataInterface, ParameterInterface, SenderReceiverInterface,
+        SensorActuatorSwComponentType, ServiceSwComponentType, TriggerInterface,
     },
 };
 
@@ -553,6 +553,32 @@ impl ArPackage {
         settings: &ImplementationDataTypeSettings,
     ) -> Result<ImplementationDataType, AutosarAbstractionError> {
         ImplementationDataType::new(self, settings)
+    }
+
+    /// create a new `ModeDeclarationGroup` in the package
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::*;
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+    /// let package = model.get_or_create_package("/some/package")?;
+    /// let mode_declaration_group = package.create_mode_declaration_group("ModeDeclarationGroup", None)?;
+    /// assert!(model.get_element_by_path("/some/package/ModeDeclarationGroup").is_some());
+    /// # Ok(())}
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model while trying to create the MODE-DECLARATION-GROUP element
+    pub fn create_mode_declaration_group(
+        &self,
+        name: &str,
+        category: Option<ModeDeclarationGroupCategory>,
+    ) -> Result<ModeDeclarationGroup, AutosarAbstractionError> {
+        ModeDeclarationGroup::new(name, self, category)
     }
 
     /// create a new `ModeSwitchInterface` in the package

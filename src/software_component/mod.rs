@@ -12,11 +12,13 @@ use autosar_data::ElementName;
 mod connector;
 mod interface;
 mod internal_behavior;
+mod mode;
 mod port;
 
 pub use connector::*;
 pub use interface::*;
 pub use internal_behavior::*;
+pub use mode::*;
 pub use port::*;
 
 //##################################################################
