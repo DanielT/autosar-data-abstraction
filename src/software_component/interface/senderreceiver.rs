@@ -110,6 +110,7 @@ mod test {
     use crate::{
         AutosarModelAbstraction,
         datatype::{AutosarDataType, BaseTypeEncoding, ImplementationDataTypeSettings, NumericalValueSpecification},
+        software_component::AbstractPortInterface,
     };
     use autosar_data::AutosarVersion;
 
@@ -166,5 +167,12 @@ mod test {
             }
             .into()
         );
+
+        sr_interface.set_is_service(Some(false)).unwrap();
+        assert_eq!(sr_interface.is_service().unwrap(), false);
+        sr_interface.set_is_service(Some(true)).unwrap();
+        assert_eq!(sr_interface.is_service().unwrap(), true);
+        sr_interface.set_is_service(None).unwrap();
+        assert_eq!(sr_interface.is_service(), None);
     }
 }

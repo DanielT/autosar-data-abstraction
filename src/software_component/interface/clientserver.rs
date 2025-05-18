@@ -318,5 +318,12 @@ mod test {
         assert_eq!(argument.data_type().unwrap().name().unwrap(), "ImplementationValue");
         assert_eq!(argument.direction().unwrap(), ArgumentDirection::In);
         assert_eq!(operation.arguments().count(), 1);
+
+        client_server_interface.set_is_service(Some(true)).unwrap();
+        assert_eq!(client_server_interface.is_service().unwrap(), true);
+        client_server_interface.set_is_service(Some(false)).unwrap();
+        assert_eq!(client_server_interface.is_service().unwrap(), false);
+        client_server_interface.set_is_service(None).unwrap();
+        assert_eq!(client_server_interface.is_service(), None);
     }
 }

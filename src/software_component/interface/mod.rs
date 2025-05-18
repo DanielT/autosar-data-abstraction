@@ -40,7 +40,7 @@ impl ModeSwitchInterface {
         name: &str,
         mode_declaration_group: &ModeDeclarationGroup,
     ) -> Result<ModeGroup, AutosarAbstractionError> {
-        ModeGroup::new(name, &self.element(), mode_declaration_group)
+        ModeGroup::new(name, self.element(), mode_declaration_group)
     }
 
     /// Get the mode group for this `ModeSwitchInterface`
@@ -220,7 +220,28 @@ impl TriggerInterface {
 //##################################################################
 
 /// The `AbstractPortInterface` trait is a marker trait for all port interfaces
-pub trait AbstractPortInterface: AbstractionElement {}
+pub trait AbstractPortInterface: AbstractionElement {
+    /// Set the isService property for this port interface
+    fn set_is_service(&self, is_service: Option<bool>) -> Result<(), AutosarAbstractionError> {
+        if let Some(is_service) = is_service {
+            self.element()
+                .get_or_create_sub_element(ElementName::IsService)?
+                .set_character_data(is_service)?;
+        } else {
+            let _ = self.element().remove_sub_element_kind(ElementName::IsService);
+        }
+        Ok(())
+    }
+
+    /// Get the isService property for this port interface
+    #[must_use]
+    fn is_service(&self) -> Option<bool> {
+        self.element()
+            .get_sub_element(ElementName::IsService)
+            .and_then(|elem| elem.character_data())
+            .and_then(|cdata| cdata.parse_bool())
+    }
+}
 
 //##################################################################
 
@@ -388,6 +409,11 @@ mod test {
 
         assert_eq!(parameter_interface.parameters().count(), 1);
 
+        parameter_interface.set_is_service(Some(true)).unwrap();
+        assert_eq!(parameter_interface.is_service(), Some(true));
+        parameter_interface.set_is_service(None).unwrap();
+        assert_eq!(parameter_interface.is_service(), None);
+
         let value_spec = TextValueSpecification {
             label: None,
             value: "42".to_string(),
@@ -413,6 +439,11 @@ mod test {
             .unwrap();
 
         let mode_switch_interface = package.create_mode_switch_interface("mode_switch_interface").unwrap();
+        mode_switch_interface.set_is_service(Some(true)).unwrap();
+        assert_eq!(mode_switch_interface.is_service(), Some(true));
+        mode_switch_interface.set_is_service(None).unwrap();
+        assert_eq!(mode_switch_interface.is_service(), None);
+
         let mode_group = mode_switch_interface
             .create_mode_group("mode_group", &mode_declaration_group)
             .unwrap();
