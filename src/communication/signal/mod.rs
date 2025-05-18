@@ -3,7 +3,7 @@ use crate::communication::{
     AbstractPhysicalChannel, CommunicationDirection, DataTransformation, EndToEndTransformationISignalProps,
     PhysicalChannel, SomeIpTransformationISignalProps, TransformationTechnology,
 };
-use crate::datatype::{CompuMethod, DataConstr, SwBaseType, Unit};
+use crate::datatype::{CompuMethod, DataConstr, SwBaseType, Unit, ValueSpecification};
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance, abstraction_element,
     communication::ISignalToIPduMapping, make_unique_name,
@@ -90,6 +90,34 @@ impl ISignal {
             .get_sub_element(ElementName::Length)?
             .character_data()?
             .parse_integer()
+    }
+
+    /// set the init value for this signal
+    ///
+    /// only NumericalValueSpecification, TextValueSpecification or ArrayValueSpecification are permitted here
+    pub fn set_init_value<T: Into<ValueSpecification>>(&self, value_spec: T) -> Result<(), AutosarAbstractionError> {
+        let value_spec: ValueSpecification = value_spec.into();
+        if !matches!(
+            value_spec,
+            ValueSpecification::Numerical(_) | ValueSpecification::Text(_) | ValueSpecification::Array(_)
+        ) {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "The init value must be a NumericalValueSpecification, TextValueSpecification or ArrayValueSpecification".to_string(),
+            ));
+        }
+        let init_value_elem = self.element().get_or_create_sub_element(ElementName::InitValue)?;
+        value_spec.store(&init_value_elem)?;
+        Ok(())
+    }
+
+    /// get the init value for this signal
+    #[must_use]
+    pub fn init_value(&self) -> Option<ValueSpecification> {
+        let init_value_elem = self
+            .element()
+            .get_sub_element(ElementName::InitValue)?
+            .get_sub_element_at(0)?;
+        ValueSpecification::load(&init_value_elem)
     }
 
     /// set the system signal that corresponds to this signal
@@ -737,7 +765,7 @@ mod tests {
             AbstractFrame, AbstractPdu, CanAddressingMode, CanFrameType, DataTransformationSet, SomeIpMessageType,
             SomeIpTransformationTechnologyConfig, TransformationTechnologyConfig,
         },
-        datatype::{BaseTypeEncoding, CompuMethodContent, SwBaseType, Unit},
+        datatype::{BaseTypeEncoding, CompuMethodContent, NumericalValueSpecification, SwBaseType, Unit},
     };
     use autosar_data::AutosarVersion;
 
@@ -783,6 +811,14 @@ mod tests {
         assert_eq!(signal.mappings().len(), 1);
         assert_eq!(signal.mappings()[0], mapping.clone());
         assert_eq!(mapping.signal().unwrap(), signal);
+
+        // init value
+        let init_value = NumericalValueSpecification {
+            label: None,
+            value: 0.0,
+        };
+        signal.set_init_value(init_value.clone()).unwrap();
+        assert_eq!(signal.init_value(), Some(init_value.into()));
     }
 
     #[test]

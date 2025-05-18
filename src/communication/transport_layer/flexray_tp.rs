@@ -206,7 +206,6 @@ impl IdentifiableAbstractionElement for FlexrayTpConnection {
     /// In early versions of the Autosar standard, TpConnections were not identifiable.
     /// This was fixed later by adding the Ident sub-element. This method returns the name
     /// provied in the Ident element, if it exists.
-    #[must_use]
     fn name(&self) -> Option<String> {
         self.element()
             .get_sub_element(ElementName::Ident)

@@ -1,6 +1,7 @@
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, Element, IdentifiableAbstractionElement,
     abstraction_element,
+    datatype::{AbstractAutosarDataType, ValueSpecification},
 };
 use autosar_data::ElementName;
 
@@ -49,6 +50,64 @@ impl ParameterInterface {
         let parameter_interface = elements.create_named_sub_element(ElementName::ParameterInterface, name)?;
 
         Ok(Self(parameter_interface))
+    }
+
+    /// Create a new `ParameterDataPrototype` in this `ParameterInterface`
+    pub fn create_parameter<T: AbstractAutosarDataType>(
+        &self,
+        name: &str,
+        data_type: &T,
+    ) -> Result<ParameterDataPrototype, AutosarAbstractionError> {
+        let parameters = self.element().get_or_create_sub_element(ElementName::Parameters)?;
+        ParameterDataPrototype::new(name, &parameters, data_type.element())
+    }
+
+    /// iterate over all `ParameterDataPrototype` in this `ParameterInterface`
+    pub fn parameters(&self) -> impl Iterator<Item = ParameterDataPrototype> + Send + 'static {
+        self.element()
+            .get_sub_element(ElementName::Parameters)
+            .into_iter()
+            .flat_map(|parameters| parameters.sub_elements())
+            .filter_map(|param| ParameterDataPrototype::try_from(param).ok())
+    }
+}
+
+//##################################################################
+
+/// A `ParameterDataPrototype` defines a read-only parameter.
+///
+/// Typically such a parameter can be calibrated, but this is not required.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ParameterDataPrototype(Element);
+abstraction_element!(ParameterDataPrototype, ParameterDataPrototype);
+impl IdentifiableAbstractionElement for ParameterDataPrototype {}
+
+impl ParameterDataPrototype {
+    /// Create a new `ParameterDataPrototype`
+    fn new(name: &str, parent_element: &Element, data_type: &Element) -> Result<Self, AutosarAbstractionError> {
+        let pdp = parent_element.create_named_sub_element(ElementName::ParameterDataPrototype, name)?;
+        pdp.create_sub_element(ElementName::TypeTref)?
+            .set_reference_target(data_type)?;
+
+        Ok(Self(pdp))
+    }
+
+    /// set the init value for this signal
+    pub fn set_init_value<T: Into<ValueSpecification>>(&self, value_spec: T) -> Result<(), AutosarAbstractionError> {
+        let value_spec: ValueSpecification = value_spec.into();
+        let init_value_elem = self.element().get_or_create_sub_element(ElementName::InitValue)?;
+        value_spec.store(&init_value_elem)?;
+        Ok(())
+    }
+
+    /// get the init value for this signal
+    #[must_use]
+    pub fn init_value(&self) -> Option<ValueSpecification> {
+        let init_value_elem = self
+            .element()
+            .get_sub_element(ElementName::InitValue)?
+            .get_sub_element_at(0)?;
+        ValueSpecification::load(&init_value_elem)
     }
 }
 
@@ -162,7 +221,11 @@ impl TryFrom<Element> for PortInterface {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{AutosarModelAbstraction, software_component::AbstractSwComponentType};
+    use crate::{
+        AutosarModelAbstraction,
+        datatype::{BaseTypeEncoding, ImplementationDataTypeSettings, TextValueSpecification},
+        software_component::AbstractSwComponentType,
+    };
     use autosar_data::AutosarVersion;
 
     #[test]
@@ -236,5 +299,43 @@ mod test {
             Ok(PortInterface::TriggerInterface(interface)) if interface == trigger_interface
         ));
         assert_eq!(port_6.port_interface().unwrap().element(), trigger_interface.element());
+    }
+
+    #[test]
+    fn parameter_interface() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+
+        let parameter_interface = package.create_parameter_interface("parameter_interface").unwrap();
+        let base_type = package
+            .create_sw_base_type("base", 32, BaseTypeEncoding::None, None, None, None)
+            .unwrap();
+        let datatype = package
+            .create_implementation_data_type(&ImplementationDataTypeSettings::Value {
+                name: "ImplementationValue".to_string(),
+                base_type: base_type.clone(),
+                compu_method: None,
+                data_constraint: None,
+            })
+            .unwrap();
+
+        let parameter = parameter_interface.create_parameter("parameter", &datatype).unwrap();
+        assert_eq!(parameter.name().as_deref().unwrap(), "parameter");
+
+        assert_eq!(parameter_interface.parameters().count(), 1);
+
+        let value_spec = TextValueSpecification {
+            label: None,
+            value: "42".to_string(),
+        };
+        parameter.set_init_value(value_spec).unwrap();
+        assert_eq!(
+            parameter.init_value().unwrap(),
+            TextValueSpecification {
+                label: None,
+                value: "42".to_string()
+            }
+            .into()
+        );
     }
 }

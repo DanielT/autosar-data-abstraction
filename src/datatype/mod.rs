@@ -12,12 +12,14 @@ mod basetype;
 mod compu_method;
 mod implementationtype;
 mod mapping;
+mod values;
 
 pub use applicationtype::*;
 pub use basetype::*;
 pub use compu_method::*;
 pub use implementationtype::*;
 pub use mapping::*;
+pub use values::*;
 
 //#########################################################
 

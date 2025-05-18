@@ -11,7 +11,8 @@ use crate::{
     datatype::{
         ApplicationArrayDataType, ApplicationArraySize, ApplicationDataType, ApplicationPrimitiveCategory,
         ApplicationPrimitiveDataType, ApplicationRecordDataType, BaseTypeEncoding, CompuMethod, CompuMethodContent,
-        DataConstr, DataTypeMappingSet, ImplementationDataType, ImplementationDataTypeSettings, SwBaseType, Unit,
+        ConstantSpecification, DataConstr, DataTypeMappingSet, ImplementationDataType, ImplementationDataTypeSettings,
+        SwBaseType, Unit, ValueSpecification,
     },
     ecu_configuration::{
         EcucDefinitionCollection, EcucDestinationUriDefSet, EcucModuleConfigurationValues, EcucModuleDef,
@@ -278,6 +279,36 @@ impl ArPackage {
         content: CompuMethodContent,
     ) -> Result<CompuMethod, AutosarAbstractionError> {
         CompuMethod::new(name, self, content)
+    }
+
+    /// create a new `ConstantSpecification` in the package
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::{*, datatype::*};
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+    /// let package = model.get_or_create_package("/some/package")?;
+    /// let value = NumericalValueSpecification {
+    ///    label: None,
+    ///    value: 42.0,
+    /// };
+    /// let compu_method = package.create_constant_specification("CompuMethod", value)?;
+    /// assert!(model.get_element_by_path("/some/package/CompuMethod").is_some());
+    /// # Ok(())}
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model while trying to create the CONSTANT-SPECIFICATION element
+    pub fn create_constant_specification<T: Into<ValueSpecification>>(
+        &self,
+        name: &str,
+        value: T,
+    ) -> Result<ConstantSpecification, AutosarAbstractionError> {
+        ConstantSpecification::new(name, self, value.into())
     }
 
     /// create a new `DataConstr` in the package

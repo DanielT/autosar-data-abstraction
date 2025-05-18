@@ -1,7 +1,7 @@
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, Element, IdentifiableAbstractionElement,
     abstraction_element,
-    datatype::{AbstractAutosarDataType, AutosarDataType},
+    datatype::{AbstractAutosarDataType, AutosarDataType, ValueSpecification},
     software_component::AbstractPortInterface,
 };
 use autosar_data::ElementName;
@@ -84,6 +84,23 @@ impl VariableDataPrototype {
         let type_tref = self.element().get_sub_element(ElementName::TypeTref)?;
         AutosarDataType::try_from(type_tref.get_reference_target().ok()?).ok()
     }
+
+    /// Set the init value of the data element
+    pub fn set_init_value<T: Into<ValueSpecification>>(&self, value_spec: T) -> Result<(), AutosarAbstractionError> {
+        let value_spec: ValueSpecification = value_spec.into();
+        let init_value_elem = self.element().get_or_create_sub_element(ElementName::InitValue)?;
+        value_spec.store(&init_value_elem)?;
+        Ok(())
+    }
+
+    /// Get the init value of the data element
+    pub fn init_value(&self) -> Option<ValueSpecification> {
+        let init_value_elem = self
+            .element()
+            .get_sub_element(ElementName::InitValue)?
+            .get_sub_element_at(0)?;
+        ValueSpecification::load(&init_value_elem)
+    }
 }
 
 //##################################################################
@@ -92,7 +109,7 @@ impl VariableDataPrototype {
 mod test {
     use crate::{
         AutosarModelAbstraction,
-        datatype::{AutosarDataType, BaseTypeEncoding, ImplementationDataTypeSettings},
+        datatype::{AutosarDataType, BaseTypeEncoding, ImplementationDataTypeSettings, NumericalValueSpecification},
     };
     use autosar_data::AutosarVersion;
 
@@ -134,6 +151,20 @@ mod test {
         assert_eq!(
             data_element.data_type().unwrap(),
             AutosarDataType::ImplementationDataType(datatype2)
+        );
+
+        let value_spec = NumericalValueSpecification {
+            label: None,
+            value: 42.0,
+        };
+        data_element.set_init_value(value_spec).unwrap();
+        assert_eq!(
+            data_element.init_value().unwrap(),
+            NumericalValueSpecification {
+                label: None,
+                value: 42.0
+            }
+            .into()
         );
     }
 }

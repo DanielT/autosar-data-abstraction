@@ -390,6 +390,21 @@ mod test {
     }
 
     #[test]
+    fn model_load_file() {
+        let tempdir = tempfile::tempdir().unwrap();
+        let filename = tempdir.path().join("test.arxml");
+
+        // write a new arxml file to disk
+        let model = AutosarModelAbstraction::create(filename.clone(), AutosarVersion::LATEST);
+        model.write().unwrap();
+
+        // load the file into a new model
+        let model = AutosarModelAbstraction::new(AutosarModel::new());
+        let (_file, errors) = model.load_file(filename, true).unwrap();
+        assert!(errors.is_empty());
+    }
+
+    #[test]
     fn model_packages() {
         let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00049);
         let package = model.get_or_create_package("/package").unwrap();
