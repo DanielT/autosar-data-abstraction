@@ -3,6 +3,7 @@ use crate::{
     datatype::DataTypeMappingSet,
     software_component::{
         ClientServerOperation, ModeDeclaration, PPortPrototype, PortInterface, PortPrototype, SwComponentType,
+        VariableDataPrototype,
     },
 };
 use autosar_data::{ElementName, EnumItem};
@@ -109,6 +110,18 @@ impl SwcInternalBehavior {
     ) -> Result<BackgroundEvent, AutosarAbstractionError> {
         let events = self.element().get_or_create_sub_element(ElementName::Events)?;
         BackgroundEvent::new(name, &events, runnable)
+    }
+
+    /// create a data received event that triggers a runnable in the `SwcInternalBehavior` when data is received
+    pub fn create_data_received_event<T: Into<PortPrototype> + Clone>(
+        &self,
+        name: &str,
+        runnable: &RunnableEntity,
+        variable_data_prototype: &VariableDataPrototype,
+        context_port: &T,
+    ) -> Result<DataReceivedEvent, AutosarAbstractionError> {
+        let events = self.element().get_or_create_sub_element(ElementName::Events)?;
+        DataReceivedEvent::new(name, &events, runnable, variable_data_prototype, context_port)
     }
 
     /// create an os task execution event that triggers a runnable in the `SwcInternalBehavior` every time the task is executed
@@ -315,6 +328,85 @@ pub struct DataReceivedEvent(Element);
 abstraction_element!(DataReceivedEvent, DataReceivedEvent);
 impl IdentifiableAbstractionElement for DataReceivedEvent {}
 impl AbstractRTEEvent for DataReceivedEvent {}
+
+impl DataReceivedEvent {
+    pub(crate) fn new<T: Into<PortPrototype> + Clone>(
+        name: &str,
+        parent: &Element,
+        runnable: &RunnableEntity,
+        variable_data_prototype: &VariableDataPrototype,
+        context_port: &T,
+    ) -> Result<Self, AutosarAbstractionError> {
+        let data_received_event = parent.create_named_sub_element(ElementName::DataReceivedEvent, name)?;
+        let data_received_event = Self(data_received_event);
+        data_received_event.set_runnable_entity(runnable)?;
+
+        let result = data_received_event.set_variable_data_prototype(variable_data_prototype, context_port);
+        if let Err(err) = result {
+            // this operation could fail if bad parameters are provided; in this case we remove the event
+            parent.remove_sub_element(data_received_event.0)?;
+            return Err(err);
+        }
+
+        Ok(data_received_event)
+    }
+
+    /// Set the `VariableDataPrototype` that triggers the `DataReceivedEvent`
+    pub fn set_variable_data_prototype<T: Into<PortPrototype> + Clone>(
+        &self,
+        variable_data_prototype: &VariableDataPrototype,
+        context_port: &T,
+    ) -> Result<(), AutosarAbstractionError> {
+        let context_port = context_port.clone().into();
+        // reject P-Ports. It's not clear if PRPortPrototypes are allowed here, so let's not reject them for now
+        if matches!(context_port, PortPrototype::P(_)) {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "A DataReceivedEvent must refer to a port using an RPortPrototype".to_string(),
+            ));
+        }
+        // the port must be a sender-receiver port
+        let PortInterface::SenderReceiverInterface(sr_interface) = context_port.port_interface()? else {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "A DataReceivedEvent must refer to a port using a SenderReceiverInterface".to_string(),
+            ));
+        };
+        // the variable data prototype must be part of the sender-receiver interface
+        if sr_interface != variable_data_prototype.interface()? {
+            return Err(AutosarAbstractionError::InvalidParameter(format!(
+                "VariableDataPrototype {} is not part of SenderReceiverInterface {}",
+                variable_data_prototype.name().as_deref().unwrap_or("(invalid)"),
+                sr_interface.name().as_deref().unwrap_or("(invalid)")
+            )));
+        }
+
+        // all ok, create the reference
+        let data_iref = self.element().get_or_create_sub_element(ElementName::DataIref)?;
+        data_iref
+            .get_or_create_sub_element(ElementName::ContextRPortRef)?
+            .set_reference_target(context_port.element())?;
+        data_iref
+            .get_or_create_sub_element(ElementName::TargetDataElementRef)?
+            .set_reference_target(variable_data_prototype.element())?;
+
+        Ok(())
+    }
+
+    /// Get the `VariableDataPrototype` that triggers the `DataReceivedEvent`
+    pub fn variable_data_prototype(&self) -> Option<(VariableDataPrototype, PortPrototype)> {
+        let data_iref = self.element().get_sub_element(ElementName::DataIref)?;
+        let variable_data_prototype_elem = data_iref
+            .get_sub_element(ElementName::TargetDataElementRef)?
+            .get_reference_target()
+            .ok()?;
+        let context_port_elem = data_iref
+            .get_sub_element(ElementName::ContextRPortRef)?
+            .get_reference_target()
+            .ok()?;
+        let variable_data_prototype = VariableDataPrototype::try_from(variable_data_prototype_elem).ok()?;
+        let context_port = PortPrototype::try_from(context_port_elem).ok()?;
+        Some((variable_data_prototype, context_port))
+    }
+}
 
 //##################################################################
 
@@ -557,7 +649,7 @@ impl SwcModeSwitchEvent {
         let Some(mode_declaration_group) = interface_mode_group.mode_declaration_group() else {
             return Err(AutosarAbstractionError::InvalidParameter(format!(
                 "ModeGroup {} is invalid: the reference a ModeDeclarationGroup is missing",
-                interface_mode_group.name().unwrap()
+                interface_mode_group.name().as_deref().unwrap_or("(invalid)")
             )));
         };
 
@@ -565,8 +657,8 @@ impl SwcModeSwitchEvent {
         if mode_declaration.mode_declaration_group()? != mode_declaration_group {
             return Err(AutosarAbstractionError::InvalidParameter(format!(
                 "ModeDeclaration {} is not part of ModeDeclarationGroup {}",
-                mode_declaration.name().unwrap(),
-                mode_declaration_group.name().unwrap()
+                mode_declaration.name().as_deref().unwrap_or("(invalid)"),
+                mode_declaration_group.name().as_deref().unwrap_or("(invalid)")
             )));
         }
         // verify that the second mode_declaration is part of the mode declaration group of the context port interface
@@ -574,8 +666,8 @@ impl SwcModeSwitchEvent {
             if second_mode_declaration.mode_declaration_group()? != mode_declaration_group {
                 return Err(AutosarAbstractionError::InvalidParameter(format!(
                     "ModeDeclaration {} is not part of ModeDeclarationGroup {}",
-                    second_mode_declaration.name().unwrap(),
-                    mode_declaration_group.name().unwrap()
+                    second_mode_declaration.name().as_deref().unwrap_or("(invalid)"),
+                    mode_declaration_group.name().as_deref().unwrap_or("(invalid)")
                 )));
             }
         }
@@ -797,6 +889,7 @@ mod test {
     use super::*;
     use crate::{
         AbstractionElement, AutosarModelAbstraction,
+        datatype::ApplicationPrimitiveCategory,
         software_component::{AbstractRTEEvent, AbstractSwComponentType, AtomicSwComponentType},
     };
     use autosar_data::AutosarVersion;
@@ -1016,5 +1109,76 @@ mod test {
         // mode activation kind error case
         let activation_kind = ModeActivationKind::try_from(EnumItem::Opaque);
         assert!(activation_kind.is_err());
+    }
+
+    #[test]
+    fn data_received_event() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+
+        // create a sender receiver interface with a variable
+        let sender_receiver_interface = package
+            .create_sender_receiver_interface("SenderReceiverInterface")
+            .unwrap();
+        let app_data_type = package
+            .create_application_primitive_data_type("uint32", ApplicationPrimitiveCategory::Value, None, None, None)
+            .unwrap();
+        let variable_data_prototype = sender_receiver_interface
+            .create_data_element("data", &app_data_type)
+            .unwrap();
+
+        // create a software component type with an internal behavior
+        let app_swc = package
+            .create_application_sw_component_type("AppSwComponentType")
+            .unwrap();
+        let r_port = app_swc.create_r_port("r_port", &sender_receiver_interface).unwrap();
+        let swc_internal_behavior = app_swc
+            .create_swc_internal_behavior("AppSwComponentType_InternalBehavior")
+            .unwrap();
+        assert_eq!(app_swc.swc_internal_behaviors().count(), 1);
+        assert_eq!(
+            swc_internal_behavior.sw_component_type().unwrap(),
+            app_swc.clone().into()
+        );
+
+        // create a p-port using the sender-receiver interface
+        let p_port = app_swc.create_p_port("p_port", &sender_receiver_interface).unwrap();
+
+        // create a port using a client-server interface
+        let client_server_interface = package.create_client_server_interface("ClientServerInterface").unwrap();
+        let cs_port = app_swc.create_r_port("cs_port", &client_server_interface).unwrap();
+
+        // create a runnable entity
+        let runnable = swc_internal_behavior.create_runnable_entity("Runnable1").unwrap();
+        assert_eq!(runnable.swc_internal_behavior().unwrap(), swc_internal_behavior);
+
+        // error case: create a data received event with a port that does not have a sender-receiver interface
+        let result = swc_internal_behavior.create_data_received_event(
+            "DataReceivedEvent",
+            &runnable,
+            &variable_data_prototype,
+            &cs_port,
+        );
+        assert!(result.is_err());
+
+        // error case: can't create a data received event with a p-port
+        let result = swc_internal_behavior.create_data_received_event(
+            "DataReceivedEvent",
+            &runnable,
+            &variable_data_prototype,
+            &p_port,
+        );
+        assert!(result.is_err());
+
+        // create a data received event, which triggers runnable
+        let data_received_event = swc_internal_behavior
+            .create_data_received_event("DataReceivedEvent", &runnable, &variable_data_prototype, &r_port)
+            .unwrap();
+        assert_eq!(data_received_event.runnable_entity().unwrap(), runnable);
+
+        let (data_element, context_port) = data_received_event.variable_data_prototype().unwrap();
+        assert_eq!(data_element, variable_data_prototype);
+        assert_eq!(context_port, r_port.into());
+        assert_eq!(data_received_event.runnable_entity().unwrap(), runnable);
     }
 }
