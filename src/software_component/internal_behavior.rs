@@ -1,9 +1,11 @@
 use crate::{
     AbstractionElement, AutosarAbstractionError, Element, IdentifiableAbstractionElement, abstraction_element,
     datatype::DataTypeMappingSet,
-    software_component::{ClientServerOperation, PPortPrototype, SwComponentType},
+    software_component::{
+        ClientServerOperation, ModeDeclaration, PPortPrototype, PortInterface, PortPrototype, SwComponentType,
+    },
 };
-use autosar_data::ElementName;
+use autosar_data::{ElementName, EnumItem};
 
 //##################################################################
 
@@ -117,6 +119,28 @@ impl SwcInternalBehavior {
     ) -> Result<OsTaskExecutionEvent, AutosarAbstractionError> {
         let events = self.element().get_or_create_sub_element(ElementName::Events)?;
         OsTaskExecutionEvent::new(name, &events, runnable)
+    }
+
+    /// create a mode switch event that triggers a runnable in the `SwcInternalBehavior` when the mode is switched
+    pub fn create_mode_switch_event<T: Into<PortPrototype> + Clone>(
+        &self,
+        name: &str,
+        runnable: &RunnableEntity,
+        activation: ModeActivationKind,
+        context_port: &T,
+        mode_declaration: &ModeDeclaration,
+        second_mode_declaration: Option<&ModeDeclaration>,
+    ) -> Result<SwcModeSwitchEvent, AutosarAbstractionError> {
+        let events = self.element().get_or_create_sub_element(ElementName::Events)?;
+        SwcModeSwitchEvent::new(
+            name,
+            &events,
+            runnable,
+            activation,
+            context_port,
+            mode_declaration,
+            second_mode_declaration,
+        )
     }
 
     /// create an iterator over all events in the `SwcInternalBehavior`
@@ -461,6 +485,194 @@ abstraction_element!(SwcModeSwitchEvent, SwcModeSwitchEvent);
 impl IdentifiableAbstractionElement for SwcModeSwitchEvent {}
 impl AbstractRTEEvent for SwcModeSwitchEvent {}
 
+impl SwcModeSwitchEvent {
+    pub(crate) fn new<T: Into<PortPrototype> + Clone>(
+        name: &str,
+        parent: &Element,
+        runnable: &RunnableEntity,
+        activation: ModeActivationKind,
+        context_port: &T,
+        mode_declaration: &ModeDeclaration,
+        second_mode_declaration: Option<&ModeDeclaration>,
+    ) -> Result<Self, AutosarAbstractionError> {
+        let swc_mode_switch_event = parent.create_named_sub_element(ElementName::SwcModeSwitchEvent, name)?;
+        let swc_mode_switch_event = Self(swc_mode_switch_event);
+        swc_mode_switch_event.set_runnable_entity(runnable)?;
+
+        swc_mode_switch_event.set_mode_activation_kind(activation)?;
+
+        // set the context port and mode declaration
+        let result =
+            swc_mode_switch_event.set_mode_declaration(context_port, mode_declaration, second_mode_declaration);
+        if let Err(err) = result {
+            // this operation could fail if bad parameters are provided; in this case we remove the event
+            parent.remove_sub_element(swc_mode_switch_event.0)?;
+            return Err(err);
+        }
+
+        Ok(swc_mode_switch_event)
+    }
+
+    /// Set the `ModeActivationKind` that controls when the `SwcModeSwitchEvent` is triggered
+    pub fn set_mode_activation_kind(&self, activation: ModeActivationKind) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::Activation)?
+            .set_character_data::<EnumItem>(activation.into())?;
+        Ok(())
+    }
+
+    /// Get the `ModeActivationKind` that controls when the `SwcModeSwitchEvent` is triggered
+    pub fn mode_activation_kind(&self) -> Option<ModeActivationKind> {
+        let value = self
+            .element()
+            .get_sub_element(ElementName::Activation)?
+            .character_data()?
+            .enum_value()?;
+        ModeActivationKind::try_from(value).ok()
+    }
+
+    /// Set the `ModeDeclaration` that triggers the `SwcModeSwitchEvent`
+    ///
+    /// The second mode must be provided if the activation kind `OnTransition` is configured.
+    /// In that case only transitions between the two modes trigger the event.
+    pub fn set_mode_declaration<T: Into<PortPrototype> + Clone>(
+        &self,
+        context_port: &T,
+        mode_declaration: &ModeDeclaration,
+        second_mode_declaration: Option<&ModeDeclaration>,
+    ) -> Result<(), AutosarAbstractionError> {
+        let context_port = context_port.clone().into();
+        let interface = context_port.port_interface()?;
+        let PortInterface::ModeSwitchInterface(mode_switch_interface) = interface else {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "A ModeSwitchEvent must refer to a port using a ModeSwitchInterface".to_string(),
+            ));
+        };
+        let Some(interface_mode_group) = mode_switch_interface.mode_group() else {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "A ModeSwitchEvent cannot refer a port whose ModeSwitchInterface does not contain a ModeGroup"
+                    .to_string(),
+            ));
+        };
+        let Some(mode_declaration_group) = interface_mode_group.mode_declaration_group() else {
+            return Err(AutosarAbstractionError::InvalidParameter(format!(
+                "ModeGroup {} is invalid: the reference a ModeDeclarationGroup is missing",
+                interface_mode_group.name().unwrap()
+            )));
+        };
+
+        // verify that the mode_declaration is part of the mode declaration group of the context port interface
+        if mode_declaration.mode_declaration_group()? != mode_declaration_group {
+            return Err(AutosarAbstractionError::InvalidParameter(format!(
+                "ModeDeclaration {} is not part of ModeDeclarationGroup {}",
+                mode_declaration.name().unwrap(),
+                mode_declaration_group.name().unwrap()
+            )));
+        }
+        // verify that the second mode_declaration is part of the mode declaration group of the context port interface
+        if let Some(second_mode_declaration) = second_mode_declaration {
+            if second_mode_declaration.mode_declaration_group()? != mode_declaration_group {
+                return Err(AutosarAbstractionError::InvalidParameter(format!(
+                    "ModeDeclaration {} is not part of ModeDeclarationGroup {}",
+                    second_mode_declaration.name().unwrap(),
+                    mode_declaration_group.name().unwrap()
+                )));
+            }
+        }
+
+        let _ = self.element().remove_sub_element_kind(ElementName::ModeIrefs);
+        let mode_irefs_elem = self.element().create_sub_element(ElementName::ModeIrefs)?;
+
+        let mode_iref = mode_irefs_elem.create_sub_element(ElementName::ModeIref)?;
+        mode_iref
+            .create_sub_element(ElementName::ContextPortRef)?
+            .set_reference_target(context_port.element())?;
+        mode_iref
+            .create_sub_element(ElementName::ContextModeDeclarationGroupPrototypeRef)?
+            .set_reference_target(interface_mode_group.element())?;
+        mode_iref
+            .create_sub_element(ElementName::TargetModeDeclarationRef)?
+            .set_reference_target(mode_declaration.element())?;
+
+        if let Some(second_mode_declaration) = second_mode_declaration {
+            let second_mode_iref = mode_irefs_elem.create_sub_element(ElementName::ModeIref)?;
+            second_mode_iref
+                .create_sub_element(ElementName::ContextPortRef)?
+                .set_reference_target(context_port.element())?;
+            second_mode_iref
+                .create_sub_element(ElementName::ContextModeDeclarationGroupPrototypeRef)?
+                .set_reference_target(interface_mode_group.element())?;
+            second_mode_iref
+                .create_sub_element(ElementName::TargetModeDeclarationRef)?
+                .set_reference_target(second_mode_declaration.element())?;
+        }
+
+        Ok(())
+    }
+
+    /// Get the `ModeDeclaration`s that trigger the `SwcModeSwitchEvent`
+    ///
+    /// The list contains either one or two `ModeDeclaration`s depending on the `ModeActivationKind`.
+    pub fn mode_declarations(&self) -> Option<(Vec<ModeDeclaration>, PortPrototype)> {
+        let mode_irefs_elem = self.element().get_sub_element(ElementName::ModeIrefs)?;
+        let mode_declarations = mode_irefs_elem
+            .sub_elements()
+            .filter_map(|mode_iref_elem| {
+                mode_iref_elem
+                    .get_sub_element(ElementName::TargetModeDeclarationRef)
+                    .and_then(|tref_elem| tref_elem.get_reference_target().ok())
+                    .and_then(|elem| ModeDeclaration::try_from(elem).ok())
+            })
+            .collect();
+        let port_elem = mode_irefs_elem
+            .get_sub_element(ElementName::ModeIref)?
+            .get_sub_element(ElementName::ContextPortRef)?
+            .get_reference_target()
+            .ok()?;
+        let port_proto = PortPrototype::try_from(port_elem).ok()?;
+        Some((mode_declarations, port_proto))
+    }
+}
+
+//##################################################################
+
+/// Kind of mode switch condition used for activation of an event
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ModeActivationKind {
+    /// On entering the mode
+    OnEntry,
+    /// On leaving the mode
+    OnExit,
+    /// on transition from the first mode to the second mode
+    OnTransition,
+}
+
+impl From<ModeActivationKind> for EnumItem {
+    fn from(activation_kind: ModeActivationKind) -> Self {
+        match activation_kind {
+            ModeActivationKind::OnEntry => EnumItem::OnEntry,
+            ModeActivationKind::OnExit => EnumItem::OnExit,
+            ModeActivationKind::OnTransition => EnumItem::OnTransition,
+        }
+    }
+}
+
+impl TryFrom<EnumItem> for ModeActivationKind {
+    type Error = AutosarAbstractionError;
+
+    fn try_from(activation_kind: EnumItem) -> Result<Self, Self::Error> {
+        match activation_kind {
+            EnumItem::OnEntry => Ok(ModeActivationKind::OnEntry),
+            EnumItem::OnExit => Ok(ModeActivationKind::OnExit),
+            EnumItem::OnTransition => Ok(ModeActivationKind::OnTransition),
+            _ => Err(AutosarAbstractionError::ValueConversionError {
+                value: activation_kind.to_string(),
+                dest: "ModeActivationKind".to_string(),
+            }),
+        }
+    }
+}
+
 //##################################################################
 
 /// raised if a hard transformer error occurs
@@ -582,6 +794,7 @@ impl AbstractRTEEvent for RTEEvent {}
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use crate::{
         AbstractionElement, AutosarModelAbstraction,
         software_component::{AbstractRTEEvent, AbstractSwComponentType, AtomicSwComponentType},
@@ -670,5 +883,138 @@ mod test {
             .add_data_type_mapping_set(&data_type_mapping_set)
             .unwrap();
         assert_eq!(swc_internal_behavior.data_type_mapping_sets().count(), 1);
+    }
+
+    #[test]
+    fn mode_switch_event() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+
+        // create a software component type with an internal behavior
+        let app_swc = package
+            .create_application_sw_component_type("AppSwComponentType")
+            .unwrap();
+        let swc_internal_behavior = app_swc
+            .create_swc_internal_behavior("AppSwComponentType_InternalBehavior")
+            .unwrap();
+        assert_eq!(app_swc.swc_internal_behaviors().count(), 1);
+        assert_eq!(
+            swc_internal_behavior.sw_component_type().unwrap(),
+            app_swc.clone().into()
+        );
+
+        // create a mode declaration group and a mode switch interface
+        let mode_declaration_group = package
+            .create_mode_declaration_group("ModeDeclarationGroup", None)
+            .unwrap();
+        let mode_declaration_1 = mode_declaration_group
+            .create_mode_declaration("ModeDeclaration1")
+            .unwrap();
+        let mode_declaration_2 = mode_declaration_group
+            .create_mode_declaration("ModeDeclaration2")
+            .unwrap();
+        let mode_switch_interface = package.create_mode_switch_interface("ModeSwitchInterface").unwrap();
+        let r_port = app_swc.create_r_port("r_port", &mode_switch_interface).unwrap();
+
+        let mode_declaration_group2 = package
+            .create_mode_declaration_group("ModeDeclarationGroup2", None)
+            .unwrap();
+        let mode_declaration_g2 = mode_declaration_group2
+            .create_mode_declaration("ModeDeclaratio_g2")
+            .unwrap();
+
+        //  create a second port for the error path test which does not have a mode switch interface
+        let client_server_interface = package.create_client_server_interface("ClientServerInterface").unwrap();
+        let bad_port = app_swc.create_r_port("bad_port", &client_server_interface).unwrap();
+
+        // create a runnable entity
+        let runnable = swc_internal_behavior.create_runnable_entity("Runnable1").unwrap();
+        assert_eq!(runnable.swc_internal_behavior().unwrap(), swc_internal_behavior);
+
+        // error case: create a mode switch event with a port that does not have a mode switch interface
+        let result = swc_internal_behavior.create_mode_switch_event(
+            "ModeSwitchEvent",
+            &runnable,
+            ModeActivationKind::OnEntry,
+            &bad_port,
+            &mode_declaration_g2,
+            None,
+        );
+        assert!(result.is_err());
+
+        // error case: the mode switch interface does not contain a mode group
+        let result = swc_internal_behavior.create_mode_switch_event(
+            "ModeSwitchEvent",
+            &runnable,
+            ModeActivationKind::OnEntry,
+            &r_port,
+            &mode_declaration_1,
+            Some(&mode_declaration_2),
+        );
+        assert!(result.is_err());
+
+        // create the mode group in the mode switch interface
+        mode_switch_interface
+            .create_mode_group("mode_group", &mode_declaration_group)
+            .unwrap();
+
+        // error case: create a mode switch event with a mode_declaration that is not part of the mode declaration group
+        let result = swc_internal_behavior.create_mode_switch_event(
+            "ModeSwitchEvent",
+            &runnable,
+            ModeActivationKind::OnEntry,
+            &r_port,
+            &mode_declaration_g2,
+            None,
+        );
+        assert!(result.is_err());
+
+        // correct: create a mode switch event with a mode_declaration that is part of the mode declaration group
+        let mode_switch_event = swc_internal_behavior
+            .create_mode_switch_event(
+                "ModeSwitchEvent",
+                &runnable,
+                ModeActivationKind::OnEntry,
+                &r_port,
+                &mode_declaration_1,
+                Some(&mode_declaration_2),
+            )
+            .unwrap();
+        assert_eq!(mode_switch_event.runnable_entity().unwrap(), runnable);
+
+        assert_eq!(runnable.events().len(), 1);
+
+        let (mode_decls, context_port) = mode_switch_event.mode_declarations().unwrap();
+        assert_eq!(context_port, r_port.into());
+        assert_eq!(mode_decls.len(), 2);
+        assert_eq!(mode_decls[0], mode_declaration_1);
+        assert_eq!(mode_decls[1], mode_declaration_2);
+
+        // check the mode activation kind
+        mode_switch_event
+            .set_mode_activation_kind(ModeActivationKind::OnEntry)
+            .unwrap();
+        assert_eq!(
+            mode_switch_event.mode_activation_kind().unwrap(),
+            ModeActivationKind::OnEntry
+        );
+        mode_switch_event
+            .set_mode_activation_kind(ModeActivationKind::OnExit)
+            .unwrap();
+        assert_eq!(
+            mode_switch_event.mode_activation_kind().unwrap(),
+            ModeActivationKind::OnExit
+        );
+        mode_switch_event
+            .set_mode_activation_kind(ModeActivationKind::OnTransition)
+            .unwrap();
+        assert_eq!(
+            mode_switch_event.mode_activation_kind().unwrap(),
+            ModeActivationKind::OnTransition
+        );
+
+        // mode activation kind error case
+        let activation_kind = ModeActivationKind::try_from(EnumItem::Opaque);
+        assert!(activation_kind.is_err());
     }
 }

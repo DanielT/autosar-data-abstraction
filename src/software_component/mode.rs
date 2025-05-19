@@ -184,6 +184,16 @@ impl ModeDeclaration {
             .character_data()?
             .parse_integer()
     }
+
+    /// Get the mode declaration group that this mode declaration belongs to
+    pub fn mode_declaration_group(&self) -> Result<ModeDeclarationGroup, AutosarAbstractionError> {
+        let Some(parent) = self.element().named_parent()? else {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "Mode declaration has no parent".to_string(),
+            ));
+        };
+        ModeDeclarationGroup::try_from(parent)
+    }
 }
 
 //##################################################################
