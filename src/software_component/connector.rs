@@ -232,7 +232,7 @@ impl AssemblySwConnector {
         PortPrototype::try_from(provider_port_elem).ok()
     }
 
-    /// get the component containing the p_port of the assembly connector
+    /// get the component containing the `p_port` of the assembly connector
     #[must_use]
     pub fn p_sw_component(&self) -> Option<SwComponentPrototype> {
         let provider_iref = self.element().get_sub_element(ElementName::ProviderIref)?;
@@ -254,7 +254,7 @@ impl AssemblySwConnector {
         PortPrototype::try_from(requester_port_elem).ok()
     }
 
-    /// get the component containing the r_port of the assembly connector
+    /// get the component containing the `r_port` of the assembly connector
     #[must_use]
     pub fn r_sw_component(&self) -> Option<SwComponentPrototype> {
         let requester_iref = self.element().get_sub_element(ElementName::RequesterIref)?;

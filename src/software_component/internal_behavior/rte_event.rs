@@ -262,7 +262,7 @@ impl InitEvent {
 
 //##################################################################
 
-/// The referenced InternalTriggeringPoint raises this InternalTriggerOccurredEvent
+/// The referenced `InternalTriggeringPoint` raises this `InternalTriggerOccurredEvent`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct InternalTriggerOccurredEvent(Element);
 abstraction_element!(InternalTriggerOccurredEvent, InternalTriggerOccurredEvent);
@@ -271,7 +271,7 @@ impl AbstractRTEEvent for InternalTriggerOccurredEvent {}
 
 //##################################################################
 
-/// raised when the referenced ModeSwitchPoint has been acknowledged
+/// raised when the referenced `ModeSwitchPoint` has been acknowledged
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ModeSwitchedAckEvent(Element);
 abstraction_element!(ModeSwitchedAckEvent, ModeSwitchedAckEvent);
@@ -280,7 +280,7 @@ impl AbstractRTEEvent for ModeSwitchedAckEvent {}
 
 //##################################################################
 
-/// raised in order to run the server runnable of a ClientServerOperation
+/// raised in order to run the server runnable of a `ClientServerOperation`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct OperationInvokedEvent(Element);
 abstraction_element!(OperationInvokedEvent, OperationInvokedEvent);
@@ -341,7 +341,7 @@ impl OperationInvokedEvent {
 
 //##################################################################
 
-/// this event is unconditionally raised whenever the OsTask on which it is mapped is executed
+/// this event is unconditionally raised whenever the OS task on which it is mapped is executed
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct OsTaskExecutionEvent(Element);
 abstraction_element!(OsTaskExecutionEvent, OsTaskExecutionEvent);
@@ -364,7 +364,7 @@ impl OsTaskExecutionEvent {
 
 //##################################################################
 
-/// raised when an error occurred during the handling of the referenced ModeDeclarationGroup
+/// raised when an error occurred during the handling of the referenced `ModeDeclarationGroup`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SwcModeManagerErrorEvent(Element);
 abstraction_element!(SwcModeManagerErrorEvent, SwcModeManagerErrorEvent);
@@ -600,21 +600,21 @@ pub enum RTEEvent {
     ExternalTriggerOccurredEvent(ExternalTriggerOccurredEvent),
     /// triggered once after the RTE has been started
     InitEvent(InitEvent),
-    /// The referenced InternalTriggeringPoint raises this InternalTriggerOccurredEvent
+    /// The referenced `InternalTriggeringPoint` raises this `InternalTriggerOccurredEvent`
     InternalTriggerOccurredEvent(InternalTriggerOccurredEvent),
-    /// raised when the referenced ModeSwitchPoint has been acknowledged
+    /// raised when the referenced `ModeSwitchPoint` has been acknowledged
     ModeSwitchedAckEvent(ModeSwitchedAckEvent),
-    /// raised in order to run the server runnable of a ClientServerOperation
+    /// raised in order to run the server runnable of a `ClientServerOperation`
     OperationInvokedEvent(OperationInvokedEvent),
-    /// this event is unconditionally raised whenever the OsTask on which it is mapped is executed
+    /// this event is unconditionally raised whenever the OS task on which it is mapped is executed
     OsTaskExecutionEvent(OsTaskExecutionEvent),
-    /// raised when an error occurred during the handling of the referenced ModeDeclarationGroup
+    /// raised when an error occurred during the handling of the referenced `ModeDeclarationGroup`
     SwcModeManagerErrorEvent(SwcModeManagerErrorEvent),
     /// raised when the specified mode change occurs
     SwcModeSwitchEvent(SwcModeSwitchEvent),
     /// raised if a hard transformer error occurs
     TimingEvent(TimingEvent),
-    /// raised when an error occurred during the handling of the referenced ModeDeclarationGroup
+    /// raised when an error occurred during the handling of the referenced `ModeDeclarationGroup`
     TransformerHardErrorEvent(TransformerHardErrorEvent),
 }
 

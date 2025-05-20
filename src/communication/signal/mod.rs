@@ -95,7 +95,7 @@ impl ISignal {
 
     /// set the init value for this signal
     ///
-    /// only NumericalValueSpecification, TextValueSpecification or ArrayValueSpecification are permitted here
+    /// only `NumericalValueSpecification`, `TextValueSpecification` or `ArrayValueSpecification` are permitted here
     pub fn set_init_value<T: Into<ValueSpecification>>(&self, value_spec: T) -> Result<(), AutosarAbstractionError> {
         let value_spec: ValueSpecification = value_spec.into();
         if !matches!(

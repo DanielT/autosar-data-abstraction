@@ -42,7 +42,7 @@ impl SecuredIPdu {
         SecureCommunicationProps::get_props(self.element())
     }
 
-    /// set or remove the useAsCryptographicIPdu flag
+    /// set or remove the `useAsCryptographicIPdu` flag
     pub fn set_use_as_cryptographic_ipdu(&self, value: Option<bool>) -> Result<(), AutosarAbstractionError> {
         if let Some(value) = value {
             self.element()
@@ -56,7 +56,7 @@ impl SecuredIPdu {
         Ok(())
     }
 
-    /// get the useAsCryptographicIPdu flag
+    /// get the `useAsCryptographicIPdu` flag
     #[must_use]
     pub fn use_as_cryptographic_ipdu(&self) -> Option<bool> {
         self.element()
@@ -65,10 +65,10 @@ impl SecuredIPdu {
             .parse_bool()
     }
 
-    /// set the payload PduTriggering based on an IPdu
+    /// set the payload `PduTriggering` based on an `IPdu`
     ///
-    /// This function should be used when useAsCryptographicIPdu is false or not set.
-    /// A PduTriggering is created for the Pdu
+    /// This function should be used when `useAsCryptographicIPdu` is false or not set.
+    /// A `PduTriggering` is created for the `Pdu`
     pub fn set_payload_ipdu<T: AbstractIpdu + AbstractPdu, U: AbstractPhysicalChannel>(
         &self,
         ipdu: &T,
@@ -82,11 +82,11 @@ impl SecuredIPdu {
         Ok(pdu_triggering)
     }
 
-    /// set the payload PduTriggering with an existing PduTriggering
+    /// set the payload `PduTriggering` with an existing `PduTriggering`
     ///
     /// This function should be used when useAsCryptographicIPdu is true.
     /// In this case the payload is transmitted separately from the
-    /// cryptographic data, so the PduTriggering already exists.
+    /// cryptographic data, so the `PduTriggering` already exists.
     pub fn set_payload_pdu_triggering(&self, pdu_triggering: &PduTriggering) -> Result<(), AutosarAbstractionError> {
         self.0
             .get_or_create_sub_element(ElementName::PayloadRef)?
@@ -94,7 +94,7 @@ impl SecuredIPdu {
         Ok(())
     }
 
-    /// get the payload PduTriggering
+    /// get the payload `PduTriggering`
     #[must_use]
     pub fn payload_pdu_triggering(&self) -> Option<PduTriggering> {
         let elem = self.0.get_sub_element(ElementName::PayloadRef)?;
@@ -131,7 +131,7 @@ pub struct SecureCommunicationProps {
     pub authentication_build_attempts: Option<u32>,
     /// number of additional authentication attempts. If this value is zero, the authentication is not repeated
     pub authentication_retries: Option<u32>,
-    /// numerical identifier of the secured IPdu
+    /// numerical identifier of the secured `IPdu`
     pub data_id: Option<u32>,
     /// id of the freshness value
     pub freshness_value_id: Option<u32>,

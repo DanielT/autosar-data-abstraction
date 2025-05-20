@@ -213,7 +213,7 @@ impl From<NumericalValueSpecification> for ValueSpecification {
 
 //#########################################################
 
-/// reference to a ConstantValue
+/// reference to a `ConstantValue`
 #[derive(Debug, Clone, PartialEq)]
 pub struct ConstantReference {
     /// SHORT-LABEL: used to identify the constant in a human readable way. This is used when the constant is part of a record.
@@ -259,7 +259,7 @@ pub struct ApplicationValueSpecification {
     pub label: Option<String>,
     /// category of the application value
     pub category: ApplicationPrimitiveCategory,
-    /// axis values of a compound primitive data type. Required for categories ResAxis, Cure, Map, Cuboid, Cube4, Cube5
+    /// axis values of a compound primitive data type. Required for categories `ResAxis`, Cure, Map, Cuboid, Cube4, Cube5
     pub sw_axis_conts: Vec<SwAxisCont>,
     /// values of a compound primitive data type
     pub sw_value_cont: SwValueCont,
@@ -313,12 +313,12 @@ impl From<ApplicationValueSpecification> for ValueSpecification {
 
 //#########################################################
 
-/// Default init pattern, which is used when an optional ApplicationRecordElement in not available
+/// Default init pattern, which is used when an optional `ApplicationRecordElement` in not available
 #[derive(Debug, Clone, PartialEq)]
 pub struct NotAvailableValueSpecification {
     /// SHORT-LABEL: used to identify the default pattern in a human readable way. This is used when the default pattern is part of a record.
     pub label: Option<String>,
-    /// initialization pattern for memory occupied by unavailable application record elements; available in AUTOSAR_00049 and newer
+    /// initialization pattern for memory occupied by unavailable application record elements; available in `AUTOSAR_00049` and newer
     pub default_pattern: Option<u64>, // presumably this could be u8 to initialize bytes in memory. But the spec only says it's a positive integer
 }
 
@@ -353,7 +353,7 @@ impl From<NotAvailableValueSpecification> for ValueSpecification {
 
 //#########################################################
 
-/// reference to a DataPrototype, to be used as a pointer in the software
+/// reference to a `DataPrototype`, to be used as a pointer in the software
 #[derive(Debug, Clone, PartialEq)]
 pub struct ReferenceValueSpecification {
     /// SHORT-LABEL: used to identify the reference in a human readable way. This is used when the reference is part of a record.
@@ -399,7 +399,7 @@ pub struct ApplicationRuleBasedValueSpecification {
     pub label: Option<String>,
     /// category of the application value
     pub category: ApplicationPrimitiveCategory,
-    /// rule-based axis values of a compound primitive data type. Required for categories ResAxis, Cure, Map, Cuboid, Cube4, Cube5
+    /// rule-based axis values of a compound primitive data type. Required for categories `ResAxis`, Cure, Map, Cuboid, Cube4, Cube5
     pub sw_axis_cont: Vec<RuleBasedAxisCont>,
     /// rule-based values of a compound primitive data type
     pub sw_value_cont: RuleBasedValueCont,
@@ -464,7 +464,7 @@ pub struct CompositeRuleBasedValueSpecification {
     pub argument: Vec<CompositeValueSpecification>,
     /// collection of specified primitive values. The last value is used by the filling rule to fill the array
     pub compound_primitive_argument: Vec<CompositeRuleBasedValueArgument>,
-    /// maximum size of the array to fill. It is used if the filling rule is set to FILL_UNTIL_MAX_SIZE
+    /// maximum size of the array to fill. It is used if the filling rule is set to `FILL_UNTIL_MAX_SIZE`
     pub max_size_to_fill: Option<u64>,
     /// rule to fill the array
     pub rule: RuleBasedFillUntil,
@@ -582,13 +582,13 @@ pub enum ValueSpecification {
     Text(TextValueSpecification),
     /// numerical value
     Numerical(NumericalValueSpecification),
-    /// reference to a ConstantValue
+    /// reference to a `ConstantValue`
     ConstantReference(ConstantReference),
     /// Application value
     Application(ApplicationValueSpecification),
-    /// Default init pattern, which is used when an optional ApplicationRecordElement in not available
+    /// Default init pattern, which is used when an optional `ApplicationRecordElement` in not available
     NotAvailable(NotAvailableValueSpecification),
-    /// reference to a DataPrototype, to be used as a pointer in the software
+    /// reference to a `DataPrototype`, to be used as a pointer in the software
     Reference(ReferenceValueSpecification),
     /// A rule to generate application values for an array value specification
     ApplicationRuleBased(ApplicationRuleBasedValueSpecification),
@@ -661,10 +661,10 @@ fn load_label(element: &Element) -> Option<String> {
 /// standard fill rules for rule based value specifications
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RuleBasedFillUntil {
-    /// FILL_UNTIL_END: fills the value of the last RuleBasedValueSpecification.arguments
+    /// `FILL_UNTIL_END`: fills the value of the last RuleBasedValueSpecification.arguments
     /// until the last element of the array has been filled
     End,
-    /// FILL_UNTIL_MAX_SIZE: fills the value of the last RuleBasedValueSpecification.arguments
+    /// `FILL_UNTIL_MAX_SIZE`: fills the value of the last RuleBasedValueSpecification.arguments
     /// until maxSizeToFill elements of the array have been filled
     MaxSize,
 }
@@ -698,9 +698,9 @@ impl std::fmt::Display for RuleBasedFillUntil {
 /// specification of the axis values of a compound primitive data type (curve, map)
 #[derive(Debug, Clone, PartialEq)]
 pub struct SwAxisCont {
-    /// category of the axis; one of STD_AXIS, COM_AXIS, COM_AXIS, RES_AXIS
+    /// category of the axis; one of `STD_AXIS`, `COM_AXIS`, `COM_AXIS`, `RES_AXIS`
     pub category: SwAxisContCategory,
-    /// dimensions of the axis, used if the category is RES_AXIS, otherwise it should be empty
+    /// dimensions of the axis, used if the category is `RES_AXIS`, otherwise it should be empty
     pub sw_array_size: Vec<u64>,
     /// index of the axis. Here 1 is the x axis, 2 is the y axis, ...
     pub sw_axis_index: u64,
@@ -787,7 +787,7 @@ impl SwAxisCont {
 //#########################################################
 
 /// enumeration of the axis categories.
-/// This is a restricted version of the CalprmAxisCategoryEnum: FixAxis is not permitted in SwAxisCont
+/// This is a restricted version of the `CalprmAxisCategoryEnum`: `FixAxis` is not permitted in `SwAxisCont`
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SwAxisContCategory {
     /// standard axis
@@ -987,9 +987,9 @@ impl SwValue {
 /// specification of the axis values of a compound primitive data type (curve, map) in a rule-based definition
 #[derive(Debug, Clone, PartialEq)]
 pub struct RuleBasedAxisCont {
-    /// category of the axis; one of STD_AXIS, COM_AXIS, COM_AXIS, RES_AXIS
+    /// category of the axis; one of `STD_AXIS`, `COM_AXIS`, `COM_AXIS`, `RES_AXIS`
     pub category: SwAxisContCategory,
-    /// dimensions of the axis, used if the category is RES_AXIS, otherwise it should be empty
+    /// dimensions of the axis, used if the category is `RES_AXIS`, otherwise it should be empty
     pub sw_array_size: Vec<u64>,
     /// index of the axis. Here 1 is the x axis, 2 is the y axis, ...
     pub sw_axis_index: u64,
@@ -1112,7 +1112,7 @@ impl RuleBasedValueCont {
 pub struct RuleBasedValueSpecification {
     /// arguments of the rule-based value specification; they are filled in-order, andf the last one is repeated as required
     pub arguments: Vec<RuleArgument>,
-    /// maximum size of the array to fill. It is used if the filling rule is set to FILL_UNTIL_MAX_SIZE
+    /// maximum size of the array to fill. It is used if the filling rule is set to `FILL_UNTIL_MAX_SIZE`
     pub max_size_to_fill: Option<u64>,
     /// rule to fill the array
     pub rule: RuleBasedFillUntil,

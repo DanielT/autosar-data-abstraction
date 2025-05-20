@@ -105,7 +105,7 @@ pub trait AbstractSwComponentType: IdentifiableAbstractionElement {
 ///
 /// An atomic software component is atomic in the sense that it cannot be further decomposed
 pub trait AtomicSwComponentType: AbstractSwComponentType {
-    /// create an SwcInternalBehavior for the component
+    /// create an `SwcInternalBehavior` for the component
     ///
     /// A component can have only one internal behavior, but since the internal behavior is a variation point,
     /// more than one internal behavior can be created. In this case the variation point settings must ensure that only one

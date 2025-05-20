@@ -60,14 +60,14 @@ pub trait AbstractPdu: AbstractionElement + Into<Pdu> {
 
 /// for now this is a marker trait to identify `IPdus`
 pub trait AbstractIpdu: AbstractPdu + Into<IPdu> {
-    /// set the ContainedIPduProps for this `IPdu`
+    /// set the `ContainedIPduProps` for this `IPdu`
     ///
-    /// This is only relevant for IPdus that will be transmitted in `ContainerIPdus`
+    /// This is only relevant for `IPdus` that will be transmitted in `ContainerIPdus`
     fn set_contained_ipdu_props(&self, props: Option<&ContainedIPduProps>) -> Result<(), AutosarAbstractionError> {
         ContainedIPduProps::set_props(self.element(), props)
     }
 
-    /// get the ContainedIPduProps for this `IPdu`
+    /// get the `ContainedIPduProps` for this `IPdu`
     #[must_use]
     fn contained_ipdu_props(&self) -> Option<ContainedIPduProps> {
         ContainedIPduProps::get_props(self.element())
@@ -477,19 +477,19 @@ impl AbstractPdu for Pdu {}
 /// Wrapper for all Pdu types. It is used as a return value for functions that can return any Pdu type
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum IPdu {
-    /// The IPdu is an `ISignalIPdu`
+    /// The `IPdu` is an `ISignalIPdu`
     ISignalIPdu(ISignalIPdu),
     /// The Pdu is a Transport Layer Pdu
     NPdu(NPdu),
-    /// The IPdu is a Diagnostic Communication Management Pdu
+    /// The `IPdu` is a Diagnostic Communication Management Pdu
     DcmIPdu(DcmIPdu),
-    /// The IPdu is a General Purpose Pdu
+    /// The `IPdu` is a general purpose Pdu
     GeneralPurposeIPdu(GeneralPurposeIPdu),
-    /// The IPdu is a Container `IPdu`
+    /// The `IPdu` is a Container `IPdu`
     ContainerIPdu(ContainerIPdu),
-    /// The IPdu is a Secured `IPdu`
+    /// The `IPdu` is a secured `IPdu`
     SecuredIPdu(SecuredIPdu),
-    /// The IPdu is a Multiplexed `IPdu`
+    /// The `IPdu` is a multiplexed `IPdu`
     MultiplexedIPdu(MultiplexedIPdu),
 }
 

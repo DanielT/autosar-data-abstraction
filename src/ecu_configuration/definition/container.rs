@@ -17,7 +17,7 @@ pub trait AbstractEcucContainerDef: EcucDefinitionElement {}
 //#########################################################
 
 /// The `EcucChoiceContainerDef` is used to define configuration containers
-/// that provide a choice between several EcucParamConfContainerDef
+/// that provide a choice between several `EcucParamConfContainerDef`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucChoiceContainerDef(Element);
 abstraction_element!(EcucChoiceContainerDef, EcucChoiceContainerDef);
@@ -94,7 +94,7 @@ impl EcucParamConfContainerDef {
             .filter_map(|elem| EcucContainerDef::try_from(elem).ok())
     }
 
-    /// create a new EcucAddInfoParamDef in the container
+    /// create a new `EcucAddInfoParamDef` in the container
     pub fn create_add_info_param_def(
         &self,
         name: &str,
@@ -104,7 +104,7 @@ impl EcucParamConfContainerDef {
         EcucAddInfoParamDef::new(name, &parameters_elem, origin)
     }
 
-    /// create a new EcucBooleanParamDef in the container
+    /// create a new `EcucBooleanParamDef` in the container
     pub fn create_boolean_param_def(
         &self,
         name: &str,
@@ -114,7 +114,7 @@ impl EcucParamConfContainerDef {
         EcucBooleanParamDef::new(name, &parameters_elem, origin)
     }
 
-    /// create a new EcucEnumerationParamDef in the container
+    /// create a new `EcucEnumerationParamDef` in the container
     pub fn create_enumeration_param_def(
         &self,
         name: &str,
@@ -124,7 +124,7 @@ impl EcucParamConfContainerDef {
         EcucEnumerationParamDef::new(name, &parameters_elem, origin)
     }
 
-    /// create a new EcucFloatParamDef in the container
+    /// create a new `EcucFloatParamDef` in the container
     pub fn create_float_param_def(
         &self,
         name: &str,
@@ -134,7 +134,7 @@ impl EcucParamConfContainerDef {
         EcucFloatParamDef::new(name, &parameters_elem, origin)
     }
 
-    /// create a new EcucIntegerParamDef in the container
+    /// create a new `EcucIntegerParamDef` in the container
     pub fn create_integer_param_def(
         &self,
         name: &str,
@@ -144,7 +144,7 @@ impl EcucParamConfContainerDef {
         EcucIntegerParamDef::new(name, &parameters_elem, origin)
     }
 
-    /// create a new EcucFunctionNameDef in the container
+    /// create a new `EcucFunctionNameDef` in the container
     pub fn create_function_name_param_def(
         &self,
         name: &str,
@@ -154,7 +154,7 @@ impl EcucParamConfContainerDef {
         EcucFunctionNameDef::new(name, &parameters_elem, origin)
     }
 
-    /// create a new EcucLinkerSymbolDef in the container
+    /// create a new `EcucLinkerSymbolDef` in the container
     pub fn create_linker_symbol_param_def(
         &self,
         name: &str,
@@ -164,7 +164,7 @@ impl EcucParamConfContainerDef {
         EcucLinkerSymbolDef::new(name, &parameters_elem, origin)
     }
 
-    /// create a new EcucMultilineStringParamDef in the container
+    /// create a new `EcucMultilineStringParamDef` in the container
     pub fn create_multiline_string_param_def(
         &self,
         name: &str,
@@ -174,7 +174,7 @@ impl EcucParamConfContainerDef {
         EcucMultilineStringParamDef::new(name, &parameters_elem, origin)
     }
 
-    /// create a new EcucStringParamDef in the container
+    /// create a new `EcucStringParamDef` in the container
     pub fn create_string_param_def(
         &self,
         name: &str,
@@ -193,7 +193,7 @@ impl EcucParamConfContainerDef {
             .filter_map(|elem| EcucParameterDef::try_from(elem).ok())
     }
 
-    /// create a new EcucForeignReferenceDef in the container
+    /// create a new `EcucForeignReferenceDef` in the container
     pub fn create_foreign_reference_def(
         &self,
         name: &str,
@@ -203,7 +203,7 @@ impl EcucParamConfContainerDef {
         EcucForeignReferenceDef::new(name, &foreign_references_elem, origin)
     }
 
-    /// create a new EcucInstanceReferenceDef in the container
+    /// create a new `EcucInstanceReferenceDef` in the container
     pub fn create_instance_reference_def(
         &self,
         name: &str,
@@ -213,7 +213,7 @@ impl EcucParamConfContainerDef {
         EcucInstanceReferenceDef::new(name, &instance_references_elem, origin)
     }
 
-    /// create a new EcucChoiceReferenceDef in the container
+    /// create a new `EcucChoiceReferenceDef` in the container
     pub fn create_choice_reference_def(
         &self,
         name: &str,
@@ -223,13 +223,13 @@ impl EcucParamConfContainerDef {
         EcucChoiceReferenceDef::new(name, &choice_references_elem, origin)
     }
 
-    /// create a new EcucReferenceDef in the container
+    /// create a new `EcucReferenceDef` in the container
     pub fn create_reference_def(&self, name: &str, origin: &str) -> Result<EcucReferenceDef, AutosarAbstractionError> {
         let references_elem = self.element().get_or_create_sub_element(ElementName::References)?;
         EcucReferenceDef::new(name, &references_elem, origin)
     }
 
-    /// create a new EcucUriReferenceDef in the container
+    /// create a new `EcucUriReferenceDef` in the container
     pub fn create_uri_reference_def(
         &self,
         name: &str,

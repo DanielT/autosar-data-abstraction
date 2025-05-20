@@ -194,7 +194,7 @@ impl AutosarModelAbstraction {
     /// create a new `AutosarModelAbstraction` with an empty `AutosarModel`
     ///
     /// You must specify a file name for the initial file in the model. This file is not created on disk immediately.
-    /// The model also needs an AutosarVersion.
+    /// The model also needs an `AutosarVersion`.
     pub fn create<P: AsRef<Path>>(file_name: P, version: AutosarVersion) -> Self {
         let model = AutosarModel::new();
         // create the initial file in the model - create_file can return a DuplicateFileName

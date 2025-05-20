@@ -200,7 +200,7 @@ impl SocketConnection {
 
     /// Create a new `SocketConnectionIpduIdentifier` in this socket connection
     ///
-    /// The SocketConnectionIpduIdentifier is used to trigger a PDU, and contains associated settings
+    /// The `SocketConnectionIpduIdentifier` is used to trigger a PDU, and contains associated settings
     /// The function returns a tuple of the new `SocketConnectionIpduIdentifier` and the associated `PduTriggering`
     /// since most callers only need the `PduTriggering`.
     pub fn create_socket_connection_ipdu_identifier<T: AbstractPdu>(
@@ -300,7 +300,7 @@ impl SocketConnection {
             .and_then(|cdata| cdata.parse_bool())
     }
 
-    /// set the RuntimeIpAddressConfiguration attribute for this socket connection
+    /// set the `RuntimeIpAddressConfiguration` attribute for this socket connection
     ///
     /// If `state` is true, the attribute is set to "Sd"
     /// If `state` is false, the attribute is removed
@@ -317,7 +317,7 @@ impl SocketConnection {
         Ok(())
     }
 
-    /// check if the value of the RuntimeIpAddressConfiguration attribute is "SD"
+    /// check if the value of the `RuntimeIpAddressConfiguration` attribute is "SD"
     #[must_use]
     pub fn runtime_ip_address_configuration(&self) -> bool {
         let enum_value = self
@@ -328,7 +328,7 @@ impl SocketConnection {
         enum_value == Some(EnumItem::Sd)
     }
 
-    /// set the RuntimePortConfiguration attributes for this socket connection
+    /// set the `RuntimePortConfiguration` attributes for this socket connection
     ///
     /// If `state` is true, the attribute is set to "Sd"
     /// If `state` is false, the attributes is removed
@@ -345,7 +345,7 @@ impl SocketConnection {
         Ok(())
     }
 
-    /// check if the value of the RuntimePortConfiguration attribute is "SD"
+    /// check if the value of the `RuntimePortConfiguration` attribute is "SD"
     #[must_use]
     pub fn runtime_port_configuration(&self) -> bool {
         let enum_value = self
@@ -387,7 +387,7 @@ impl SocketConnectionIpduIdentifier {
         Ok((scii, pt))
     }
 
-    /// get the SocketConnection containing this `SocketConnectionIpduIdentifier`
+    /// get the `SocketConnection` containing this `SocketConnectionIpduIdentifier`
     pub fn socket_connection(&self) -> Result<SocketConnection, AutosarAbstractionError> {
         // SOCKET-CONNECTION > PDUS > SOCKET-CONNECTION-IPDU-IDENTIFIER
         let socket_connection_elem = self.element().parent()?.unwrap().parent()?.unwrap();

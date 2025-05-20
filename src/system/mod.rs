@@ -356,7 +356,7 @@ impl System {
 
     /// iterate over all Frames in the System
     ///
-    /// This iterator returns all CAN and Flexray frames that are connected to the System using a FibexElementRef.
+    /// This iterator returns all CAN and Flexray frames that are connected to the System using a `FibexElementRef`.
     pub fn frames(&self) -> impl Iterator<Item = Frame> + Send + 'static {
         self.0
             .get_sub_element(ElementName::FibexElements)
@@ -407,9 +407,9 @@ impl System {
         Ok(i_signal)
     }
 
-    /// iterate over all ISignals in the System
+    /// iterate over all `ISignals` in the System
     ///
-    /// This iterator returns all ISignals that are connected to the System using a FibexElementRef.
+    /// This iterator returns all `ISignals` that are connected to the System using a `FibexElementRef`.
     pub fn isignals(&self) -> impl Iterator<Item = ISignal> + Send + 'static {
         self.0
             .get_sub_element(ElementName::FibexElements)
@@ -461,9 +461,9 @@ impl System {
         Ok(i_signal_group)
     }
 
-    /// iterate over all ISignalGroups in the System
+    /// iterate over all `ISignalGroups` in the System
     ///
-    /// This iterator returns all ISignalGroups that are connected to the System using a FibexElementRef.
+    /// This iterator returns all `ISignalGroups` that are connected to the System using a `FibexElementRef`.
     pub fn isignal_groups(&self) -> impl Iterator<Item = ISignalGroup> + Send + 'static {
         self.0
             .get_sub_element(ElementName::FibexElements)
@@ -767,7 +767,7 @@ impl System {
 
     /// iterate over all PDUs in the System
     ///
-    /// This iterator returns all PDUs that are connected to the System using a FibexElementRef.
+    /// This iterator returns all PDUs that are connected to the System using a `FibexElementRef`.
     pub fn pdus(&self) -> impl Iterator<Item = Pdu> + Send + 'static {
         self.0
             .get_sub_element(ElementName::FibexElements)

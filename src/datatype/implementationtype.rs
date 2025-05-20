@@ -106,7 +106,7 @@ pub trait AbstractImplementationDataType: IdentifiableAbstractionElement {
             .parse_integer()
     }
 
-    /// get the data pointer target of this implementation data type [category: DATA_REFERENCE]
+    /// get the data pointer target of this implementation data type [[category: `DATA_REFERENCE`]]
     fn data_pointer_target(&self) -> Option<DataPointerTarget> {
         let category = self.category()?;
         if category != ImplementationDataCategory::DataReference {
@@ -527,7 +527,7 @@ pub enum ImplementationDataTypeSettings {
     DataReference {
         /// the name of the data type
         name: String,
-        /// the target of the data pointer; either an SwBaseType or an ImplementationDataType
+        /// the target of the data pointer; either an `SwBaseType` or an `ImplementationDataType`
         target: DataPointerTarget,
     },
     /// A pointer to a function
@@ -567,7 +567,7 @@ impl ImplementationDataTypeSettings {
 
 //#########################################################
 
-/// The target of an ImplementationDataType with category DataReference
+/// The target of an `ImplementationDataType` with category `DataReference`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum DataPointerTarget {
     /// A base type

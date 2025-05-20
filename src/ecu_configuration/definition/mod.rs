@@ -13,12 +13,12 @@ pub use reference::*;
 
 //#########################################################
 
-/// EcucCommonAttributes provides methods to modify attributes that are shared by all parameters and references
+/// `EcucCommonAttributes` provides methods to modify attributes that are shared by all parameters and references
 pub trait EcucCommonAttributes: EcucDefinitionElement {
     /// set the multiplicity config classes of the parameter definition.
     /// If an empty list is provided, the multiplicity config classes are removed.
     ///
-    /// This setting is required if the containing EcucModuleDef has the category VENDOR_SPECIFIC_MODULE_DEFINITION.
+    /// This setting is required if the containing `EcucModuleDef` has the category `VENDOR_SPECIFIC_MODULE_DEFINITION`.
     fn set_multiplicity_config_classes(
         &self,
         config: &[(EcucConfigurationClass, EcucConfigurationVariant)],
@@ -152,8 +152,8 @@ pub trait EcucCommonAttributes: EcucDefinitionElement {
     /// set the value config classes of the parameter definition.
     ///
     /// If an empty list is provided, the value config classes are removed.
-    /// According to the specification setting is required if the containing EcucModuleDef
-    /// has the category VENDOR_SPECIFIC_MODULE_DEFINITION, but in practice it is rarely used.
+    /// According to the specification setting is required if the containing `EcucModuleDef`
+    /// has the category "VENDOR_SPECIFIC_MODULE_DEFINITION", but in practice it is rarely used.
     fn set_value_config_classes(
         &self,
         config: &[(EcucConfigurationClass, EcucConfigurationVariant)],
@@ -169,8 +169,8 @@ pub trait EcucCommonAttributes: EcucDefinitionElement {
 
     /// get the value config classes of the parameter definition
     ///
-    /// According to the specification setting is required if the containing EcucModuleDef
-    /// has the category VENDOR_SPECIFIC_MODULE_DEFINITION, but in practice it is rarely used.
+    /// According to the specification setting is required if the containing `EcucModuleDef`
+    /// has the category "VENDOR_SPECIFIC_MODULE_DEFINITION", but in practice it is rarely used.
     #[must_use]
     fn value_config_classes(&self) -> Vec<(EcucConfigurationClass, EcucConfigurationVariant)> {
         get_config_classes(self.element(), ElementName::ValueConfigClasses)
@@ -200,7 +200,7 @@ pub trait EcucCommonAttributes: EcucDefinitionElement {
     }
 }
 
-/// EcucDefinitionElement provides methods to modify attributes that are shared by all elements of the ecuc definition
+/// `EcucDefinitionElement` provides methods to modify attributes that are shared by all elements of the ecuc definition
 pub trait EcucDefinitionElement: AbstractionElement {
     /// set or remove the lower multiplicity attribute
     fn set_lower_multiplicity(&self, lower_multiplicity: Option<u32>) -> Result<(), AutosarAbstractionError> {
@@ -332,13 +332,13 @@ impl EcucModuleDef {
         Ok(Self(ecuc_module_def_elem))
     }
 
-    /// create a new EcucChoiceContainerDef in the module
+    /// create a new `EcucChoiceContainerDef` in the module
     pub fn create_choice_container_def(&self, name: &str) -> Result<EcucChoiceContainerDef, AutosarAbstractionError> {
         let containers_elem = self.element().get_or_create_sub_element(ElementName::Containers)?;
         EcucChoiceContainerDef::new(name, &containers_elem)
     }
 
-    /// create a new EcucParamConfContainerDef in the module
+    /// create a new `EcucParamConfContainerDef` in the module
     pub fn create_param_conf_container_def(
         &self,
         name: &str,
@@ -512,15 +512,15 @@ pub enum EcucConfigurationVariant {
     PreconfiguredConfiguration,
     /// Recommended configuration
     RecommendedConfiguration,
-    /// the BSW Module implementation may use PreCompileTime and LinkTime configuration parameters
+    /// the BSW Module implementation may use `PreCompileTime` and `LinkTime` configuration parameters
     VariantLinkTime,
-    /// the BSW Module implementation may use PreCompileTime, LinkTime and PostBuild configuration parameters
+    /// the BSW Module implementation may use `PreCompileTime`, `LinkTime` and `PostBuild` configuration parameters
     VariantPostBuild,
-    /// the BSW Module implementation may use PreCompileTime configuration parameters
+    /// the BSW Module implementation may use `PreCompileTime` configuration parameters
     VariantPreCompile,
-    /// deprecated in Autosar 4.2.1 - the BSW Module implementation may use PreCompileTime, LinkTime and PostBuild loadable configuration parameters
+    /// deprecated in Autosar 4.2.1 - the BSW Module implementation may use `PreCompileTime`, `LinkTime` and `PostBuild` loadable configuration parameters
     VariantPostBuildLoadable,
-    /// deprecated in Autosar 4.2.1 - the BSW Module implementation may use PreCompileTime, LinkTime and PostBuild selectable configuration parameters
+    /// deprecated in Autosar 4.2.1 - the BSW Module implementation may use `PreCompileTime`, `LinkTime` and `PostBuild` selectable configuration parameters
     VariantPostBuildSelectable,
 }
 
@@ -565,11 +565,11 @@ impl TryFrom<EnumItem> for EcucConfigurationVariant {
 pub enum EcucConfigurationClass {
     /// Link Time: parts of configuration are delivered from another object code file
     Link,
-    /// PostBuild: a configuration parameter can be changed after compilation
+    /// `PostBuild`: a configuration parameter can be changed after compilation
     PostBuild,
-    /// PreCompile: a configuration parameter can not be changed after compilation
+    /// `PreCompile`: a configuration parameter can not be changed after compilation
     PreCompile,
-    /// PublishedInformation is used to specify the fact that certain information is fixed even before the pre-compile stage.
+    /// `PublishedInformation` is used to specify the fact that certain information is fixed even before the pre-compile stage.
     PublishedInformation,
 }
 
@@ -817,11 +817,11 @@ impl EcucDestinationUriDef {
 /// `EcucDestinationUriNestingContract` provides the different nesting contracts for destination URIs
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EcucDestinationUriNestingContract {
-    /// EcucDestinationUriPolicy describes elements (subContainers, Parameters, References) that are directly owned by the target container.
+    /// `EcucDestinationUriPolicy` describes elements (subContainers, Parameters, References) that are directly owned by the target container.
     LeafOfTargetContainer,
-    /// EcucDestinationUriPolicy describes the target container of EcucUriReferenceDef.
+    /// `EcucDestinationUriPolicy` describes the target container of `EcucUriReferenceDef`.
     TargetContainer,
-    /// EcucDestinationUriPolicy describes elements (subContainers, Parameters, References) that are owned by the target container or its subContainers.
+    /// `EcucDestinationUriPolicy` describes elements (subContainers, Parameters, References) that are owned by the target container or its subContainers.
     VertexOfTargetContainer,
 }
 

@@ -17,7 +17,7 @@ pub trait AbstractPhysicalChannel: AbstractionElement + Into<PhysicalChannel> {
     /// the type of communication connector used by this physical channel
     type CommunicationConnectorType: AbstractCommunicationConnector;
 
-    /// iterate over all PduTriggerings of this physical channel
+    /// iterate over all `PduTriggerings` of this physical channel
     fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::PduTriggerings)
@@ -26,7 +26,7 @@ pub trait AbstractPhysicalChannel: AbstractionElement + Into<PhysicalChannel> {
             .filter_map(|triggering| PduTriggering::try_from(triggering).ok())
     }
 
-    /// iterate over all ISignalTriggerings of this physical channel
+    /// iterate over all `ISignalTriggerings` of this physical channel
     fn signal_triggerings(&self) -> impl Iterator<Item = ISignalTriggering> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ISignalTriggerings)

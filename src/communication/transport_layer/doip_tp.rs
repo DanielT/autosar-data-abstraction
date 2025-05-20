@@ -131,8 +131,8 @@ abstraction_element!(DoIpTpConnection, DoIpTpConnection);
 impl IdentifiableAbstractionElement for DoIpTpConnection {
     /// get the name of the connection
     ///
-    /// In early versions of the Autosar standard, TpConnections were not identifiable.
-    /// This was fixed later by adding the Ident sub-element. This method returns the name
+    /// In early versions of the Autosar standard, `TpConnections` were not identifiable.
+    /// This was fixed later by adding the `Ident` sub-element. This method returns the name
     /// provied in the Ident element, if it exists.
     fn name(&self) -> Option<String> {
         self.element()

@@ -117,7 +117,7 @@ impl ContainerIPdu {
             .ok()
     }
 
-    /// map an IPdu to this `ContainerIPdu`, and create a PduTriggering for it in the physical channel
+    /// map an `IPdu` to this `ContainerIPdu`, and create a `PduTriggering` for it in the physical channel
     pub fn map_ipdu<T: AbstractIpdu, U: AbstractPhysicalChannel>(
         &self,
         ipdu: &T,
@@ -135,7 +135,7 @@ impl ContainerIPdu {
         Ok(pdu_triggering)
     }
 
-    /// iterate over all contained IPdu triggerings
+    /// iterate over all contained `IPdu` triggerings
     pub fn contained_ipdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::ContainedPduTriggeringRefs)
@@ -203,12 +203,12 @@ impl TryFrom<EnumItem> for ContainerIPduHeaderType {
 
 //##################################################################
 
-/// The `RxAcceptContainedIPdu` enum defines whether a fixed set of contained IPdus is accepted or all contained IPdus
+/// The `RxAcceptContainedIPdu` enum defines whether a fixed set of contained `IPdus` is accepted or all contained `IPdus`
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RxAcceptContainedIPdu {
-    /// All contained IPdus are accepted
+    /// All contained `IPdus` are accepted
     AcceptAll,
-    /// Only the configured contained IPdus are accepted
+    /// Only the configured contained `IPdus` are accepted
     AcceptConfigured,
 }
 
@@ -238,13 +238,13 @@ impl TryFrom<EnumItem> for RxAcceptContainedIPdu {
 
 //##################################################################
 
-/// Defines when the transmission of the ContainerIPdu shall be requested
+/// Defines when the transmission of the `ContainerIPdu` shall be requested
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ContainerIPduTrigger {
-    /// transmission of the ContainerIPdu shall be requested when the default trigger conditions apply
+    /// transmission of the `ContainerIPdu` shall be requested when the default trigger conditions apply
     DefaultTrigger,
-    /// transmission of the ContainerIPdu shall be requested right after the first Contained
-    /// IPdu was put into the ContainerIPdu
+    /// transmission of the `ContainerIPdu` shall be requested right after the first Contained
+    /// `IPdu` was put into the `ContainerIPdu`
     FirstContainedTrigger,
 }
 
@@ -274,24 +274,24 @@ impl TryFrom<EnumItem> for ContainerIPduTrigger {
 
 //##################################################################
 
-/// Properties for an IPdu that is transmitted in a container IPdu
+/// Properties for an `IPdu` that is transmitted in a container `IPdu`
 #[derive(Debug, Clone, PartialEq)]
 pub struct ContainedIPduProps {
-    /// collection semantics: LastIsBest or Queued
+    /// collection semantics: `LastIsBest` or `Queued`
     pub collection_semantics: Option<ContainedIPduCollectionSemantics>,
-    /// header id of the contained IPdu, used when the header type is LongHeader
+    /// header id of the contained `IPdu`, used when the header type is `LongHeader`
     pub header_id_long: Option<u32>,
-    /// header id of the contained IPdu, used when the header type is ShortHeader
+    /// header id of the contained `IPdu`, used when the header type is `ShortHeader`
     pub header_id_short: Option<u32>, // 24 bit
-    /// offset of the contained IPdu in the container IPdu, used when the header type is NoHeader
+    /// offset of the contained `IPdu` in the container `IPdu`, used when the header type is `NoHeader`
     pub offset: Option<u32>,
-    /// priority of the contained IPdu. 255: lowest, 0: highest
+    /// priority of the contained `IPdu`. 255: lowest, 0: highest
     pub priority: Option<u8>,
     /// sender timeout. Ignored on the receiver side
     pub timeout: Option<f64>,
-    /// defines whether the contained IPdu triggers transmission of the container IPdu
+    /// defines whether the contained `IPdu` triggers transmission of the container `IPdu`
     pub trigger: Option<PduCollectionTrigger>,
-    /// update indication bit position of the contained IPdu
+    /// update indication bit position of the contained `IPdu`
     pub update_indication_bit_position: Option<u32>,
 }
 
@@ -387,12 +387,12 @@ impl ContainedIPduProps {
 
 //##################################################################
 
-/// collection semantics for the ContainedIPdu
+/// collection semantics for the `ContainedIPdu`
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ContainedIPduCollectionSemantics {
-    /// The ContainedIPdu data will be fetched via TriggerTransmit just before the transmission executes.
+    /// The `ContainedIPdu` data will be fetched via `TriggerTransmit` just before the transmission executes.
     LastIsBest,
-    /// The ContainedIPdu data will instantly be stored to the ContainerIPdu in the context of the Transmit call
+    /// The `ContainedIPdu` data will instantly be stored to the `ContainerIPdu` in the context of the Transmit call
     Queued,
 }
 

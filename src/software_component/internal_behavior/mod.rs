@@ -35,13 +35,13 @@ impl SwcInternalBehavior {
         SwComponentType::try_from(parent).ok()
     }
 
-    /// Create a new RunnableEntity in the SwcInternalBehavior
+    /// Create a new `RunnableEntity` in the `SwcInternalBehavior`
     pub fn create_runnable_entity(&self, name: &str) -> Result<RunnableEntity, AutosarAbstractionError> {
         let runnalbles_elem = self.element().get_or_create_sub_element(ElementName::Runnables)?;
         RunnableEntity::new(name, &runnalbles_elem)
     }
 
-    /// Get an iterator over all RunnableEntities in the SwcInternalBehavior
+    /// Get an iterator over all `RunnableEntities` in the `SwcInternalBehavior`
     pub fn runnable_entities(&self) -> impl Iterator<Item = RunnableEntity> + Send + 'static {
         self.element()
             .get_sub_element(ElementName::Runnables)
@@ -213,9 +213,9 @@ impl RunnableEntity {
         }
     }
 
-    /// add implicit read access to a data element of a sender-receiver PortPrototype
+    /// add implicit read access to a data element of a sender-receiver `PortPrototype`
     ///
-    /// this results in Rte_IRead_<port>_<data_element> being generated
+    /// this results in `Rte_IRead_<port>_<data_element>` being generated
     pub fn create_data_read_access<T: Into<PortPrototype> + Clone>(
         &self,
         name: &str,
@@ -235,9 +235,9 @@ impl RunnableEntity {
             .filter_map(|elem| VariableAccess::try_from(elem).ok())
     }
 
-    /// add implicit write access to a data element of a sender-receiver PortPrototype
+    /// add implicit write access to a data element of a sender-receiver `PortPrototype`
     ///
-    /// this results in Rte_IWrite_<port>_<data_element> being generated
+    /// this results in `Rte_IWrite_<port>_<data_element>` being generated
     pub fn create_data_write_access<T: Into<PortPrototype> + Clone>(
         &self,
         name: &str,
@@ -259,7 +259,7 @@ impl RunnableEntity {
             .filter_map(|elem| VariableAccess::try_from(elem).ok())
     }
 
-    /// add a data send point to a data element of a sender-receiver PortPrototype
+    /// add a data send point to a data element of a sender-receiver `PortPrototype`
     pub fn create_data_send_point<T: Into<PortPrototype> + Clone>(
         &self,
         name: &str,
@@ -279,9 +279,9 @@ impl RunnableEntity {
             .filter_map(|elem| VariableAccess::try_from(elem).ok())
     }
 
-    /// add explicit read access by argument to a data element of a sender-receiver PortPrototype
+    /// add explicit read access by argument to a data element of a sender-receiver `PortPrototype`
     ///
-    /// this results in Rte_Read_<port>_<data_element>(DataType* data) being generated
+    /// this results in `Rte_Read_<port>_<data_element>(DataType* data)` being generated
     pub fn create_data_receive_point_by_argument<T: Into<PortPrototype> + Clone>(
         &self,
         name: &str,
@@ -303,7 +303,7 @@ impl RunnableEntity {
             .filter_map(|elem| VariableAccess::try_from(elem).ok())
     }
 
-    /// add explicit read access by value to a data element of a sender-receiver PortPrototype
+    /// add explicit read access by value to a data element of a sender-receiver `PortPrototype`
     pub fn create_data_receive_point_by_value<T: Into<PortPrototype> + Clone>(
         &self,
         name: &str,

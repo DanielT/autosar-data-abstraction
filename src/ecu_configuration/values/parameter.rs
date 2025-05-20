@@ -27,8 +27,8 @@ impl EcucAddInfoParamValue {
 
 /// The `EcucNumericalParamValue` holds a numerical value and can represent boolean, float or int parameter definitions.
 ///
-/// Internally this value is stored as a string; in additon to the value() function, there are also
-/// value_bool(), value_int() and value_float() functions, which parse the string and should be used as appropriate.
+/// Internally this value is stored as a string; in additon to the `value()` function, there are also
+/// `value_bool()`, `value_int()` and `value_float()` functions, which parse the string and should be used as appropriate.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EcucNumericalParamValue(Element);
 abstraction_element!(EcucNumericalParamValue, EcucNumericalParamValue);

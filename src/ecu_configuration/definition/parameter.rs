@@ -172,13 +172,13 @@ pub trait EcucParamDef: EcucCommonAttributes {}
 
 //#########################################################
 
-/// marker trait for numerical parameter defintions: EcucFloatParamDef, EcucIntegerParamDef, EcucBooleanParamDef
+/// marker trait for numerical parameter defintions: `EcucFloatParamDef`, `EcucIntegerParamDef`, `EcucBooleanParamDef`
 pub trait EcucNumericalParamDef: EcucParamDef {}
 
 //#########################################################
 
-/// marker trait for textual parameter defintions: EcucEnumerationParamDef,
-/// EcucFunctionNameDef, EcucLinkerSymbolDef, EcucMultilineStringParamDef, EcucStringParamDef
+/// marker trait for textual parameter defintions: `EcucEnumerationParamDef`,
+/// `EcucFunctionNameDef`, `EcucLinkerSymbolDef`, `EcucMultilineStringParamDef`, `EcucStringParamDef`
 ///
 /// This grouping is determined by the usage in the value definition: `EcucTextualParamValue` can refer to any of these
 pub trait EcucTextualParamDef: EcucParamDef {}

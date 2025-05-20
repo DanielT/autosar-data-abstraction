@@ -182,7 +182,7 @@ pub struct FlexrayNmClusterSettings {
 
 //##################################################################
 
-/// A `FlexRayNmClusterCoupling` `couples multiple `FlexrayNmCluster`s.
+/// A `FlexRayNmClusterCoupling` couples multiple `FlexrayNmCluster`s.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FlexrayNmClusterCoupling(Element);
 abstraction_element!(FlexrayNmClusterCoupling, FlexrayNmClusterCoupling);

@@ -125,7 +125,7 @@ pub enum ModeDeclarationGroupCategory {
     /// Ordering of the modes in the mode declaration group is alphabetic, and the modes may not set a value
     AlphabeticOrder,
     /// Ordering of modes in the mode declaration group is made explixit by the value, which must be set for each mode.
-    /// Additonally, the on_transition_value attribute must be set in this case.
+    /// Additonally, the `on_transition_value` attribute must be set in this case.
     ExplicitOrder,
 }
 

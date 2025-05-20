@@ -7,7 +7,7 @@ use crate::{
 };
 use autosar_data::{Element, ElementName};
 
-/// The `CanPhysicalChannel contains all of the communication on a CAN network
+/// The `CanPhysicalChannel` contains all of the communication on a CAN network
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CanPhysicalChannel(Element);
 abstraction_element!(CanPhysicalChannel, CanPhysicalChannel);
