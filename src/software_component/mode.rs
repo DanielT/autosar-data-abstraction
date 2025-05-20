@@ -43,6 +43,7 @@ impl ModeDeclarationGroup {
     }
 
     /// Get the category of the mode declaration group
+    #[must_use]
     pub fn category(&self) -> Option<ModeDeclarationGroupCategory> {
         let category = self
             .element()
@@ -86,6 +87,7 @@ impl ModeDeclarationGroup {
     }
 
     /// Get the initial mode of the mode declaration group
+    #[must_use]
     pub fn initial_mode(&self) -> Option<ModeDeclaration> {
         self.element()
             .get_sub_element(ElementName::InitialModeRef)
@@ -106,6 +108,7 @@ impl ModeDeclarationGroup {
     }
 
     /// Get the onTransitionValue attribute of the mode declaration group
+    #[must_use]
     pub fn on_transition_value(&self) -> Option<u64> {
         self.element()
             .get_sub_element(ElementName::OnTransitionValue)?
@@ -178,6 +181,7 @@ impl ModeDeclaration {
     }
 
     /// Get the value that should be used to represent the mode in the RTE
+    #[must_use]
     pub fn value(&self) -> Option<u64> {
         self.element()
             .get_sub_element(ElementName::Value)?

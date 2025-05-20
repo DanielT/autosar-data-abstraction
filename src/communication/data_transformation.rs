@@ -1990,9 +1990,9 @@ mod test {
         someip_props.set_size_of_string_length(Some(16)).unwrap();
         someip_props.set_size_of_struct_length(Some(32)).unwrap();
         someip_props.set_size_of_union_length(Some(64)).unwrap();
-        assert_eq!(someip_props.legacy_strings().unwrap(), true);
+        assert!(someip_props.legacy_strings().unwrap());
         assert_eq!(someip_props.interface_version().unwrap(), 1);
-        assert_eq!(someip_props.dynamic_length().unwrap(), true);
+        assert!(someip_props.dynamic_length().unwrap());
         assert_eq!(someip_props.message_type().unwrap(), SomeIpMessageType::Request);
         assert_eq!(someip_props.size_of_array_length().unwrap(), 8);
         assert_eq!(someip_props.size_of_string_length().unwrap(), 16);

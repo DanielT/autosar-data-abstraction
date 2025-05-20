@@ -70,6 +70,7 @@ impl EcucValueCollection {
     }
 
     /// Get the system that the ECU configuration is linked to
+    #[must_use]
     pub fn ecu_extract_reference(&self) -> Option<System> {
         let system_elem = self
             .element()
@@ -116,6 +117,7 @@ impl EcucModuleConfigurationValues {
     ///
     /// This function returns the definition as an `EcucModuleDef` object.
     /// If the definition is not loaded, use `definition_ref()` instead.
+    #[must_use]
     pub fn definition(&self) -> Option<EcucModuleDef> {
         let definition_elem = self
             .element()
@@ -129,6 +131,7 @@ impl EcucModuleConfigurationValues {
     ///
     /// This function is an alternative to `definition()`; it is useful when the
     /// referenced definition is not loaded and can't be resolved.
+    #[must_use]
     pub fn definition_ref(&self) -> Option<String> {
         self.element()
             .get_sub_element(ElementName::DefinitionRef)?
@@ -191,6 +194,7 @@ impl EcucContainerValue {
     ///
     /// This function returns the definition as an `EcucContainerDef` object.
     /// If the definition is not loaded, use `definition_ref()` instead.
+    #[must_use]
     pub fn definition(&self) -> Option<EcucContainerDef> {
         let definition_elem = self
             .element()
@@ -204,6 +208,7 @@ impl EcucContainerValue {
     ///
     /// This function is an alternative to `definition()`; it is useful when the
     /// referenced definition is not loaded and can't be resolved.
+    #[must_use]
     pub fn definition_ref(&self) -> Option<String> {
         self.element()
             .get_sub_element(ElementName::DefinitionRef)?
@@ -250,6 +255,7 @@ impl EcucContainerValue {
     ///
     /// If the container definition has `requiresIndex` set to `true`, then the container
     /// must have an index. Otherwise the index is meaningless.
+    #[must_use]
     pub fn index(&self) -> Option<u64> {
         self.element()
             .get_sub_element(ElementName::Index)?

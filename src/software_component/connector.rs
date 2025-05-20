@@ -92,6 +92,7 @@ impl DelegationSwConnector {
     }
 
     /// Get the inner port of the delegation connector
+    #[must_use]
     pub fn inner_port(&self) -> Option<PortPrototype> {
         let inner_port_iref = self.element().get_sub_element(ElementName::InnerPortIref)?;
         if let Some(r_port_in_instance) = inner_port_iref.get_sub_element(ElementName::RPortInCompositionInstanceRef) {
@@ -114,6 +115,7 @@ impl DelegationSwConnector {
     }
 
     /// Get the component containing the inner port of the delegation connector
+    #[must_use]
     pub fn inner_sw_component(&self) -> Option<SwComponentPrototype> {
         let inner_port_iref = self.element().get_sub_element(ElementName::InnerPortIref)?;
         if let Some(r_port_in_instance) = inner_port_iref.get_sub_element(ElementName::RPortInCompositionInstanceRef) {
@@ -136,6 +138,7 @@ impl DelegationSwConnector {
     }
 
     /// Get the outer port of the delegation connector
+    #[must_use]
     pub fn outer_port(&self) -> Option<PortPrototype> {
         let outer_port_elem = self
             .element()
@@ -219,6 +222,7 @@ impl AssemblySwConnector {
     }
 
     /// Get the provider port of the assembly connector
+    #[must_use]
     pub fn p_port(&self) -> Option<PortPrototype> {
         let provider_iref = self.element().get_sub_element(ElementName::ProviderIref)?;
         let provider_port_elem = provider_iref
@@ -229,6 +233,7 @@ impl AssemblySwConnector {
     }
 
     /// get the component containing the p_port of the assembly connector
+    #[must_use]
     pub fn p_sw_component(&self) -> Option<SwComponentPrototype> {
         let provider_iref = self.element().get_sub_element(ElementName::ProviderIref)?;
         let provider_swc_elem = provider_iref
@@ -239,6 +244,7 @@ impl AssemblySwConnector {
     }
 
     /// Get the requester port of the assembly connector
+    #[must_use]
     pub fn r_port(&self) -> Option<PortPrototype> {
         let requester_iref = self.element().get_sub_element(ElementName::RequesterIref)?;
         let requester_port_elem = requester_iref
@@ -249,6 +255,7 @@ impl AssemblySwConnector {
     }
 
     /// get the component containing the r_port of the assembly connector
+    #[must_use]
     pub fn r_sw_component(&self) -> Option<SwComponentPrototype> {
         let requester_iref = self.element().get_sub_element(ElementName::RequesterIref)?;
         let requester_swc_elem = requester_iref
@@ -304,6 +311,7 @@ impl PassThroughSwConnector {
     }
 
     /// Get the provided port of the pass-through connector
+    #[must_use]
     pub fn p_port(&self) -> Option<PortPrototype> {
         let provided_port_elem = self
             .element()
@@ -314,6 +322,7 @@ impl PassThroughSwConnector {
     }
 
     /// Get the required port of the pass-through connector
+    #[must_use]
     pub fn r_port(&self) -> Option<PortPrototype> {
         let required_port_elem = self
             .element()

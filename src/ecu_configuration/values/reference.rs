@@ -39,6 +39,7 @@ impl EcucInstanceReferenceValue {
     /// This function returns the definition as an `EcucParameterDef` enum, which
     /// could contain either an `EcucFloatParamDef` or an `EcucIntegerParamDef`.
     /// If the definition is not loaded, use `definition_ref()` instead.
+    #[must_use]
     pub fn definition(&self) -> Option<EcucInstanceReferenceDef> {
         let definition_elem = self
             .element()
@@ -52,6 +53,7 @@ impl EcucInstanceReferenceValue {
     ///
     /// This function is an alternative to `definition()`; it is useful when the
     /// referenced definition is not loaded and can't be resolved.
+    #[must_use]
     pub fn definition_ref(&self) -> Option<String> {
         self.element()
             .get_sub_element(ElementName::DefinitionRef)?
@@ -87,6 +89,7 @@ impl EcucInstanceReferenceValue {
     ///
     /// Returns the targt element of the instance reference, as well as the context elements that are needed to uniquely
     /// identify the target.
+    #[must_use]
     pub fn target(&self) -> Option<(Vec<Element>, Element)> {
         let value_iref_elem = self.element().get_sub_element(ElementName::ValueIref)?;
         let target = value_iref_elem
@@ -123,6 +126,7 @@ impl EcucInstanceReferenceValue {
     ///
     /// If the reference definition has `requiresIndex` set to `true`, then the reference
     /// must have an index. Otherwise the index is meaningless.
+    #[must_use]
     pub fn index(&self) -> Option<u64> {
         self.element()
             .get_sub_element(ElementName::Index)?
@@ -146,6 +150,7 @@ impl EcucInstanceReferenceValue {
     }
 
     /// get the isAutoValue flag
+    #[must_use]
     pub fn is_auto_value(&self) -> Option<bool> {
         self.element()
             .get_sub_element(ElementName::IsAutoValue)?
@@ -190,6 +195,7 @@ impl EcucReferenceValue {
     /// This function returns the definition as an `EcucParameterDef` enum, which
     /// could contain either an `EcucFloatParamDef` or an `EcucIntegerParamDef`.
     /// If the definition is not loaded, use `definition_ref()` instead.
+    #[must_use]
     pub fn definition(&self) -> Option<EcucAnyReferenceDef> {
         let definition_elem = self
             .element()
@@ -203,6 +209,7 @@ impl EcucReferenceValue {
     ///
     /// This function is an alternative to `definition()`; it is useful when the
     /// referenced definition is not loaded and can't be resolved.
+    #[must_use]
     pub fn definition_ref(&self) -> Option<String> {
         self.element()
             .get_sub_element(ElementName::DefinitionRef)?
@@ -220,6 +227,7 @@ impl EcucReferenceValue {
     }
 
     /// Get the target of the reference
+    #[must_use]
     pub fn target(&self) -> Option<Element> {
         self.element()
             .get_sub_element(ElementName::ValueRef)?
@@ -247,6 +255,7 @@ impl EcucReferenceValue {
     ///
     /// If the reference definition has `requiresIndex` set to `true`, then the reference
     /// must have an index. Otherwise the index is meaningless.
+    #[must_use]
     pub fn index(&self) -> Option<u64> {
         self.element()
             .get_sub_element(ElementName::Index)?
@@ -270,6 +279,7 @@ impl EcucReferenceValue {
     }
 
     /// get the isAutoValue flag
+    #[must_use]
     pub fn is_auto_value(&self) -> Option<bool> {
         self.element()
             .get_sub_element(ElementName::IsAutoValue)?

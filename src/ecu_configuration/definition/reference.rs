@@ -47,6 +47,7 @@ impl EcucForeignReferenceDef {
     }
 
     /// get the destination type of the reference definition
+    #[must_use]
     pub fn destination_type(&self) -> Option<String> {
         self.element()
             .get_sub_element(ElementName::DestinationType)?
@@ -91,6 +92,7 @@ impl EcucInstanceReferenceDef {
     }
 
     /// get the destination type of the reference definition
+    #[must_use]
     pub fn destination_type(&self) -> Option<String> {
         self.element()
             .get_sub_element(ElementName::DestinationType)?
@@ -118,6 +120,7 @@ impl EcucInstanceReferenceDef {
     /// get the destination context of the reference definition
     ///
     /// The destination context is a string of autosar element names separated by spaces.
+    #[must_use]
     pub fn destination_context(&self) -> Option<String> {
         self.element()
             .get_sub_element(ElementName::DestinationContext)?
@@ -210,6 +213,7 @@ impl EcucReferenceDef {
     }
 
     /// get the destination container of the reference
+    #[must_use]
     pub fn destination(&self) -> Option<EcucContainerDef> {
         self.element()
             .get_sub_element(ElementName::DestinationRef)
@@ -256,6 +260,7 @@ impl EcucUriReferenceDef {
     }
 
     /// get the destination uri of the reference definition
+    #[must_use]
     pub fn destination_uri(&self) -> Option<EcucDestinationUriDef> {
         self.element()
             .get_sub_element(ElementName::DestinationUriRef)?

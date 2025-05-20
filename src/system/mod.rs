@@ -84,6 +84,7 @@ impl System {
     }
 
     /// get the category of the system
+    #[must_use]
     pub fn category(&self) -> Option<SystemCategory> {
         self.0
             .get_sub_element(ElementName::Category)?
@@ -106,6 +107,7 @@ impl System {
     }
 
     /// get the pncVectorLength of the system
+    #[must_use]
     pub fn pnc_vector_length(&self) -> Option<u32> {
         self.0
             .get_sub_element(ElementName::PncVectorLength)?
@@ -126,6 +128,7 @@ impl System {
     }
 
     /// get the pncVectorOffset of the system
+    #[must_use]
     pub fn pnc_vector_offset(&self) -> Option<u32> {
         self.0
             .get_sub_element(ElementName::PncVectorOffset)?
@@ -927,6 +930,7 @@ impl System {
     /// Get the `NmConfig` of the SYSTEM, if any
     ///
     /// The System may contain zero or one `NmConfig`s.
+    #[must_use]
     pub fn nm_config(&self) -> Option<NmConfig> {
         self.0
             .get_sub_element(ElementName::FibexElements)

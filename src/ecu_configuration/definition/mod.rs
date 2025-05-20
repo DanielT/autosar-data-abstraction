@@ -493,6 +493,7 @@ impl EcucModuleDef {
     /// get the reference to a refined standard module
     ///
     /// This reference is only used if the category is `VendorSpecificModuleDefinition`
+    #[must_use]
     pub fn refined_module_def(&self) -> Option<EcucModuleDef> {
         self.element()
             .get_sub_element(ElementName::RefinedModuleDefRef)

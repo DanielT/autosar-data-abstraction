@@ -1700,13 +1700,13 @@ mod test {
             )
             .unwrap();
         let unicast_rx_pdu = system
-            .create_general_purpose_pdu("UnicastRxPdu", &pkg, 0, GeneralPurposePduCategory::Sd)
+            .create_general_purpose_pdu("UnicastRxPdu", pkg, 0, GeneralPurposePduCategory::Sd)
             .unwrap();
         let unicast_tx_pdu = system
-            .create_general_purpose_pdu("UnicastTxPdu", &pkg, 0, GeneralPurposePduCategory::Sd)
+            .create_general_purpose_pdu("UnicastTxPdu", pkg, 0, GeneralPurposePduCategory::Sd)
             .unwrap();
         let multicast_rx_pdu = system
-            .create_general_purpose_pdu("MulticastRxPdu", &pkg, 0, GeneralPurposePduCategory::Sd)
+            .create_general_purpose_pdu("MulticastRxPdu", pkg, 0, GeneralPurposePduCategory::Sd)
             .unwrap();
         (
             unicast_socket,

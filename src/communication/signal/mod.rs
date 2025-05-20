@@ -63,6 +63,7 @@ impl ISignal {
     }
 
     /// get the data type of this signal
+    #[must_use]
     pub fn datatype(&self) -> Option<SwBaseType> {
         self.element()
             .get_sub_element(ElementName::NetworkRepresentationProps)?
@@ -143,6 +144,7 @@ impl ISignal {
     ///
     /// Usually a signal should only be mapped to a single PDU,
     /// so this iterator is expected to return either zero or one item in ordinary cases.
+    #[must_use]
     pub fn mappings(&self) -> Vec<ISignalToIPduMapping> {
         let model_result = self.element().model();
         let path_result = self.element().path();
@@ -162,6 +164,7 @@ impl ISignal {
     }
 
     /// get the signal group that contains this signal, if any
+    #[must_use]
     pub fn signal_group(&self) -> Option<ISignalGroup> {
         let path = self.element().path().ok()?;
         let referrers = self.element().model().ok()?.get_references_to(&path);
@@ -178,6 +181,7 @@ impl ISignal {
     }
 
     /// list all `ISignalTriggering`s that trigger this signal
+    #[must_use]
     pub fn signal_triggerings(&self) -> Vec<ISignalTriggering> {
         let model_result = self.element().model();
         let path_result = self.element().path();

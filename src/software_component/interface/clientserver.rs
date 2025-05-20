@@ -89,6 +89,7 @@ impl ApplicationError {
     }
 
     /// Get the error code of the application error
+    #[must_use]
     pub fn error_code(&self) -> Option<u64> {
         self.element()
             .get_sub_element(ElementName::ErrorCode)?
@@ -240,6 +241,7 @@ impl ArgumentDataPrototype {
     }
 
     /// Get the data type of the argument
+    #[must_use]
     pub fn data_type(&self) -> Option<AutosarDataType> {
         let data_type_elem = self
             .element()
@@ -258,6 +260,7 @@ impl ArgumentDataPrototype {
     }
 
     /// Get the direction of the argument
+    #[must_use]
     pub fn direction(&self) -> Option<ArgumentDirection> {
         let value = self
             .element()
@@ -320,9 +323,9 @@ mod test {
         assert_eq!(operation.arguments().count(), 1);
 
         client_server_interface.set_is_service(Some(true)).unwrap();
-        assert_eq!(client_server_interface.is_service().unwrap(), true);
+        assert!(client_server_interface.is_service().unwrap());
         client_server_interface.set_is_service(Some(false)).unwrap();
-        assert_eq!(client_server_interface.is_service().unwrap(), false);
+        assert!(!client_server_interface.is_service().unwrap());
         client_server_interface.set_is_service(None).unwrap();
         assert_eq!(client_server_interface.is_service(), None);
     }

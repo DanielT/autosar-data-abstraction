@@ -62,6 +62,7 @@ impl EcucNumericalParamValue {
     /// This function returns the definition as an `EcucParameterDef` enum, which
     /// could contain either an `EcucFloatParamDef` or an `EcucIntegerParamDef`.
     /// If the definition is not loaded, use `definition_ref()` instead.
+    #[must_use]
     pub fn definition(&self) -> Option<EcucParameterDef> {
         let definition_elem = self
             .element()
@@ -75,6 +76,7 @@ impl EcucNumericalParamValue {
     ///
     /// This function is an alternative to `definition()`; it is useful when the
     /// referenced definition is not loaded and can't be resolved.
+    #[must_use]
     pub fn definition_ref(&self) -> Option<String> {
         self.element()
             .get_sub_element(ElementName::DefinitionRef)?
@@ -92,6 +94,7 @@ impl EcucNumericalParamValue {
     }
 
     /// get the numerical value as a string
+    #[must_use]
     pub fn value(&self) -> Option<String> {
         self.element()
             .get_sub_element(ElementName::Value)?
@@ -100,6 +103,7 @@ impl EcucNumericalParamValue {
     }
 
     /// get the numerical value as a boolean
+    #[must_use]
     pub fn value_bool(&self) -> Option<bool> {
         self.element()
             .get_sub_element(ElementName::Value)?
@@ -108,6 +112,7 @@ impl EcucNumericalParamValue {
     }
 
     /// get the numerical value as an integer
+    #[must_use]
     pub fn value_int(&self) -> Option<i64> {
         self.element()
             .get_sub_element(ElementName::Value)?
@@ -116,6 +121,7 @@ impl EcucNumericalParamValue {
     }
 
     /// get the numerical value as a float
+    #[must_use]
     pub fn value_float(&self) -> Option<f64> {
         self.element()
             .get_sub_element(ElementName::Value)?
@@ -143,6 +149,7 @@ impl EcucNumericalParamValue {
     ///
     /// If the parameter definition has `requiresIndex` set to `true`, then the parameter
     /// must have an index. Otherwise the index is meaningless.
+    #[must_use]
     pub fn index(&self) -> Option<u64> {
         self.element()
             .get_sub_element(ElementName::Index)?
@@ -166,6 +173,7 @@ impl EcucNumericalParamValue {
     }
 
     /// get the isAutoValue flag
+    #[must_use]
     pub fn is_auto_value(&self) -> Option<bool> {
         self.element()
             .get_sub_element(ElementName::IsAutoValue)?
@@ -212,6 +220,7 @@ impl EcucTextualParamValue {
     /// could contain either an `EcucStringParamDef`, `EcucMultiStringParamDef`,
     /// `EcucFunctionNameDef` or `EcucLinkerSymbolDef`.
     /// If the definition is not loaded, use `definition_ref()` instead.
+    #[must_use]
     pub fn definition(&self) -> Option<EcucParameterDef> {
         let definition_elem = self
             .element()
@@ -225,6 +234,7 @@ impl EcucTextualParamValue {
     ///
     /// This function is an alternative to `definition()`; it is useful when the
     /// referenced definition is not loaded and can't be resolved.
+    #[must_use]
     pub fn definition_ref(&self) -> Option<String> {
         self.element()
             .get_sub_element(ElementName::DefinitionRef)?
@@ -242,6 +252,7 @@ impl EcucTextualParamValue {
     }
 
     /// get the textual value
+    #[must_use]
     pub fn value(&self) -> Option<String> {
         self.element()
             .get_sub_element(ElementName::Value)?
@@ -269,6 +280,7 @@ impl EcucTextualParamValue {
     ///
     /// If the parameter definition has `requiresIndex` set to `true`, then the parameter
     /// must have an index. Otherwise the index is meaningless.
+    #[must_use]
     pub fn index(&self) -> Option<u64> {
         self.element()
             .get_sub_element(ElementName::Index)?
@@ -294,6 +306,7 @@ impl EcucTextualParamValue {
     /// get the isAutoValue flag
     ///
     /// If the parameter definition has `withAuto` set to `true`, then the parameter is allowed to have an auto value.
+    #[must_use]
     pub fn is_auto_value(&self) -> Option<bool> {
         self.element()
             .get_sub_element(ElementName::IsAutoValue)?

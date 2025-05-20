@@ -29,6 +29,7 @@ impl SwcInternalBehavior {
     }
 
     /// Get the software component type that contains the `SwcInternalBehavior`
+    #[must_use]
     pub fn sw_component_type(&self) -> Option<SwComponentType> {
         let parent = self.element().named_parent().ok()??;
         SwComponentType::try_from(parent).ok()
@@ -186,12 +187,14 @@ impl RunnableEntity {
     }
 
     /// Get the `SwcInternalBehavior` that contains the `RunnableEntity`
+    #[must_use]
     pub fn swc_internal_behavior(&self) -> Option<SwcInternalBehavior> {
         let parent = self.element().named_parent().ok()??;
         SwcInternalBehavior::try_from(parent).ok()
     }
 
     /// Iterate over all events that can trigger the `RunnableEntity`
+    #[must_use]
     pub fn events(&self) -> Vec<RTEEvent> {
         let model_result = self.element().model();
         let path_result = self.element().path();
@@ -388,6 +391,7 @@ impl VariableAccess {
     }
 
     /// Get the accessed variable
+    #[must_use]
     pub fn accessed_variable(&self) -> Option<(VariableDataPrototype, PortPrototype)> {
         let accessed_variable = self.element().get_sub_element(ElementName::AccessedVariable)?;
         let autosar_variable_iref = accessed_variable.get_sub_element(ElementName::AutosarVariableIref)?;
@@ -401,6 +405,7 @@ impl VariableAccess {
     }
 
     /// Get the `RunnableEntity` that contains the `VariableAccess`
+    #[must_use]
     pub fn runnable_entity(&self) -> Option<RunnableEntity> {
         let parent = self.element().named_parent().ok()??;
         RunnableEntity::try_from(parent).ok()
@@ -450,6 +455,7 @@ impl SynchronousServerCallPoint {
     }
 
     /// Get the client server operation
+    #[must_use]
     pub fn client_server_operation(&self) -> Option<(ClientServerOperation, RPortPrototype)> {
         let operation_iref = self.element().get_sub_element(ElementName::OperationIref)?;
         let required_operation_ref = operation_iref.get_sub_element(ElementName::TargetRequiredOperationRef)?;
@@ -463,6 +469,7 @@ impl SynchronousServerCallPoint {
     }
 
     /// Get the `RunnableEntity` that contains the `SynchronousServerCallPoint`
+    #[must_use]
     pub fn runnable_entity(&self) -> Option<RunnableEntity> {
         let parent = self.element().named_parent().ok()??;
         RunnableEntity::try_from(parent).ok()

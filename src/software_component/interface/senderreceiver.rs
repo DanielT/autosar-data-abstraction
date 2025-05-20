@@ -80,6 +80,7 @@ impl VariableDataPrototype {
     }
 
     /// Get the data type of the data element
+    #[must_use]
     pub fn data_type(&self) -> Option<AutosarDataType> {
         let type_tref = self.element().get_sub_element(ElementName::TypeTref)?;
         AutosarDataType::try_from(type_tref.get_reference_target().ok()?).ok()
@@ -94,6 +95,7 @@ impl VariableDataPrototype {
     }
 
     /// Get the init value of the data element
+    #[must_use]
     pub fn init_value(&self) -> Option<ValueSpecification> {
         let init_value_elem = self
             .element()
@@ -169,9 +171,9 @@ mod test {
         );
 
         sr_interface.set_is_service(Some(false)).unwrap();
-        assert_eq!(sr_interface.is_service().unwrap(), false);
+        assert!(!sr_interface.is_service().unwrap());
         sr_interface.set_is_service(Some(true)).unwrap();
-        assert_eq!(sr_interface.is_service().unwrap(), true);
+        assert!(sr_interface.is_service().unwrap());
         sr_interface.set_is_service(None).unwrap();
         assert_eq!(sr_interface.is_service(), None);
     }

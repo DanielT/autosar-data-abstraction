@@ -738,9 +738,9 @@ mod test {
             .unwrap();
         assert_eq!(connection.addressing_format().unwrap(), CanTpAddressingFormat::Extended);
 
-        assert_eq!(connection.padding_activation().unwrap(), false);
+        assert!(!connection.padding_activation().unwrap());
         connection.set_padding_activation(true).unwrap();
-        assert_eq!(connection.padding_activation().unwrap(), true);
+        assert!(connection.padding_activation().unwrap());
 
         let node = can_tp_config.create_can_tp_node("node").unwrap();
         assert_eq!(can_tp_config.can_tp_nodes().count(), 1);

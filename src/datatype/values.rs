@@ -46,6 +46,7 @@ impl ConstantSpecification {
     }
 
     /// get the value specification of the constant
+    #[must_use]
     pub fn value_specification(&self) -> Option<ValueSpecification> {
         let spec_elem = self
             .element()

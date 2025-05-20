@@ -71,6 +71,7 @@ impl TimingEvent {
     }
 
     /// Get the period of the `TimingEvent`
+    #[must_use]
     pub fn period(&self) -> Option<f64> {
         self.element()
             .get_sub_element(ElementName::Period)?
@@ -192,6 +193,7 @@ impl DataReceivedEvent {
     }
 
     /// Get the `VariableDataPrototype` that triggers the `DataReceivedEvent`
+    #[must_use]
     pub fn variable_data_prototype(&self) -> Option<(VariableDataPrototype, PortPrototype)> {
         let data_iref = self.element().get_sub_element(ElementName::DataIref)?;
         let variable_data_prototype_elem = data_iref
@@ -320,6 +322,7 @@ impl OperationInvokedEvent {
     }
 
     /// Get the `ClientServerOperation` that triggers the `OperationInvokedEvent`
+    #[must_use]
     pub fn client_server_operation(&self) -> Option<(ClientServerOperation, PPortPrototype)> {
         let op_iref = self.element().get_sub_element(ElementName::OperationIref)?;
         let operation_elem = op_iref
@@ -414,6 +417,7 @@ impl SwcModeSwitchEvent {
     }
 
     /// Get the `ModeActivationKind` that controls when the `SwcModeSwitchEvent` is triggered
+    #[must_use]
     pub fn mode_activation_kind(&self) -> Option<ModeActivationKind> {
         let value = self
             .element()
@@ -505,6 +509,7 @@ impl SwcModeSwitchEvent {
     /// Get the `ModeDeclaration`s that trigger the `SwcModeSwitchEvent`
     ///
     /// The list contains either one or two `ModeDeclaration`s depending on the `ModeActivationKind`.
+    #[must_use]
     pub fn mode_declarations(&self) -> Option<(Vec<ModeDeclaration>, PortPrototype)> {
         let mode_irefs_elem = self.element().get_sub_element(ElementName::ModeIrefs)?;
         let mode_declarations = mode_irefs_elem

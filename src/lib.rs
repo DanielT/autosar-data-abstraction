@@ -286,6 +286,7 @@ impl AutosarModelAbstraction {
     /// }
     /// # Ok(())}
     /// ```
+    #[must_use]
     pub fn find_system(&self) -> Option<System> {
         System::find(&self.0)
     }

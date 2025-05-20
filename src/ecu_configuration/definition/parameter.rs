@@ -240,6 +240,7 @@ impl EcucBooleanParamDef {
     }
 
     /// get the default value of the boolean parameter
+    #[must_use]
     pub fn default_value(&self) -> Option<bool> {
         self.element()
             .get_sub_element(ElementName::DefaultValue)?
@@ -311,6 +312,7 @@ impl EcucEnumerationParamDef {
     }
 
     /// get the default value of the enumeration parameter
+    #[must_use]
     pub fn default_value(&self) -> Option<String> {
         self.element()
             .get_sub_element(ElementName::DefaultValue)?
@@ -372,6 +374,7 @@ impl EcucFloatParamDef {
     }
 
     /// get the default value of the float parameter
+    #[must_use]
     pub fn default_value(&self) -> Option<f64> {
         self.element()
             .get_sub_element(ElementName::DefaultValue)?
@@ -393,6 +396,7 @@ impl EcucFloatParamDef {
     }
 
     /// get the min value of the float parameter
+    #[must_use]
     pub fn min(&self) -> Option<f64> {
         self.element()
             .get_sub_element(ElementName::Min)?
@@ -414,6 +418,7 @@ impl EcucFloatParamDef {
     }
 
     /// get the max value of the float parameter
+    #[must_use]
     pub fn max(&self) -> Option<f64> {
         self.element()
             .get_sub_element(ElementName::Max)?
@@ -458,6 +463,7 @@ impl EcucIntegerParamDef {
     }
 
     /// get the default value of the integer parameter
+    #[must_use]
     pub fn default_value(&self) -> Option<i64> {
         self.element()
             .get_sub_element(ElementName::DefaultValue)?
@@ -479,6 +485,7 @@ impl EcucIntegerParamDef {
     }
 
     /// get the min value of the integer parameter
+    #[must_use]
     pub fn min(&self) -> Option<i64> {
         self.element()
             .get_sub_element(ElementName::Min)?
@@ -500,6 +507,7 @@ impl EcucIntegerParamDef {
     }
 
     /// get the max value of the integer parameter
+    #[must_use]
     pub fn max(&self) -> Option<i64> {
         self.element()
             .get_sub_element(ElementName::Max)?

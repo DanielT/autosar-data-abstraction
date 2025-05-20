@@ -791,8 +791,8 @@ mod test {
         assert_eq!(fr_tp_config.flexray_tp_ecus().count(), 1);
         assert_eq!(fr_tp_config.flexray_tp_ecus().next().unwrap(), fr_tp_ecu);
         assert_eq!(fr_tp_ecu.ecu_instance().unwrap(), ecu_instance);
-        assert_eq!(fr_tp_ecu.full_duplex_enabled().unwrap(), true);
+        assert!(fr_tp_ecu.full_duplex_enabled().unwrap());
         assert_eq!(fr_tp_ecu.cycle_time_main_function().unwrap(), 0.01);
-        assert_eq!(fr_tp_ecu.cancellation().unwrap(), true);
+        assert!(fr_tp_ecu.cancellation().unwrap());
     }
 }

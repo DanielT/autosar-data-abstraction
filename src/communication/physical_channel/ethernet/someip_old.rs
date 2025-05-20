@@ -598,6 +598,7 @@ impl ConsumedEventGroupV1 {
     }
 
     /// iterate over any `EventHandlerV1`s that reference this `ConsumedEventGroupV1`
+    #[must_use]
     pub fn event_handlers(&self) -> Vec<EventHandlerV1> {
         let model_result = self.element().model();
         let path_result = self.element().path();

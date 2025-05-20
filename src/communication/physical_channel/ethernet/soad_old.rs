@@ -667,13 +667,13 @@ mod test {
         connection.set_client_port_from_connection_request(None).unwrap();
         assert_eq!(connection.client_port_from_connection_request(), None);
         connection.set_runtime_ip_address_configuration(true).unwrap();
-        assert_eq!(connection.runtime_ip_address_configuration(), true);
+        assert!(connection.runtime_ip_address_configuration());
         connection.set_runtime_port_configuration(true).unwrap();
-        assert_eq!(connection.runtime_port_configuration(), true);
+        assert!(connection.runtime_port_configuration());
         connection.set_runtime_ip_address_configuration(false).unwrap();
-        assert_eq!(connection.runtime_ip_address_configuration(), false);
+        assert!(!connection.runtime_ip_address_configuration());
         connection.set_runtime_port_configuration(false).unwrap();
-        assert_eq!(connection.runtime_port_configuration(), false);
+        assert!(!connection.runtime_port_configuration());
 
         let routing_group = system
             .create_so_ad_routing_group("RoutingGroup", &package, None)

@@ -39,6 +39,7 @@ impl TpAddress {
     }
 
     /// get the value of the address
+    #[must_use]
     pub fn address(&self) -> Option<u32> {
         self.element()
             .get_sub_element(ElementName::TpAddress)?
