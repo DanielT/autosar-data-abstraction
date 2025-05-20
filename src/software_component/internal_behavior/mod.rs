@@ -208,6 +208,180 @@ impl RunnableEntity {
             vec![]
         }
     }
+
+    /// add implicit read access to a data element of a sender-receiver PortPrototype
+    ///
+    /// this results in Rte_IRead_<port>_<data_element> being generated
+    pub fn create_data_read_access<T: Into<PortPrototype> + Clone>(
+        &self,
+        name: &str,
+        data_element: &VariableDataPrototype,
+        context_port: &T,
+    ) -> Result<VariableAccess, AutosarAbstractionError> {
+        let data_accesses = self.element().get_or_create_sub_element(ElementName::DataReadAccesss)?;
+        VariableAccess::new(name, &data_accesses, data_element, &context_port.clone().into())
+    }
+
+    /// iterate over all data read accesses
+    pub fn data_read_accesses(&self) -> impl Iterator<Item = VariableAccess> + Send + 'static {
+        self.element()
+            .get_sub_element(ElementName::DataReadAccesss)
+            .into_iter()
+            .flat_map(|data_accesses| data_accesses.sub_elements())
+            .filter_map(|elem| VariableAccess::try_from(elem).ok())
+    }
+
+    /// add implicit write access to a data element of a sender-receiver PortPrototype
+    ///
+    /// this results in Rte_IWrite_<port>_<data_element> being generated
+    pub fn create_data_write_access<T: Into<PortPrototype> + Clone>(
+        &self,
+        name: &str,
+        data_element: &VariableDataPrototype,
+        context_port: &T,
+    ) -> Result<VariableAccess, AutosarAbstractionError> {
+        let data_accesses = self
+            .element()
+            .get_or_create_sub_element(ElementName::DataWriteAccesss)?;
+        VariableAccess::new(name, &data_accesses, data_element, &context_port.clone().into())
+    }
+
+    /// iterate over all data write accesses
+    pub fn data_write_accesses(&self) -> impl Iterator<Item = VariableAccess> + Send + 'static {
+        self.element()
+            .get_sub_element(ElementName::DataWriteAccesss)
+            .into_iter()
+            .flat_map(|data_accesses| data_accesses.sub_elements())
+            .filter_map(|elem| VariableAccess::try_from(elem).ok())
+    }
+
+    /// add a data send point to a data element of a sender-receiver PortPrototype
+    pub fn create_data_send_point<T: Into<PortPrototype> + Clone>(
+        &self,
+        name: &str,
+        data_element: &VariableDataPrototype,
+        context_port: &T,
+    ) -> Result<VariableAccess, AutosarAbstractionError> {
+        let data_accesses = self.element().get_or_create_sub_element(ElementName::DataSendPoints)?;
+        VariableAccess::new(name, &data_accesses, data_element, &context_port.clone().into())
+    }
+
+    /// iterate over all data send points
+    pub fn data_send_points(&self) -> impl Iterator<Item = VariableAccess> + Send + 'static {
+        self.element()
+            .get_sub_element(ElementName::DataSendPoints)
+            .into_iter()
+            .flat_map(|data_accesses| data_accesses.sub_elements())
+            .filter_map(|elem| VariableAccess::try_from(elem).ok())
+    }
+
+    /// add explicit read access by argument to a data element of a sender-receiver PortPrototype
+    ///
+    /// this results in Rte_Read_<port>_<data_element>(DataType* data) being generated
+    pub fn create_data_receive_point_by_argument<T: Into<PortPrototype> + Clone>(
+        &self,
+        name: &str,
+        data_element: &VariableDataPrototype,
+        context_port: &T,
+    ) -> Result<VariableAccess, AutosarAbstractionError> {
+        let data_accesses = self
+            .element()
+            .get_or_create_sub_element(ElementName::DataReceivePointByArguments)?;
+        VariableAccess::new(name, &data_accesses, data_element, &context_port.clone().into())
+    }
+
+    /// iterate over all data receive points by argument
+    pub fn data_receive_points_by_argument(&self) -> impl Iterator<Item = VariableAccess> + Send + 'static {
+        self.element()
+            .get_sub_element(ElementName::DataReceivePointByArguments)
+            .into_iter()
+            .flat_map(|data_accesses| data_accesses.sub_elements())
+            .filter_map(|elem| VariableAccess::try_from(elem).ok())
+    }
+
+    /// add explicit read access by value to a data element of a sender-receiver PortPrototype
+    pub fn create_data_receive_point_by_value<T: Into<PortPrototype> + Clone>(
+        &self,
+        name: &str,
+        data_element: &VariableDataPrototype,
+        context_port: &T,
+    ) -> Result<VariableAccess, AutosarAbstractionError> {
+        let data_accesses = self
+            .element()
+            .get_or_create_sub_element(ElementName::DataReceivePointByValues)?;
+        VariableAccess::new(name, &data_accesses, data_element, &context_port.clone().into())
+    }
+
+    /// iterate over all data receive points by value
+    pub fn data_receive_points_by_value(&self) -> impl Iterator<Item = VariableAccess> + Send + 'static {
+        self.element()
+            .get_sub_element(ElementName::DataReceivePointByValues)
+            .into_iter()
+            .flat_map(|data_accesses| data_accesses.sub_elements())
+            .filter_map(|elem| VariableAccess::try_from(elem).ok())
+    }
+}
+
+//##################################################################
+
+/// A `VariableAccess` allows a `RunnableEntity` to access a variable in various contexts
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct VariableAccess(Element);
+abstraction_element!(VariableAccess, VariableAccess);
+impl IdentifiableAbstractionElement for VariableAccess {}
+
+impl VariableAccess {
+    pub(crate) fn new(
+        name: &str,
+        parent: &Element,
+        data_element: &VariableDataPrototype,
+        context_port: &PortPrototype,
+    ) -> Result<Self, AutosarAbstractionError> {
+        let variable_access = parent.create_named_sub_element(ElementName::VariableAccess, name)?;
+        let variable_access = Self(variable_access);
+        variable_access.set_accessed_variable(data_element, context_port)?;
+
+        Ok(variable_access)
+    }
+
+    /// Set the accessed variable
+    pub fn set_accessed_variable(
+        &self,
+        data_element: &VariableDataPrototype,
+        context_port: &PortPrototype,
+    ) -> Result<(), AutosarAbstractionError> {
+        // remove the old accessed variable
+        let _ = self.element().remove_sub_element_kind(ElementName::AccessedVariable);
+        let accessed_variable = self.element().create_sub_element(ElementName::AccessedVariable)?;
+        let autosar_variable_iref = accessed_variable.create_sub_element(ElementName::AutosarVariableIref)?;
+
+        autosar_variable_iref
+            .create_sub_element(ElementName::TargetDataPrototypeRef)?
+            .set_reference_target(data_element.element())?;
+        autosar_variable_iref
+            .create_sub_element(ElementName::PortPrototypeRef)?
+            .set_reference_target(context_port.element())?;
+        Ok(())
+    }
+
+    /// Get the accessed variable
+    pub fn accessed_variable(&self) -> Option<(VariableDataPrototype, PortPrototype)> {
+        let accessed_variable = self.element().get_sub_element(ElementName::AccessedVariable)?;
+        let autosar_variable_iref = accessed_variable.get_sub_element(ElementName::AutosarVariableIref)?;
+        let data_prototype_ref = autosar_variable_iref.get_sub_element(ElementName::TargetDataPrototypeRef)?;
+        let port_prototype_ref = autosar_variable_iref.get_sub_element(ElementName::PortPrototypeRef)?;
+
+        let data_prototype = VariableDataPrototype::try_from(data_prototype_ref.get_reference_target().ok()?).ok()?;
+        let port_prototype = PortPrototype::try_from(port_prototype_ref.get_reference_target().ok()?).ok()?;
+
+        Some((data_prototype, port_prototype))
+    }
+
+    /// Get the `RunnableEntity` that contains the `VariableAccess`
+    pub fn runnable_entity(&self) -> Option<RunnableEntity> {
+        let parent = self.element().named_parent().ok()??;
+        RunnableEntity::try_from(parent).ok()
+    }
 }
 
 //##################################################################
@@ -508,5 +682,81 @@ mod test {
         assert_eq!(data_element, variable_data_prototype);
         assert_eq!(context_port, r_port.into());
         assert_eq!(data_received_event.runnable_entity().unwrap(), runnable);
+    }
+
+    #[test]
+    fn variable_access() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+
+        // create a sender receiver interface with a variable
+        let sender_receiver_interface = package
+            .create_sender_receiver_interface("SenderReceiverInterface")
+            .unwrap();
+        let app_data_type = package
+            .create_application_primitive_data_type("uint32", ApplicationPrimitiveCategory::Value, None, None, None)
+            .unwrap();
+        let variable_data_prototype = sender_receiver_interface
+            .create_data_element("data", &app_data_type)
+            .unwrap();
+
+        // create a software component type with an internal behavior
+        let app_swc = package
+            .create_application_sw_component_type("AppSwComponentType")
+            .unwrap();
+        let r_port = app_swc.create_r_port("r_port", &sender_receiver_interface).unwrap();
+        let p_port = app_swc.create_p_port("p_port", &sender_receiver_interface).unwrap();
+        let swc_internal_behavior = app_swc
+            .create_swc_internal_behavior("AppSwComponentType_InternalBehavior")
+            .unwrap();
+        assert_eq!(app_swc.swc_internal_behaviors().count(), 1);
+        assert_eq!(
+            swc_internal_behavior.sw_component_type().unwrap(),
+            app_swc.clone().into()
+        );
+
+        // create a runnable entity
+        let runnable = swc_internal_behavior.create_runnable_entity("Runnable").unwrap();
+        assert_eq!(runnable.swc_internal_behavior().unwrap(), swc_internal_behavior);
+
+        // create a variable access for read access
+        let variable_access = runnable
+            .create_data_read_access("DataReadAccess", &variable_data_prototype, &r_port)
+            .unwrap();
+        assert_eq!(variable_access.runnable_entity().unwrap(), runnable);
+        assert_eq!(variable_access.accessed_variable().unwrap().0, variable_data_prototype);
+        assert_eq!(runnable.data_read_accesses().count(), 1);
+
+        // create a variable access for write access
+        let variable_access = runnable
+            .create_data_write_access("DataWriteAccess", &variable_data_prototype, &p_port)
+            .unwrap();
+        assert_eq!(variable_access.runnable_entity().unwrap(), runnable);
+        assert_eq!(variable_access.accessed_variable().unwrap().0, variable_data_prototype);
+        assert_eq!(runnable.data_write_accesses().count(), 1);
+
+        // create a variable access for send point
+        let variable_access = runnable
+            .create_data_send_point("DataSendPoint", &variable_data_prototype, &p_port)
+            .unwrap();
+        assert_eq!(variable_access.runnable_entity().unwrap(), runnable);
+        assert_eq!(variable_access.accessed_variable().unwrap().0, variable_data_prototype);
+        assert_eq!(runnable.data_send_points().count(), 1);
+
+        // create a variable access for receive point by argument
+        let variable_access = runnable
+            .create_data_receive_point_by_argument("DataReceivePointByArgument", &variable_data_prototype, &r_port)
+            .unwrap();
+        assert_eq!(variable_access.runnable_entity().unwrap(), runnable);
+        assert_eq!(variable_access.accessed_variable().unwrap().0, variable_data_prototype);
+        assert_eq!(runnable.data_receive_points_by_argument().count(), 1);
+
+        // create a variable access for receive point by value
+        let variable_access = runnable
+            .create_data_receive_point_by_value("DataReceivePointByValue", &variable_data_prototype, &r_port)
+            .unwrap();
+        assert_eq!(variable_access.runnable_entity().unwrap(), runnable);
+        assert_eq!(variable_access.accessed_variable().unwrap().0, variable_data_prototype);
+        assert_eq!(runnable.data_receive_points_by_value().count(), 1);
     }
 }
