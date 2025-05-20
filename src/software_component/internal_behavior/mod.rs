@@ -2,7 +2,8 @@ use crate::{
     AbstractionElement, AutosarAbstractionError, Element, IdentifiableAbstractionElement, abstraction_element,
     datatype::DataTypeMappingSet,
     software_component::{
-        ClientServerOperation, ModeDeclaration, PPortPrototype, PortPrototype, SwComponentType, VariableDataPrototype,
+        ClientServerOperation, ModeDeclaration, PPortPrototype, PortPrototype, RPortPrototype, SwComponentType,
+        VariableDataPrototype,
     },
 };
 use autosar_data::ElementName;
@@ -320,6 +321,28 @@ impl RunnableEntity {
             .flat_map(|data_accesses| data_accesses.sub_elements())
             .filter_map(|elem| VariableAccess::try_from(elem).ok())
     }
+
+    /// create a synchronous server call point that allows the runnable to call a server operation
+    pub fn create_synchronous_server_call_point(
+        &self,
+        name: &str,
+        client_server_operation: &ClientServerOperation,
+        context_r_port: &RPortPrototype,
+    ) -> Result<SynchronousServerCallPoint, AutosarAbstractionError> {
+        let server_call_points = self
+            .element()
+            .get_or_create_sub_element(ElementName::ServerCallPoints)?;
+        SynchronousServerCallPoint::new(name, &server_call_points, client_server_operation, context_r_port)
+    }
+
+    /// iterate over all synchronous server call points
+    pub fn synchronous_server_call_points(&self) -> impl Iterator<Item = SynchronousServerCallPoint> + Send + 'static {
+        self.element()
+            .get_sub_element(ElementName::ServerCallPoints)
+            .into_iter()
+            .flat_map(|server_call_points| server_call_points.sub_elements())
+            .filter_map(|elem| SynchronousServerCallPoint::try_from(elem).ok())
+    }
 }
 
 //##################################################################
@@ -378,6 +401,68 @@ impl VariableAccess {
     }
 
     /// Get the `RunnableEntity` that contains the `VariableAccess`
+    pub fn runnable_entity(&self) -> Option<RunnableEntity> {
+        let parent = self.element().named_parent().ok()??;
+        RunnableEntity::try_from(parent).ok()
+    }
+}
+
+//##################################################################
+
+/// A `SynchronousServerCallPoint` allows a `RunnableEntity` to call a server operation synchronously
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SynchronousServerCallPoint(Element);
+abstraction_element!(SynchronousServerCallPoint, SynchronousServerCallPoint);
+impl IdentifiableAbstractionElement for SynchronousServerCallPoint {}
+
+impl SynchronousServerCallPoint {
+    pub(crate) fn new(
+        name: &str,
+        parent: &Element,
+        client_server_operation: &ClientServerOperation,
+        context_r_port: &RPortPrototype,
+    ) -> Result<Self, AutosarAbstractionError> {
+        let synchronous_server_call_point =
+            parent.create_named_sub_element(ElementName::SynchronousServerCallPoint, name)?;
+        let synchronous_server_call_point = Self(synchronous_server_call_point);
+        synchronous_server_call_point.set_client_server_operation(client_server_operation, context_r_port)?;
+
+        Ok(synchronous_server_call_point)
+    }
+
+    /// Set the client server operation
+    pub fn set_client_server_operation(
+        &self,
+        client_server_operation: &ClientServerOperation,
+        context_r_port: &RPortPrototype,
+    ) -> Result<(), AutosarAbstractionError> {
+        // remove the old client server operation
+        let _ = self.element().remove_sub_element_kind(ElementName::OperationIref);
+        let operation_iref = self.element().create_sub_element(ElementName::OperationIref)?;
+
+        operation_iref
+            .create_sub_element(ElementName::TargetRequiredOperationRef)?
+            .set_reference_target(client_server_operation.element())?;
+        operation_iref
+            .create_sub_element(ElementName::ContextRPortRef)?
+            .set_reference_target(context_r_port.element())?;
+        Ok(())
+    }
+
+    /// Get the client server operation
+    pub fn client_server_operation(&self) -> Option<(ClientServerOperation, RPortPrototype)> {
+        let operation_iref = self.element().get_sub_element(ElementName::OperationIref)?;
+        let required_operation_ref = operation_iref.get_sub_element(ElementName::TargetRequiredOperationRef)?;
+        let context_r_port_ref = operation_iref.get_sub_element(ElementName::ContextRPortRef)?;
+
+        let client_server_operation =
+            ClientServerOperation::try_from(required_operation_ref.get_reference_target().ok()?).ok()?;
+        let context_r_port = RPortPrototype::try_from(context_r_port_ref.get_reference_target().ok()?).ok()?;
+
+        Some((client_server_operation, context_r_port))
+    }
+
+    /// Get the `RunnableEntity` that contains the `SynchronousServerCallPoint`
     pub fn runnable_entity(&self) -> Option<RunnableEntity> {
         let parent = self.element().named_parent().ok()??;
         RunnableEntity::try_from(parent).ok()
@@ -758,5 +843,44 @@ mod test {
         assert_eq!(variable_access.runnable_entity().unwrap(), runnable);
         assert_eq!(variable_access.accessed_variable().unwrap().0, variable_data_prototype);
         assert_eq!(runnable.data_receive_points_by_value().count(), 1);
+    }
+
+    #[test]
+    fn synchronous_server_call_point() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+
+        // create a client-server interface
+        let client_server_interface = package.create_client_server_interface("ClientServerInterface").unwrap();
+        let operation = client_server_interface.create_operation("TestOperation").unwrap();
+
+        // create a software component type with an internal behavior
+        let app_swc = package
+            .create_application_sw_component_type("AppSwComponentType")
+            .unwrap();
+        let r_port = app_swc.create_r_port("r_port", &client_server_interface).unwrap();
+        let swc_internal_behavior = app_swc
+            .create_swc_internal_behavior("AppSwComponentType_InternalBehavior")
+            .unwrap();
+        assert_eq!(app_swc.swc_internal_behaviors().count(), 1);
+        assert_eq!(
+            swc_internal_behavior.sw_component_type().unwrap(),
+            app_swc.clone().into()
+        );
+
+        // create a runnable entity
+        let runnable = swc_internal_behavior.create_runnable_entity("Runnable1").unwrap();
+        assert_eq!(runnable.swc_internal_behavior().unwrap(), swc_internal_behavior);
+
+        // create a synchronous server call point
+        let synchronous_server_call_point = runnable
+            .create_synchronous_server_call_point("SynchronousServerCallPoint", &operation, &r_port)
+            .unwrap();
+        assert_eq!(synchronous_server_call_point.runnable_entity().unwrap(), runnable);
+        assert_eq!(
+            synchronous_server_call_point.client_server_operation().unwrap().0,
+            operation
+        );
+        assert_eq!(runnable.synchronous_server_call_points().count(), 1);
     }
 }
