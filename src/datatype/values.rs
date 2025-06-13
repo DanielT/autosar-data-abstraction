@@ -1257,11 +1257,15 @@ impl RuleArgument {
                 value_elem.set_character_data(value.clone())?;
             }
             RuleArgument::VtfNumber(value) => {
-                let value_elem = parent.create_sub_element(ElementName::Vtf)?;
-                value_elem.set_character_data(value.to_string())?;
+                let value_elem = parent
+                    .create_sub_element(ElementName::Vtf)?
+                    .create_sub_element(ElementName::Vf)?;
+                value_elem.set_character_data(*value)?;
             }
             RuleArgument::VtfText(value) => {
-                let value_elem = parent.create_sub_element(ElementName::Vtf)?;
+                let value_elem = parent
+                    .create_sub_element(ElementName::Vtf)?
+                    .create_sub_element(ElementName::Vt)?;
                 value_elem.set_character_data(value.clone())?;
             }
         }
@@ -1283,11 +1287,13 @@ impl RuleArgument {
                 RuleArgument::Vt(value)
             }
             ElementName::Vtf => {
-                if let Some(value) = element.character_data()?.parse_float() {
-                    RuleArgument::VtfNumber(value)
+                // The VTF element can contain either a Vf or a Vt element
+                if let Some(vf) = element.get_sub_element(ElementName::Vf) {
+                    RuleArgument::VtfNumber(vf.character_data()?.parse_float()?)
+                } else if let Some(vt) = element.get_sub_element(ElementName::Vt) {
+                    RuleArgument::VtfText(vt.character_data()?.string_value()?)
                 } else {
-                    let value = element.character_data()?.string_value()?;
-                    RuleArgument::VtfText(value)
+                    return None;
                 }
             }
             _ => return None,
@@ -1657,7 +1663,13 @@ mod test {
                     sw_array_size: vec![1, 2],
                     sw_axis_index: 1,
                     rule_based_values: RuleBasedValueSpecification {
-                        arguments: vec![RuleArgument::Vf(0.0), RuleArgument::Vf(1.0)],
+                        arguments: vec![
+                            RuleArgument::V(0.0),
+                            RuleArgument::Vf(1.0),
+                            RuleArgument::Vt("text".to_string()),
+                            RuleArgument::VtfNumber(2.0),
+                            RuleArgument::VtfText("text2".to_string()),
+                        ],
                         max_size_to_fill: Some(10),
                         rule: RuleBasedFillUntil::MaxSize,
                     },
