@@ -23,7 +23,6 @@ impl ConstantSpecification {
         package: &ArPackage,
         value: ValueSpecification,
     ) -> Result<ConstantSpecification, AutosarAbstractionError> {
-        let value: ValueSpecification = value;
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
 
         let const_spec_elem = elements
@@ -37,7 +36,11 @@ impl ConstantSpecification {
     }
 
     /// set the value specification of the constant
-    pub fn set_value_specification(&self, value: ValueSpecification) -> Result<(), AutosarAbstractionError> {
+    pub fn set_value_specification<T: Into<ValueSpecification>>(
+        &self,
+        value: T,
+    ) -> Result<(), AutosarAbstractionError> {
+        let value: ValueSpecification = value.into();
         // remove the existing value
         let _ = self.element().remove_sub_element_kind(ElementName::ValueSpec);
         let value_spec_elem = self.element().create_sub_element(ElementName::ValueSpec)?;
@@ -1370,6 +1373,41 @@ mod test {
         software_component::{ArgumentDirection, ClientServerInterface},
     };
     use autosar_data::AutosarVersion;
+
+    #[test]
+    fn constant_specification() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/Pkg").unwrap();
+
+        let constant = package
+            .create_constant_specification(
+                "ConstantSpec",
+                NumericalValueSpecification {
+                    label: None,
+                    value: 12.0,
+                },
+            )
+            .unwrap();
+        assert_eq!(constant.name().unwrap(), "ConstantSpec");
+
+        let spec = ArrayValueSpecification {
+            label: Some("ArrayValue".to_string()),
+            values: vec![
+                NumericalValueSpecification {
+                    label: None,
+                    value: 11.0,
+                }
+                .into(),
+                NumericalValueSpecification {
+                    label: None,
+                    value: 12.3,
+                }
+                .into(),
+            ],
+        };
+        constant.set_value_specification(spec.clone()).unwrap();
+        assert_eq!(constant.value_specification().unwrap(), spec.into());
+    }
 
     #[test]
     fn numerical_value_specification() {

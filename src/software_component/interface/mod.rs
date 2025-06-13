@@ -157,10 +157,17 @@ impl ParameterDataPrototype {
     }
 
     /// set the init value for this signal
-    pub fn set_init_value<T: Into<ValueSpecification>>(&self, value_spec: T) -> Result<(), AutosarAbstractionError> {
-        let value_spec: ValueSpecification = value_spec.into();
-        let init_value_elem = self.element().get_or_create_sub_element(ElementName::InitValue)?;
-        value_spec.store(&init_value_elem)?;
+    pub fn set_init_value<T: Into<ValueSpecification>>(
+        &self,
+        value_spec: Option<T>,
+    ) -> Result<(), AutosarAbstractionError> {
+        if let Some(value_spec) = value_spec {
+            let value_spec: ValueSpecification = value_spec.into();
+            let init_value_elem = self.element().get_or_create_sub_element(ElementName::InitValue)?;
+            value_spec.store(&init_value_elem)?;
+        } else {
+            let _ = self.element().remove_sub_element_kind(ElementName::InitValue);
+        }
         Ok(())
     }
 
@@ -418,7 +425,7 @@ mod test {
             label: None,
             value: "42".to_string(),
         };
-        parameter.set_init_value(value_spec).unwrap();
+        parameter.set_init_value(Some(value_spec)).unwrap();
         assert_eq!(
             parameter.init_value().unwrap(),
             TextValueSpecification {

@@ -96,18 +96,26 @@ impl ISignal {
     /// set the init value for this signal
     ///
     /// only `NumericalValueSpecification`, `TextValueSpecification` or `ArrayValueSpecification` are permitted here
-    pub fn set_init_value<T: Into<ValueSpecification>>(&self, value_spec: T) -> Result<(), AutosarAbstractionError> {
-        let value_spec: ValueSpecification = value_spec.into();
-        if !matches!(
-            value_spec,
-            ValueSpecification::Numerical(_) | ValueSpecification::Text(_) | ValueSpecification::Array(_)
-        ) {
-            return Err(AutosarAbstractionError::InvalidParameter(
+    pub fn set_init_value<T: Into<ValueSpecification>>(
+        &self,
+        value_spec: Option<T>,
+    ) -> Result<(), AutosarAbstractionError> {
+        if let Some(value_spec) = value_spec {
+            let value_spec: ValueSpecification = value_spec.into();
+            if !matches!(
+                value_spec,
+                ValueSpecification::Numerical(_) | ValueSpecification::Text(_) | ValueSpecification::Array(_)
+            ) {
+                return Err(AutosarAbstractionError::InvalidParameter(
                 "The init value must be a NumericalValueSpecification, TextValueSpecification or ArrayValueSpecification".to_string(),
             ));
+            }
+            let init_value_elem = self.element().get_or_create_sub_element(ElementName::InitValue)?;
+            value_spec.store(&init_value_elem)?;
+        } else {
+            // remove the init value element if it exists
+            let _ = self.element().remove_sub_element_kind(ElementName::InitValue);
         }
-        let init_value_elem = self.element().get_or_create_sub_element(ElementName::InitValue)?;
-        value_spec.store(&init_value_elem)?;
         Ok(())
     }
 
@@ -821,8 +829,11 @@ mod tests {
             label: None,
             value: 0.0,
         };
-        signal.set_init_value(init_value.clone()).unwrap();
+        signal.set_init_value(Some(init_value.clone())).unwrap();
         assert_eq!(signal.init_value(), Some(init_value.into()));
+
+        signal.set_init_value::<ValueSpecification>(None).unwrap();
+        assert_eq!(signal.init_value(), None);
     }
 
     #[test]

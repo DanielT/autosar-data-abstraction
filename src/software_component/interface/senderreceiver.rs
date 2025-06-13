@@ -87,10 +87,17 @@ impl VariableDataPrototype {
     }
 
     /// Set the init value of the data element
-    pub fn set_init_value<T: Into<ValueSpecification>>(&self, value_spec: T) -> Result<(), AutosarAbstractionError> {
-        let value_spec: ValueSpecification = value_spec.into();
-        let init_value_elem = self.element().get_or_create_sub_element(ElementName::InitValue)?;
-        value_spec.store(&init_value_elem)?;
+    pub fn set_init_value<T: Into<ValueSpecification>>(
+        &self,
+        value_spec: Option<T>,
+    ) -> Result<(), AutosarAbstractionError> {
+        if let Some(value_spec) = value_spec {
+            let value_spec: ValueSpecification = value_spec.into();
+            let init_value_elem = self.element().get_or_create_sub_element(ElementName::InitValue)?;
+            value_spec.store(&init_value_elem)?;
+        } else {
+            let _ = self.element().remove_sub_element_kind(ElementName::InitValue);
+        }
         Ok(())
     }
 
@@ -111,7 +118,10 @@ impl VariableDataPrototype {
 mod test {
     use crate::{
         AutosarModelAbstraction,
-        datatype::{AutosarDataType, BaseTypeEncoding, ImplementationDataTypeSettings, NumericalValueSpecification},
+        datatype::{
+            AutosarDataType, BaseTypeEncoding, ImplementationDataTypeSettings, NumericalValueSpecification,
+            ValueSpecification,
+        },
         software_component::AbstractPortInterface,
     };
     use autosar_data::AutosarVersion;
@@ -160,7 +170,7 @@ mod test {
             label: None,
             value: 42.0,
         };
-        data_element.set_init_value(value_spec).unwrap();
+        data_element.set_init_value(Some(value_spec)).unwrap();
         assert_eq!(
             data_element.init_value().unwrap(),
             NumericalValueSpecification {
@@ -169,6 +179,9 @@ mod test {
             }
             .into()
         );
+
+        data_element.set_init_value::<ValueSpecification>(None).unwrap();
+        assert!(data_element.init_value().is_none());
 
         sr_interface.set_is_service(Some(false)).unwrap();
         assert!(!sr_interface.is_service().unwrap());
