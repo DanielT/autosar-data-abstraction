@@ -1,7 +1,7 @@
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, Element, IdentifiableAbstractionElement,
     abstraction_element,
-    datatype::{AbstractAutosarDataType, ValueSpecification},
+    datatype::{AbstractAutosarDataType, AutosarDataType, ValueSpecification},
     software_component::ModeDeclarationGroup,
 };
 use autosar_data::ElementName;
@@ -123,7 +123,7 @@ impl ParameterInterface {
         data_type: &T,
     ) -> Result<ParameterDataPrototype, AutosarAbstractionError> {
         let parameters = self.element().get_or_create_sub_element(ElementName::Parameters)?;
-        ParameterDataPrototype::new(name, &parameters, data_type.element())
+        ParameterDataPrototype::new(name, &parameters, data_type)
     }
 
     /// iterate over all `ParameterDataPrototype` in this `ParameterInterface`
@@ -148,12 +148,17 @@ impl IdentifiableAbstractionElement for ParameterDataPrototype {}
 
 impl ParameterDataPrototype {
     /// Create a new `ParameterDataPrototype`
-    fn new(name: &str, parent_element: &Element, data_type: &Element) -> Result<Self, AutosarAbstractionError> {
+    fn new<T: AbstractAutosarDataType>(
+        name: &str,
+        parent_element: &Element,
+        data_type: &T,
+    ) -> Result<Self, AutosarAbstractionError> {
         let pdp = parent_element.create_named_sub_element(ElementName::ParameterDataPrototype, name)?;
-        pdp.create_sub_element(ElementName::TypeTref)?
-            .set_reference_target(data_type)?;
 
-        Ok(Self(pdp))
+        let pdp = Self(pdp);
+        pdp.set_data_type(data_type)?;
+
+        Ok(pdp)
     }
 
     /// set the init value for this signal
@@ -179,6 +184,27 @@ impl ParameterDataPrototype {
             .get_sub_element(ElementName::InitValue)?
             .get_sub_element_at(0)?;
         ValueSpecification::load(&init_value_elem)
+    }
+
+    /// Get the interface containing the data element
+    pub fn interface(&self) -> Result<ParameterInterface, AutosarAbstractionError> {
+        let named_parent = self.element().named_parent()?.unwrap();
+        ParameterInterface::try_from(named_parent)
+    }
+
+    /// Set the data type of the parameter
+    pub fn set_data_type<T: AbstractAutosarDataType>(&self, data_type: &T) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::TypeTref)?
+            .set_reference_target(data_type.element())?;
+        Ok(())
+    }
+
+    /// Get the data type of the parameter
+    #[must_use]
+    pub fn data_type(&self) -> Option<AutosarDataType> {
+        let type_tref = self.element().get_sub_element(ElementName::TypeTref)?;
+        AutosarDataType::try_from(type_tref.get_reference_target().ok()?).ok()
     }
 }
 
@@ -415,6 +441,12 @@ mod test {
         assert_eq!(parameter.name().as_deref().unwrap(), "parameter");
 
         assert_eq!(parameter_interface.parameters().count(), 1);
+
+        assert_eq!(parameter.interface().unwrap(), parameter_interface);
+        assert_eq!(
+            parameter.data_type().unwrap(),
+            AutosarDataType::ImplementationDataType(datatype)
+        );
 
         parameter_interface.set_is_service(Some(true)).unwrap();
         assert_eq!(parameter_interface.is_service(), Some(true));
