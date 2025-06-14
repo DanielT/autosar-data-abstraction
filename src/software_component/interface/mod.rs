@@ -54,6 +54,8 @@ impl ModeSwitchInterface {
 //##################################################################
 
 /// A `ModeGroup` represents a mode group in a `ModeSwitchInterface`
+///
+/// aka ModeDeclarationGroupPrototype in the AUTOSAR standard
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ModeGroup(Element);
 abstraction_element!(ModeGroup, ModeGroup);

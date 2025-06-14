@@ -2,8 +2,8 @@ use crate::{
     AbstractionElement, AutosarAbstractionError, Element, IdentifiableAbstractionElement, abstraction_element,
     datatype::DataTypeMappingSet,
     software_component::{
-        ClientServerOperation, ModeDeclaration, PPortPrototype, PortPrototype, RPortPrototype, SwComponentType,
-        VariableDataPrototype,
+        ClientServerOperation, ModeDeclaration, ModeGroup, PPortPrototype, PortPrototype, RPortPrototype,
+        SwComponentType, VariableDataPrototype,
     },
 };
 use autosar_data::ElementName;
@@ -346,6 +346,50 @@ impl RunnableEntity {
             .flat_map(|server_call_points| server_call_points.sub_elements())
             .filter_map(|elem| SynchronousServerCallPoint::try_from(elem).ok())
     }
+
+    /// create a mode access point that allows the runnable to access the current mode of a ModeDeclarationGroup
+    pub fn create_mode_access_point<T: Into<PortPrototype> + Clone>(
+        &self,
+        name: &str,
+        mode_group: &ModeGroup,
+        context_port: &T,
+    ) -> Result<ModeAccessPoint, AutosarAbstractionError> {
+        let mode_access_points = self
+            .element()
+            .get_or_create_sub_element(ElementName::ModeAccessPoints)?;
+        ModeAccessPoint::new(name, &mode_access_points, mode_group, &context_port.clone().into())
+    }
+
+    /// iterate over all mode access points
+    pub fn mode_access_points(&self) -> impl Iterator<Item = ModeAccessPoint> + Send + 'static {
+        self.element()
+            .get_sub_element(ElementName::ModeAccessPoints)
+            .into_iter()
+            .flat_map(|mode_access_points| mode_access_points.sub_elements())
+            .filter_map(|elem| ModeAccessPoint::try_from(elem).ok())
+    }
+
+    /// create a mode switch point that allows the runnable to switch modes in a ModeDeclarationGroup
+    pub fn create_mode_switch_point<T: Into<PortPrototype> + Clone>(
+        &self,
+        name: &str,
+        mode_group: &ModeGroup,
+        context_port: &T,
+    ) -> Result<ModeSwitchPoint, AutosarAbstractionError> {
+        let mode_switch_points = self
+            .element()
+            .get_or_create_sub_element(ElementName::ModeSwitchPoints)?;
+        ModeSwitchPoint::new(name, &mode_switch_points, mode_group, context_port)
+    }
+
+    /// iterate over all mode switch points
+    pub fn mode_switch_points(&self) -> impl Iterator<Item = ModeSwitchPoint> + Send + 'static {
+        self.element()
+            .get_sub_element(ElementName::ModeSwitchPoints)
+            .into_iter()
+            .flat_map(|mode_switch_points| mode_switch_points.sub_elements())
+            .filter_map(|elem| ModeSwitchPoint::try_from(elem).ok())
+    }
 }
 
 //##################################################################
@@ -469,6 +513,209 @@ impl SynchronousServerCallPoint {
     }
 
     /// Get the `RunnableEntity` that contains the `SynchronousServerCallPoint`
+    #[must_use]
+    pub fn runnable_entity(&self) -> Option<RunnableEntity> {
+        let parent = self.element().named_parent().ok()??;
+        RunnableEntity::try_from(parent).ok()
+    }
+}
+
+//##################################################################
+
+/// A `ModeAccessPoint`provides the ability to access the current mode of a ModeDeclarationGroup
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModeAccessPoint(Element);
+abstraction_element!(ModeAccessPoint, ModeAccessPoint);
+
+// not identifiable, but it has an Ident element instead
+impl IdentifiableAbstractionElement for ModeAccessPoint {
+    fn name(&self) -> Option<String> {
+        self.element()
+            .get_sub_element(ElementName::Ident)
+            .and_then(|elem| elem.item_name())
+    }
+
+    /// set the name of the mode access point
+    fn set_name(&self, name: &str) -> Result<(), AutosarAbstractionError> {
+        // rename an existing Ident element or create a new one
+        if let Some(ident_elem) = self.element().get_sub_element(ElementName::Ident) {
+            ident_elem.set_item_name(name)?;
+        } else {
+            self.element().create_named_sub_element(ElementName::Ident, name)?;
+        }
+        Ok(())
+    }
+}
+
+impl ModeAccessPoint {
+    pub(crate) fn new<T: Into<PortPrototype> + Clone>(
+        name: &str,
+        parent: &Element,
+        mode_group: &ModeGroup,
+        context_port: &T,
+    ) -> Result<Self, AutosarAbstractionError> {
+        let mode_access_point = parent.create_sub_element(ElementName::ModeAccessPoint)?;
+        let mode_access_point = Self(mode_access_point);
+        mode_access_point.set_name(name)?;
+        mode_access_point.set_mode_group(mode_group, context_port)?;
+
+        Ok(mode_access_point)
+    }
+
+    /// Set the mode group and context port for the mode access point
+    pub fn set_mode_group<T: Into<PortPrototype> + Clone>(
+        &self,
+        mode_group: &ModeGroup,
+        context_port: &T,
+    ) -> Result<(), AutosarAbstractionError> {
+        let context_port = context_port.clone().into();
+        // remove the old mode group iref
+        let _ = self.element().remove_sub_element_kind(ElementName::ModeGroupIref);
+        let mode_group_iref = self.element().create_sub_element(ElementName::ModeGroupIref)?;
+
+        let context_port_elem = context_port.element();
+        match context_port {
+            PortPrototype::R(_) | PortPrototype::PR(_) => {
+                let r_ref_container =
+                    mode_group_iref.create_sub_element(ElementName::RModeGroupInAtomicSwcInstanceRef)?;
+                r_ref_container
+                    .create_sub_element(ElementName::ContextRPortRef)?
+                    .set_reference_target(context_port_elem)?;
+                r_ref_container
+                    .create_sub_element(ElementName::TargetModeGroupRef)?
+                    .set_reference_target(mode_group.element())?;
+            }
+            PortPrototype::P(_) => {
+                let p_ref_container =
+                    mode_group_iref.create_sub_element(ElementName::PModeGroupInAtomicSwcInstanceRef)?;
+                p_ref_container
+                    .create_sub_element(ElementName::ContextPPortRef)?
+                    .set_reference_target(context_port_elem)?;
+                p_ref_container
+                    .create_sub_element(ElementName::TargetModeGroupRef)?
+                    .set_reference_target(mode_group.element())?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Get the mode group and context port for the mode access point
+    #[must_use]
+    pub fn mode_group(&self) -> Option<(ModeGroup, PortPrototype)> {
+        let mode_group_iref = self.element().get_sub_element(ElementName::ModeGroupIref)?;
+
+        // Determine the context port reference based on the mode group reference type
+        if let Some(r_ref_container) = mode_group_iref.get_sub_element(ElementName::RModeGroupInAtomicSwcInstanceRef) {
+            let context_r_port = r_ref_container
+                .get_sub_element(ElementName::ContextRPortRef)?
+                .get_reference_target()
+                .ok()?;
+            let mode_group = r_ref_container
+                .get_sub_element(ElementName::TargetModeGroupRef)?
+                .get_reference_target()
+                .ok()?;
+            Some((
+                ModeGroup::try_from(mode_group).ok()?,
+                PortPrototype::try_from(context_r_port).ok()?,
+            ))
+        } else if let Some(p_ref_container) =
+            mode_group_iref.get_sub_element(ElementName::PModeGroupInAtomicSwcInstanceRef)
+        {
+            let context_p_port = p_ref_container
+                .get_sub_element(ElementName::ContextPPortRef)?
+                .get_reference_target()
+                .ok()?;
+            let mode_group = p_ref_container
+                .get_sub_element(ElementName::TargetModeGroupRef)?
+                .get_reference_target()
+                .ok()?;
+            Some((
+                ModeGroup::try_from(mode_group).ok()?,
+                PortPrototype::try_from(context_p_port).ok()?,
+            ))
+        } else {
+            None
+        }
+    }
+
+    /// Get the `RunnableEntity` that contains the `ModeAccessPoint`
+    #[must_use]
+    pub fn runnable_entity(&self) -> Option<RunnableEntity> {
+        let parent = self.element().named_parent().ok()??;
+        RunnableEntity::try_from(parent).ok()
+    }
+}
+
+//##################################################################
+
+/// A `ModeSwitchPoint` allows a `RunnableEntity` to switch modes in a ModeDeclarationGroup
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModeSwitchPoint(Element);
+abstraction_element!(ModeSwitchPoint, ModeSwitchPoint);
+impl IdentifiableAbstractionElement for ModeSwitchPoint {}
+
+impl ModeSwitchPoint {
+    pub(crate) fn new<T: Into<PortPrototype> + Clone>(
+        name: &str,
+        parent: &Element,
+        mode_group: &ModeGroup,
+        context_port: &T,
+    ) -> Result<Self, AutosarAbstractionError> {
+        let mode_switch_point = parent.create_named_sub_element(ElementName::ModeSwitchPoint, name)?;
+        let mode_switch_point = Self(mode_switch_point);
+        mode_switch_point.set_mode_group(mode_group, context_port)?;
+
+        Ok(mode_switch_point)
+    }
+
+    /// Set the mode group and context port for the mode switch point
+    pub fn set_mode_group<T: Into<PortPrototype> + Clone>(
+        &self,
+        mode_group: &ModeGroup,
+        context_port: &T,
+    ) -> Result<(), AutosarAbstractionError> {
+        let context_port = context_port.clone().into();
+        if matches!(context_port, PortPrototype::R(_)) {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "ModeSwitchPoint context_port cannot be an R port".to_string(),
+            ));
+        }
+
+        // remove the old mode group iref
+        let _ = self.element().remove_sub_element_kind(ElementName::ModeGroupIref);
+        let mode_group_iref = self.element().create_sub_element(ElementName::ModeGroupIref)?;
+
+        mode_group_iref
+            .create_sub_element(ElementName::TargetModeGroupRef)?
+            .set_reference_target(mode_group.element())?;
+        mode_group_iref
+            .create_sub_element(ElementName::ContextPPortRef)?
+            .set_reference_target(context_port.element())?;
+
+        Ok(())
+    }
+
+    /// Get the mode group and context port for the mode switch point
+    #[must_use]
+    pub fn mode_group(&self) -> Option<(ModeGroup, PortPrototype)> {
+        let mode_group_iref = self.element().get_sub_element(ElementName::ModeGroupIref)?;
+        let mode_group = mode_group_iref
+            .get_sub_element(ElementName::TargetModeGroupRef)?
+            .get_reference_target()
+            .ok()?;
+        let context_port = mode_group_iref
+            .get_sub_element(ElementName::ContextPPortRef)?
+            .get_reference_target()
+            .ok()?;
+
+        let mode_declaration = ModeGroup::try_from(mode_group).ok()?;
+        let context_port = PortPrototype::try_from(context_port).ok()?;
+
+        Some((mode_declaration, context_port))
+    }
+
+    /// Get the `RunnableEntity` that contains the `ModeSwitchPoint`
     #[must_use]
     pub fn runnable_entity(&self) -> Option<RunnableEntity> {
         let parent = self.element().named_parent().ok()??;
@@ -889,5 +1136,102 @@ mod test {
             operation
         );
         assert_eq!(runnable.synchronous_server_call_points().count(), 1);
+    }
+
+    #[test]
+    fn mode_access_point() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+
+        // create a mode declaration group
+        let mode_declaration_group = package
+            .create_mode_declaration_group("ModeDeclarationGroup", None)
+            .unwrap();
+        // create a mode switch interface
+        let mode_switch_interface = package.create_mode_switch_interface("ModeSwitchInterface").unwrap();
+        // create a mode group in the mode switch interface
+        let mode_group = mode_switch_interface
+            .create_mode_group("mode_group", &mode_declaration_group)
+            .unwrap();
+
+        // create a software component type with an internal behavior
+        let app_swc = package
+            .create_application_sw_component_type("AppSwComponentType")
+            .unwrap();
+        let r_port = app_swc.create_r_port("r_port", &mode_switch_interface).unwrap();
+        let p_port = app_swc.create_p_port("p_port", &mode_switch_interface).unwrap();
+        let swc_internal_behavior = app_swc
+            .create_swc_internal_behavior("AppSwComponentType_InternalBehavior")
+            .unwrap();
+        assert_eq!(app_swc.swc_internal_behaviors().count(), 1);
+        assert_eq!(
+            swc_internal_behavior.sw_component_type().unwrap(),
+            app_swc.clone().into()
+        );
+
+        // create a runnable entity
+        let runnable = swc_internal_behavior.create_runnable_entity("Runnable1").unwrap();
+        assert_eq!(runnable.swc_internal_behavior().unwrap(), swc_internal_behavior);
+
+        // create a mode access point
+        let mode_access_point_r = runnable
+            .create_mode_access_point("ModeAccessPoint", &mode_group, &r_port)
+            .unwrap();
+        assert_eq!(mode_access_point_r.name(), Some("ModeAccessPoint".to_string()));
+        let mode_access_point_p = runnable
+            .create_mode_access_point("ModeAccessPointP", &mode_group, &p_port)
+            .unwrap();
+        assert_eq!(mode_access_point_p.name(), Some("ModeAccessPointP".to_string()));
+        assert_eq!(mode_access_point_r.runnable_entity().unwrap(), runnable);
+        assert_eq!(mode_access_point_p.runnable_entity().unwrap(), runnable);
+        assert_eq!(mode_access_point_r.mode_group().unwrap().0, mode_group);
+        assert_eq!(mode_access_point_p.mode_group().unwrap().0, mode_group);
+        assert_eq!(mode_access_point_r.mode_group().unwrap().1, r_port.into());
+        assert_eq!(mode_access_point_p.mode_group().unwrap().1, p_port.into());
+        assert_eq!(runnable.mode_access_points().count(), 2);
+    }
+
+    #[test]
+    fn test_mode_switch_point() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+
+        // create a mode declaration group
+        let mode_declaration_group = package
+            .create_mode_declaration_group("ModeDeclarationGroup", None)
+            .unwrap();
+        // create a mode switch interface
+        let mode_switch_interface = package.create_mode_switch_interface("ModeSwitchInterface").unwrap();
+        // create a mode group in the mode switch interface
+        let mode_group = mode_switch_interface
+            .create_mode_group("mode_group", &mode_declaration_group)
+            .unwrap();
+
+        // create a software component type with an internal behavior
+        let app_swc = package
+            .create_application_sw_component_type("AppSwComponentType")
+            .unwrap();
+        let p_port = app_swc.create_p_port("p_port", &mode_switch_interface).unwrap();
+        let swc_internal_behavior = app_swc
+            .create_swc_internal_behavior("AppSwComponentType_InternalBehavior")
+            .unwrap();
+        assert_eq!(app_swc.swc_internal_behaviors().count(), 1);
+        assert_eq!(
+            swc_internal_behavior.sw_component_type().unwrap(),
+            app_swc.clone().into()
+        );
+
+        // create a runnable entity
+        let runnable = swc_internal_behavior.create_runnable_entity("Runnable1").unwrap();
+        assert_eq!(runnable.swc_internal_behavior().unwrap(), swc_internal_behavior);
+
+        // create a mode switch point
+        let mode_switch_point = runnable
+            .create_mode_switch_point("ModeSwitchPoint", &mode_group, &p_port)
+            .unwrap();
+        assert_eq!(mode_switch_point.runnable_entity().unwrap(), runnable);
+        assert_eq!(mode_switch_point.mode_group().unwrap().0, mode_group);
+        assert_eq!(mode_switch_point.mode_group().unwrap().1, p_port.into());
+        assert_eq!(runnable.mode_switch_points().count(), 1);
     }
 }
