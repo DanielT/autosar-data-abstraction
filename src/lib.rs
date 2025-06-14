@@ -1,8 +1,13 @@
-//! # Crate autosar-data-abstraction
+//! # Description
+//!
+//! [![Github Actions](https://github.com/DanielT/autosar-data-abstraction/actions/workflows/CI.yml/badge.svg)](https://github.com/DanielT/autosar-data-abstraction/actions)
 //!
 //! This crate provides an abstraction layer for the AUTOSAR data model.
 //! It is built on top of the crate `autosar-data` and provides complex interactions with
 //! the model on top of the elementary operations of `autosar-data`.
+//!
+//! Rather than transforming the element based model into a new form, it only presents a
+//! view into the existing model, and provides methods to retrieve and modify the data.
 //!
 //! Since the AUTOSAR data model is very complex and has many different types of elements,
 //! this crate does not aim to provide full coverage of all classes.
@@ -11,7 +16,30 @@
 //! Any other data can still be accessed through the basic operations of `autosar-data`, because the
 //! calls to `autosar-data` and `autosar-data-abstraction` can be mixed freely.
 //!
-//! ## Example
+//! # Features
+//!
+//! Autosar Classic Platform:
+//! - Communication:
+//!   - Busses
+//!     - CAN
+//!     - Ethernet (both old and new style)
+//!     - FlexRay
+//!     - not supported: LIN, J1939
+//!   - PDUs
+//!   - Signals
+//!   - Transformations: SomeIp, E2E, Com
+//! - Data Types
+//!   - Basic data types
+//!   - Implementation data types
+//!   - Application data types
+//! - Software Components
+//!   - Atomic SWCs, Compositions, etc.
+//!   - Interfaces
+//!   - Ports
+//!   - Internal behavior: Runnables, Events, etc.
+//! - ECU Configuration
+//!
+//! # Example
 //!
 //! ```rust
 //! # use autosar_data::*;
