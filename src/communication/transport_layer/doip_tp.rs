@@ -56,7 +56,7 @@ impl DoIpTpConfig {
     }
 
     /// iterate over all `DoIpLogicAddresss`
-    pub fn doip_logic_addresses(&self) -> impl Iterator<Item = DoIpLogicAddress> + Send + 'static {
+    pub fn doip_logic_addresses(&self) -> impl Iterator<Item = DoIpLogicAddress> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::DoIpLogicAddresss)
             .into_iter()
@@ -77,7 +77,7 @@ impl DoIpTpConfig {
     }
 
     /// iterate over all `DoIpTpConnections`
-    pub fn doip_tp_connections(&self) -> impl Iterator<Item = DoIpTpConnection> + Send + 'static {
+    pub fn doip_tp_connections(&self) -> impl Iterator<Item = DoIpTpConnection> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::TpConnections)
             .into_iter()

@@ -225,7 +225,7 @@ impl ISignal {
     }
 
     /// get all data transformations that are applied to this signal
-    pub fn data_transformations(&self) -> impl Iterator<Item = DataTransformation> + Send + 'static {
+    pub fn data_transformations(&self) -> impl Iterator<Item = DataTransformation> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::DataTransformations)
             .into_iter()
@@ -258,7 +258,7 @@ impl ISignal {
     }
 
     /// get all transformation properties that are applied to this signal
-    pub fn transformation_isignal_props(&self) -> impl Iterator<Item = TransformationISignalProps> + Send + 'static {
+    pub fn transformation_isignal_props(&self) -> impl Iterator<Item = TransformationISignalProps> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::TransformationISignalPropss)
             .into_iter()
@@ -438,7 +438,7 @@ impl ISignalGroup {
     /// Iterator over all [`ISignal`]s in this group
     ///
     /// # Example
-    pub fn signals(&self) -> impl Iterator<Item = ISignal> + Send + 'static {
+    pub fn signals(&self) -> impl Iterator<Item = ISignal> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::ISignalRefs)
             .into_iter()
@@ -465,7 +465,7 @@ impl ISignalGroup {
     }
 
     /// get all data transformations that are applied to this signal group
-    pub fn data_transformations(&self) -> impl Iterator<Item = DataTransformation> + Send + 'static {
+    pub fn data_transformations(&self) -> impl Iterator<Item = DataTransformation> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::ComBasedSignalGroupTransformations)
             .into_iter()
@@ -498,7 +498,7 @@ impl ISignalGroup {
     }
 
     /// get all transformation properties that are applied to this signal group
-    pub fn transformation_isignal_props(&self) -> impl Iterator<Item = TransformationISignalProps> + Send + 'static {
+    pub fn transformation_isignal_props(&self) -> impl Iterator<Item = TransformationISignalProps> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::TransformationISignalPropss)
             .into_iter()
@@ -543,7 +543,7 @@ impl SystemSignalGroup {
     }
 
     /// Iterator over all [`SystemSignal`]s in this group
-    pub fn signals(&self) -> impl Iterator<Item = SystemSignal> + Send + 'static {
+    pub fn signals(&self) -> impl Iterator<Item = SystemSignal> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::SystemSignalRefs)
             .into_iter()
@@ -667,7 +667,7 @@ impl ISignalTriggering {
     }
 
     /// create an iterator over all signal ports that are connected to this signal triggering
-    pub fn signal_ports(&self) -> impl Iterator<Item = ISignalPort> + Send + 'static {
+    pub fn signal_ports(&self) -> impl Iterator<Item = ISignalPort> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::ISignalPortRefs)
             .into_iter()

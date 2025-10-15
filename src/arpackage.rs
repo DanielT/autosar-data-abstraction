@@ -994,7 +994,7 @@ impl ArPackage {
     /// }
     /// # Ok(())}
     /// ```
-    pub fn elements(&self) -> impl Iterator<Item = Element> + Send + 'static {
+    pub fn elements(&self) -> impl Iterator<Item = Element> + Send + use<> {
         self.0
             .get_sub_element(ElementName::Elements)
             .into_iter()
@@ -1038,7 +1038,7 @@ impl ArPackage {
     /// }
     /// # Ok(())}
     /// ```
-    pub fn sub_packages(&self) -> impl Iterator<Item = ArPackage> + Send + 'static {
+    pub fn sub_packages(&self) -> impl Iterator<Item = ArPackage> + Send + use<> {
         self.0
             .get_sub_element(ElementName::ArPackages)
             .into_iter()

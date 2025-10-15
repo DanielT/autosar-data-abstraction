@@ -73,7 +73,7 @@ impl NmConfig {
     }
 
     /// get all `NmClusters`
-    pub fn nm_clusters(&self) -> impl Iterator<Item = NmCluster> + Send + 'static {
+    pub fn nm_clusters(&self) -> impl Iterator<Item = NmCluster> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::NmClusters)
             .into_iter()
@@ -117,7 +117,7 @@ impl NmConfig {
     }
 
     /// iterate over all `NmClusterCouplings`
-    pub fn nm_cluster_couplings(&self) -> impl Iterator<Item = NmClusterCoupling> + Send + 'static {
+    pub fn nm_cluster_couplings(&self) -> impl Iterator<Item = NmClusterCoupling> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::NmClusterCouplings)
             .into_iter()
@@ -132,7 +132,7 @@ impl NmConfig {
     }
 
     /// iterate over all `NmEcus`
-    pub fn nm_ecus(&self) -> impl Iterator<Item = NmEcu> + Send + 'static {
+    pub fn nm_ecus(&self) -> impl Iterator<Item = NmEcu> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::NmIfEcus)
             .into_iter()
@@ -173,7 +173,7 @@ pub trait AbstractNmCluster: AbstractionElement {
     // Note: can't add NmNodes in the trait, because different types of NmNodes need different parameters
 
     /// iterate over all `NmNodes` in this cluster
-    fn nm_nodes(&self) -> impl Iterator<Item = Self::NmNodeType> + Send + 'static {
+    fn nm_nodes(&self) -> impl Iterator<Item = Self::NmNodeType> + Send + use<Self> {
         self.element()
             .get_sub_element(ElementName::NmNodes)
             .into_iter()
@@ -393,7 +393,7 @@ pub trait AbstractNmClusterCoupling: AbstractionElement {
     }
 
     /// iterate over all coupled `NmClusters`
-    fn coupled_clusters(&self) -> impl Iterator<Item = Self::NmClusterType> + Send + 'static {
+    fn coupled_clusters(&self) -> impl Iterator<Item = Self::NmClusterType> + Send + use<Self> {
         self.element()
             .get_sub_element(ElementName::CoupledClusterRefs)
             .into_iter()
@@ -668,7 +668,7 @@ pub trait AbstractNmNode: AbstractionElement {
     }
 
     /// iterate over all RX `NmPdus`
-    fn rx_nm_pdus(&self) -> impl Iterator<Item = NmPdu> + Send + 'static {
+    fn rx_nm_pdus(&self) -> impl Iterator<Item = NmPdu> + Send + use<Self> {
         self.element()
             .get_sub_element(ElementName::RxNmPduRefs)
             .into_iter()
@@ -693,7 +693,7 @@ pub trait AbstractNmNode: AbstractionElement {
     }
 
     /// iterate over all TX `NmPdus`
-    fn tx_nm_pdus(&self) -> impl Iterator<Item = NmPdu> + Send + 'static {
+    fn tx_nm_pdus(&self) -> impl Iterator<Item = NmPdu> + Send + use<Self> {
         self.element()
             .get_sub_element(ElementName::TxNmPduRefs)
             .into_iter()

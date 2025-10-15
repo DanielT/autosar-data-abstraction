@@ -38,7 +38,7 @@ impl SenderReceiverInterface {
     }
 
     /// iterate over all data elements
-    pub fn data_elements(&self) -> impl Iterator<Item = VariableDataPrototype> + Send + 'static {
+    pub fn data_elements(&self) -> impl Iterator<Item = VariableDataPrototype> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::DataElements)
             .into_iter()

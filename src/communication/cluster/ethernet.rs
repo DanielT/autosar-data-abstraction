@@ -86,7 +86,7 @@ impl EthernetCluster {
     /// }
     /// # Ok(())}
     /// ```
-    pub fn physical_channels(&self) -> impl Iterator<Item = EthernetPhysicalChannel> + Send + 'static {
+    pub fn physical_channels(&self) -> impl Iterator<Item = EthernetPhysicalChannel> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::EthernetClusterVariants)
             .and_then(|ecv| ecv.get_sub_element(ElementName::EthernetClusterConditional))

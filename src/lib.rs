@@ -251,7 +251,7 @@ impl AutosarModelAbstraction {
     }
 
     /// iterate over all top-level packages
-    pub fn packages(&self) -> impl Iterator<Item = ArPackage> + Send + 'static {
+    pub fn packages(&self) -> impl Iterator<Item = ArPackage> + Send + use<> {
         self.0
             .root_element()
             .get_sub_element(ElementName::ArPackages)
@@ -282,7 +282,7 @@ impl AutosarModelAbstraction {
     }
 
     /// iterate over all files in the model
-    pub fn files(&self) -> impl Iterator<Item = ArxmlFile> + Send + 'static {
+    pub fn files(&self) -> impl Iterator<Item = ArxmlFile> + Send + use<> {
         self.0.files()
     }
 

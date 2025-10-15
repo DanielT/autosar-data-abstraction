@@ -129,7 +129,7 @@ impl ParameterInterface {
     }
 
     /// iterate over all `ParameterDataPrototype` in this `ParameterInterface`
-    pub fn parameters(&self) -> impl Iterator<Item = ParameterDataPrototype> + Send + 'static {
+    pub fn parameters(&self) -> impl Iterator<Item = ParameterDataPrototype> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::Parameters)
             .into_iter()

@@ -44,7 +44,7 @@ impl ClientServerInterface {
     }
 
     /// iterate over all operations
-    pub fn operations(&self) -> impl Iterator<Item = ClientServerOperation> + Send + 'static {
+    pub fn operations(&self) -> impl Iterator<Item = ClientServerOperation> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::Operations)
             .into_iter()
@@ -53,7 +53,7 @@ impl ClientServerInterface {
     }
 
     /// iterate over all application errors
-    pub fn possible_errors(&self) -> impl Iterator<Item = ApplicationError> + Send + 'static {
+    pub fn possible_errors(&self) -> impl Iterator<Item = ApplicationError> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::PossibleErrors)
             .into_iter()
@@ -125,7 +125,7 @@ impl ClientServerOperation {
     }
 
     /// iterate over all arguments
-    pub fn arguments(&self) -> impl Iterator<Item = ArgumentDataPrototype> + Send + 'static {
+    pub fn arguments(&self) -> impl Iterator<Item = ArgumentDataPrototype> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::Arguments)
             .into_iter()
@@ -151,7 +151,7 @@ impl ClientServerOperation {
     }
 
     /// Get the possible errors of the operation
-    pub fn possible_errors(&self) -> impl Iterator<Item = ApplicationError> + Send + 'static {
+    pub fn possible_errors(&self) -> impl Iterator<Item = ApplicationError> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::PossibleErrorRefs)
             .into_iter()

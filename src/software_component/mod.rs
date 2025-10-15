@@ -84,7 +84,7 @@ pub trait AbstractSwComponentType: IdentifiableAbstractionElement {
     }
 
     /// get an iterator over the ports of the component
-    fn ports(&self) -> impl Iterator<Item = PortPrototype> + Send + 'static {
+    fn ports(&self) -> impl Iterator<Item = PortPrototype> + Send + use<Self> {
         self.element()
             .get_sub_element(ElementName::Ports)
             .into_iter()
@@ -118,7 +118,7 @@ pub trait AtomicSwComponentType: AbstractSwComponentType {
     }
 
     /// iterate over all swc internal behaviors - typically zero or one
-    fn swc_internal_behaviors(&self) -> impl Iterator<Item = SwcInternalBehavior> + Send + 'static {
+    fn swc_internal_behaviors(&self) -> impl Iterator<Item = SwcInternalBehavior> + Send + use<Self> {
         self.element()
             .get_sub_element(ElementName::InternalBehaviors)
             .into_iter()
@@ -186,7 +186,7 @@ impl CompositionSwComponentType {
     }
 
     /// get an iterator over the components of the composition
-    pub fn components(&self) -> impl Iterator<Item = SwComponentPrototype> + Send + 'static {
+    pub fn components(&self) -> impl Iterator<Item = SwComponentPrototype> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::Components)
             .into_iter()
@@ -387,7 +387,7 @@ impl CompositionSwComponentType {
     }
 
     /// iterate over all connectors
-    pub fn connectors(&self) -> impl Iterator<Item = SwConnector> + Send + 'static {
+    pub fn connectors(&self) -> impl Iterator<Item = SwConnector> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::Connectors)
             .into_iter()

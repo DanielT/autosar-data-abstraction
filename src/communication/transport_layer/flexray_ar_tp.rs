@@ -51,7 +51,7 @@ impl FlexrayArTpConfig {
     }
 
     /// iterate over all `TpAddresses`
-    pub fn tp_addresses(&self) -> impl Iterator<Item = TpAddress> + Send + 'static {
+    pub fn tp_addresses(&self) -> impl Iterator<Item = TpAddress> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::TpAddresss)
             .into_iter()
@@ -80,7 +80,7 @@ impl FlexrayArTpConfig {
     }
 
     /// get an iterator over the channels in the configuration
-    pub fn flexray_ar_tp_channels(&self) -> impl Iterator<Item = FlexrayArTpChannel> + Send + 'static {
+    pub fn flexray_ar_tp_channels(&self) -> impl Iterator<Item = FlexrayArTpChannel> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::TpChannels)
             .into_iter()
@@ -95,7 +95,7 @@ impl FlexrayArTpConfig {
     }
 
     /// get an iterator over the nodes
-    pub fn flexray_ar_tp_nodes(&self) -> impl Iterator<Item = FlexrayArTpNode> + Send + 'static {
+    pub fn flexray_ar_tp_nodes(&self) -> impl Iterator<Item = FlexrayArTpNode> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::TpNodes)
             .into_iter()
@@ -242,7 +242,7 @@ impl FlexrayArTpChannel {
     }
 
     /// get an iterator over the connections in the channel
-    pub fn flexray_ar_tp_connections(&self) -> impl Iterator<Item = FlexrayArTpConnection> + Send + 'static {
+    pub fn flexray_ar_tp_connections(&self) -> impl Iterator<Item = FlexrayArTpConnection> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::TpConnections)
             .into_iter()
@@ -263,7 +263,7 @@ impl FlexrayArTpChannel {
     }
 
     /// get the `NPdus` of the channel
-    pub fn n_pdus(&self) -> impl Iterator<Item = NPdu> + Send + 'static {
+    pub fn n_pdus(&self) -> impl Iterator<Item = NPdu> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::NPduRefs)
             .into_iter()
@@ -454,7 +454,7 @@ impl FlexrayArTpConnection {
     }
 
     /// get the targets
-    pub fn targets(&self) -> impl Iterator<Item = FlexrayArTpNode> + Send + 'static {
+    pub fn targets(&self) -> impl Iterator<Item = FlexrayArTpNode> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::TargetRefs)
             .into_iter()
@@ -552,7 +552,7 @@ impl FlexrayArTpNode {
     }
 
     /// get the connectors
-    pub fn communication_connectors(&self) -> impl Iterator<Item = FlexrayCommunicationConnector> + Send + 'static {
+    pub fn communication_connectors(&self) -> impl Iterator<Item = FlexrayCommunicationConnector> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::ConnectorRefs)
             .into_iter()

@@ -62,7 +62,7 @@ impl ModeDeclarationGroup {
     }
 
     /// Iterate over all mode declarations in the mode declaration group
-    pub fn mode_declarations(&self) -> impl Iterator<Item = ModeDeclaration> + Send + 'static {
+    pub fn mode_declarations(&self) -> impl Iterator<Item = ModeDeclaration> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::ModeDeclarations)
             .into_iter()

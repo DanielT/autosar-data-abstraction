@@ -136,7 +136,7 @@ impl ContainerIPdu {
     }
 
     /// iterate over all contained `IPdu` triggerings
-    pub fn contained_ipdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> + Send + 'static {
+    pub fn contained_ipdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::ContainedPduTriggeringRefs)
             .into_iter()

@@ -43,7 +43,7 @@ impl EcucChoiceContainerDef {
     }
 
     /// iterate over the choices in the container
-    pub fn choices(&self) -> impl Iterator<Item = EcucParamConfContainerDef> + Send + 'static {
+    pub fn choices(&self) -> impl Iterator<Item = EcucParamConfContainerDef> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::Choices)
             .into_iter()
@@ -86,7 +86,7 @@ impl EcucParamConfContainerDef {
     }
 
     /// iterate over the sub-containers
-    pub fn sub_containers(&self) -> impl Iterator<Item = EcucContainerDef> + Send + 'static {
+    pub fn sub_containers(&self) -> impl Iterator<Item = EcucContainerDef> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::SubContainers)
             .into_iter()
@@ -185,7 +185,7 @@ impl EcucParamConfContainerDef {
     }
 
     /// get the parameters in the container
-    pub fn parameters(&self) -> impl Iterator<Item = EcucParameterDef> + Send + 'static {
+    pub fn parameters(&self) -> impl Iterator<Item = EcucParameterDef> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::Parameters)
             .into_iter()
@@ -240,7 +240,7 @@ impl EcucParamConfContainerDef {
     }
 
     /// get the references in the container
-    pub fn references(&self) -> impl Iterator<Item = EcucAnyReferenceDef> + Send + 'static {
+    pub fn references(&self) -> impl Iterator<Item = EcucAnyReferenceDef> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::References)
             .into_iter()

@@ -50,7 +50,7 @@ impl FlexrayTpConfig {
     }
 
     /// iterate over all `FlexrayTpPduPools`
-    pub fn flexray_tp_pdu_pools(&self) -> impl Iterator<Item = FlexrayTpPduPool> + Send + 'static {
+    pub fn flexray_tp_pdu_pools(&self) -> impl Iterator<Item = FlexrayTpPduPool> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::PduPools)
             .into_iter()
@@ -65,7 +65,7 @@ impl FlexrayTpConfig {
     }
 
     /// iterate over all `TpAddresses`
-    pub fn tp_addresses(&self) -> impl Iterator<Item = TpAddress> + Send + 'static {
+    pub fn tp_addresses(&self) -> impl Iterator<Item = TpAddress> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::TpAddresss)
             .into_iter()
@@ -92,7 +92,7 @@ impl FlexrayTpConfig {
     }
 
     /// iterate over all `FlexrayTpConnections`
-    pub fn flexray_tp_connections(&self) -> impl Iterator<Item = FlexrayTpConnection> + Send + 'static {
+    pub fn flexray_tp_connections(&self) -> impl Iterator<Item = FlexrayTpConnection> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::TpConnections)
             .into_iter()
@@ -112,7 +112,7 @@ impl FlexrayTpConfig {
     }
 
     /// iterate over all `FlexrayTpConnectionControls`
-    pub fn flexray_tp_connection_controls(&self) -> impl Iterator<Item = FlexrayTpConnectionControl> + Send + 'static {
+    pub fn flexray_tp_connection_controls(&self) -> impl Iterator<Item = FlexrayTpConnectionControl> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::TpConnectionControls)
             .into_iter()
@@ -131,7 +131,7 @@ impl FlexrayTpConfig {
     }
 
     /// iterate over all `FlexrayTpEcus`
-    pub fn flexray_tp_ecus(&self) -> impl Iterator<Item = FlexrayTpEcu> + Send + 'static {
+    pub fn flexray_tp_ecus(&self) -> impl Iterator<Item = FlexrayTpEcu> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::TpEcus)
             .into_iter()
@@ -146,7 +146,7 @@ impl FlexrayTpConfig {
     }
 
     /// iterate over all `FlexrayTpNodes`
-    pub fn flexray_tp_nodes(&self) -> impl Iterator<Item = FlexrayTpNode> + Send + 'static {
+    pub fn flexray_tp_nodes(&self) -> impl Iterator<Item = FlexrayTpNode> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::TpNodes)
             .into_iter()
@@ -179,7 +179,7 @@ impl FlexrayTpPduPool {
     }
 
     /// iterate over all referenced `NPdus`
-    pub fn n_pdus(&self) -> impl Iterator<Item = NPdu> + Send + 'static {
+    pub fn n_pdus(&self) -> impl Iterator<Item = NPdu> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::NPduRefs)
             .into_iter()
@@ -309,7 +309,7 @@ impl FlexrayTpConnection {
     }
 
     /// iterate over all receivers of the connection
-    pub fn receivers(&self) -> impl Iterator<Item = FlexrayTpNode> + Send + 'static {
+    pub fn receivers(&self) -> impl Iterator<Item = FlexrayTpNode> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::ReceiverRefs)
             .into_iter()
@@ -651,7 +651,7 @@ impl FlexrayTpNode {
     }
 
     /// iterate over all `FlexrayCommunicationConnectors` of the node
-    pub fn communication_connectors(&self) -> impl Iterator<Item = FlexrayCommunicationConnector> + Send + 'static {
+    pub fn communication_connectors(&self) -> impl Iterator<Item = FlexrayCommunicationConnector> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::ConnectorRefs)
             .into_iter()

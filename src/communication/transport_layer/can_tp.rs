@@ -54,7 +54,7 @@ impl CanTpConfig {
     }
 
     /// get all of the ECUs in the configuration
-    pub fn can_tp_ecus(&self) -> impl Iterator<Item = CanTpEcu> + Send + 'static {
+    pub fn can_tp_ecus(&self) -> impl Iterator<Item = CanTpEcu> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::TpEcus)
             .into_iter()
@@ -69,7 +69,7 @@ impl CanTpConfig {
     }
 
     /// get all of the Can Tp addresses in the configuration
-    pub fn can_tp_addresses(&self) -> impl Iterator<Item = CanTpAddress> + Send + 'static {
+    pub fn can_tp_addresses(&self) -> impl Iterator<Item = CanTpAddress> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::TpAddresss)
             .into_iter()
@@ -92,7 +92,7 @@ impl CanTpConfig {
     }
 
     /// iterate over all `CanTpChannel`s in the configuration
-    pub fn can_tp_channels(&self) -> impl Iterator<Item = CanTpChannel> + Send + 'static {
+    pub fn can_tp_channels(&self) -> impl Iterator<Item = CanTpChannel> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::TpChannels)
             .into_iter()
@@ -126,7 +126,7 @@ impl CanTpConfig {
     }
 
     /// iterate over all `CanTpConnections` in the configuration
-    pub fn can_tp_connections(&self) -> impl Iterator<Item = CanTpConnection> + Send + 'static {
+    pub fn can_tp_connections(&self) -> impl Iterator<Item = CanTpConnection> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::TpConnections)
             .into_iter()
@@ -144,7 +144,7 @@ impl CanTpConfig {
     }
 
     /// get all of the `CanTpNodes` in the configuration
-    pub fn can_tp_nodes(&self) -> impl Iterator<Item = CanTpNode> + Send + 'static {
+    pub fn can_tp_nodes(&self) -> impl Iterator<Item = CanTpNode> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::TpNodes)
             .into_iter()
@@ -529,7 +529,7 @@ impl CanTpConnection {
     }
 
     /// get all of the receivers of the connection
-    pub fn receivers(&self) -> impl Iterator<Item = CanTpNode> + Send + 'static {
+    pub fn receivers(&self) -> impl Iterator<Item = CanTpNode> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::ReceiverRefs)
             .into_iter()

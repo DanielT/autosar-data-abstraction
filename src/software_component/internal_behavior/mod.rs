@@ -42,7 +42,7 @@ impl SwcInternalBehavior {
     }
 
     /// Get an iterator over all `RunnableEntities` in the `SwcInternalBehavior`
-    pub fn runnable_entities(&self) -> impl Iterator<Item = RunnableEntity> + Send + 'static {
+    pub fn runnable_entities(&self) -> impl Iterator<Item = RunnableEntity> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::Runnables)
             .into_iter()
@@ -63,7 +63,7 @@ impl SwcInternalBehavior {
     }
 
     /// create an iterator over all `DataTypeMappingSet` references in the `SwcInternalBehavior`
-    pub fn data_type_mapping_sets(&self) -> impl Iterator<Item = DataTypeMappingSet> + Send + 'static {
+    pub fn data_type_mapping_sets(&self) -> impl Iterator<Item = DataTypeMappingSet> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::DataTypeMappingRefs)
             .into_iter()
@@ -162,7 +162,7 @@ impl SwcInternalBehavior {
     }
 
     /// create an iterator over all events in the `SwcInternalBehavior`
-    pub fn events(&self) -> impl Iterator<Item = RTEEvent> + Send + 'static {
+    pub fn events(&self) -> impl Iterator<Item = RTEEvent> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::Events)
             .into_iter()
@@ -227,7 +227,7 @@ impl RunnableEntity {
     }
 
     /// iterate over all data read accesses
-    pub fn data_read_accesses(&self) -> impl Iterator<Item = VariableAccess> + Send + 'static {
+    pub fn data_read_accesses(&self) -> impl Iterator<Item = VariableAccess> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::DataReadAccesss)
             .into_iter()
@@ -251,7 +251,7 @@ impl RunnableEntity {
     }
 
     /// iterate over all data write accesses
-    pub fn data_write_accesses(&self) -> impl Iterator<Item = VariableAccess> + Send + 'static {
+    pub fn data_write_accesses(&self) -> impl Iterator<Item = VariableAccess> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::DataWriteAccesss)
             .into_iter()
@@ -271,7 +271,7 @@ impl RunnableEntity {
     }
 
     /// iterate over all data send points
-    pub fn data_send_points(&self) -> impl Iterator<Item = VariableAccess> + Send + 'static {
+    pub fn data_send_points(&self) -> impl Iterator<Item = VariableAccess> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::DataSendPoints)
             .into_iter()
@@ -295,7 +295,7 @@ impl RunnableEntity {
     }
 
     /// iterate over all data receive points by argument
-    pub fn data_receive_points_by_argument(&self) -> impl Iterator<Item = VariableAccess> + Send + 'static {
+    pub fn data_receive_points_by_argument(&self) -> impl Iterator<Item = VariableAccess> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::DataReceivePointByArguments)
             .into_iter()
@@ -317,7 +317,7 @@ impl RunnableEntity {
     }
 
     /// iterate over all data receive points by value
-    pub fn data_receive_points_by_value(&self) -> impl Iterator<Item = VariableAccess> + Send + 'static {
+    pub fn data_receive_points_by_value(&self) -> impl Iterator<Item = VariableAccess> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::DataReceivePointByValues)
             .into_iter()
@@ -339,7 +339,7 @@ impl RunnableEntity {
     }
 
     /// iterate over all synchronous server call points
-    pub fn synchronous_server_call_points(&self) -> impl Iterator<Item = SynchronousServerCallPoint> + Send + 'static {
+    pub fn synchronous_server_call_points(&self) -> impl Iterator<Item = SynchronousServerCallPoint> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::ServerCallPoints)
             .into_iter()
@@ -361,7 +361,7 @@ impl RunnableEntity {
     }
 
     /// iterate over all mode access points
-    pub fn mode_access_points(&self) -> impl Iterator<Item = ModeAccessPoint> + Send + 'static {
+    pub fn mode_access_points(&self) -> impl Iterator<Item = ModeAccessPoint> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::ModeAccessPoints)
             .into_iter()
@@ -383,7 +383,7 @@ impl RunnableEntity {
     }
 
     /// iterate over all mode switch points
-    pub fn mode_switch_points(&self) -> impl Iterator<Item = ModeSwitchPoint> + Send + 'static {
+    pub fn mode_switch_points(&self) -> impl Iterator<Item = ModeSwitchPoint> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::ModeSwitchPoints)
             .into_iter()

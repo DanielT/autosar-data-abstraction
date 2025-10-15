@@ -161,7 +161,7 @@ impl DataConstr {
     }
 
     /// Get all data constraint rules
-    pub fn data_constr_rules(&self) -> impl Iterator<Item = DataConstrRule> + Send + 'static {
+    pub fn data_constr_rules(&self) -> impl Iterator<Item = DataConstrRule> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::DataConstrRules)
             .into_iter()

@@ -181,7 +181,7 @@ impl System {
     /// assert_eq!(system.ecu_instances().count(), 2);
     /// # Ok(())}
     /// ```
-    pub fn ecu_instances(&self) -> impl Iterator<Item = EcuInstance> + Send + 'static {
+    pub fn ecu_instances(&self) -> impl Iterator<Item = EcuInstance> + Send + use<> {
         EcuInstanceIterator::new(self)
     }
 
@@ -312,7 +312,7 @@ impl System {
     /// assert_eq!(system.clusters().count(), 2);
     /// # Ok(())}
     /// ```
-    pub fn clusters(&self) -> impl Iterator<Item = Cluster> + Send + 'static {
+    pub fn clusters(&self) -> impl Iterator<Item = Cluster> + Send + use<> {
         self.0
             .get_sub_element(ElementName::FibexElements)
             .into_iter()
@@ -357,7 +357,7 @@ impl System {
     /// iterate over all Frames in the System
     ///
     /// This iterator returns all CAN and Flexray frames that are connected to the System using a `FibexElementRef`.
-    pub fn frames(&self) -> impl Iterator<Item = Frame> + Send + 'static {
+    pub fn frames(&self) -> impl Iterator<Item = Frame> + Send + use<> {
         self.0
             .get_sub_element(ElementName::FibexElements)
             .into_iter()
@@ -410,7 +410,7 @@ impl System {
     /// iterate over all `ISignals` in the System
     ///
     /// This iterator returns all `ISignals` that are connected to the System using a `FibexElementRef`.
-    pub fn isignals(&self) -> impl Iterator<Item = ISignal> + Send + 'static {
+    pub fn isignals(&self) -> impl Iterator<Item = ISignal> + Send + use<> {
         self.0
             .get_sub_element(ElementName::FibexElements)
             .into_iter()
@@ -464,7 +464,7 @@ impl System {
     /// iterate over all `ISignalGroups` in the System
     ///
     /// This iterator returns all `ISignalGroups` that are connected to the System using a `FibexElementRef`.
-    pub fn isignal_groups(&self) -> impl Iterator<Item = ISignalGroup> + Send + 'static {
+    pub fn isignal_groups(&self) -> impl Iterator<Item = ISignalGroup> + Send + use<> {
         self.0
             .get_sub_element(ElementName::FibexElements)
             .into_iter()
@@ -768,7 +768,7 @@ impl System {
     /// iterate over all PDUs in the System
     ///
     /// This iterator returns all PDUs that are connected to the System using a `FibexElementRef`.
-    pub fn pdus(&self) -> impl Iterator<Item = Pdu> + Send + 'static {
+    pub fn pdus(&self) -> impl Iterator<Item = Pdu> + Send + use<> {
         self.0
             .get_sub_element(ElementName::FibexElements)
             .into_iter()

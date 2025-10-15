@@ -67,7 +67,7 @@ impl EthernetCommunicationController {
     /// # Errors
     ///
     /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model while trying to create the ECU-INSTANCE
-    pub fn connected_channels(&self) -> impl Iterator<Item = EthernetPhysicalChannel> + Send + 'static {
+    pub fn connected_channels(&self) -> impl Iterator<Item = EthernetPhysicalChannel> + Send + use<> {
         if let Ok(ecu) = self.ecu_instance().map(|ecuinstance| ecuinstance.element().clone()) {
             EthernetCtrlChannelsIterator::new(self, &ecu)
         } else {

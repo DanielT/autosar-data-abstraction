@@ -651,7 +651,7 @@ impl PduTriggering {
     }
 
     /// create an iterator over the `IPduPorts` that are connected to this `PduTriggering`
-    pub fn pdu_ports(&self) -> impl Iterator<Item = IPduPort> + Send + 'static {
+    pub fn pdu_ports(&self) -> impl Iterator<Item = IPduPort> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::IPduPortRefs)
             .into_iter()
@@ -665,7 +665,7 @@ impl PduTriggering {
     }
 
     /// create an iterator over the `ISignalTriggerings` that are triggered by this `PduTriggering`
-    pub fn signal_triggerings(&self) -> impl Iterator<Item = ISignalTriggering> + Send + 'static {
+    pub fn signal_triggerings(&self) -> impl Iterator<Item = ISignalTriggering> + Send + use<> {
         self.element()
             .get_sub_element(ElementName::ISignalTriggerings)
             .into_iter()

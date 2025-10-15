@@ -22,7 +22,7 @@ pub trait AbstractFrame: AbstractionElement {
     type FrameTriggeringType: AbstractFrameTriggering;
 
     /// returns an iterator over all PDUs in the frame
-    fn mapped_pdus(&self) -> impl Iterator<Item = PduToFrameMapping> + Send + 'static {
+    fn mapped_pdus(&self) -> impl Iterator<Item = PduToFrameMapping> + Send + use<Self> {
         self.element()
             .get_sub_element(ElementName::PduToFrameMappings)
             .into_iter()
@@ -223,7 +223,7 @@ pub trait AbstractFrameTriggering: AbstractionElement {
     /// assert_eq!(frame_triggering.frame_ports().count(), 1);
     /// # Ok(())}
     /// ```
-    fn frame_ports(&self) -> impl Iterator<Item = FramePort> + Send + 'static {
+    fn frame_ports(&self) -> impl Iterator<Item = FramePort> + Send + use<Self> {
         self.element()
             .get_sub_element(ElementName::FramePortRefs)
             .into_iter()
@@ -237,7 +237,7 @@ pub trait AbstractFrameTriggering: AbstractionElement {
     }
 
     /// iterate over all PDU triggerings used by this frame triggering
-    fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> + Send + 'static {
+    fn pdu_triggerings(&self) -> impl Iterator<Item = PduTriggering> + Send + use<Self> {
         self.element()
             .get_sub_element(ElementName::PduTriggerings)
             .into_iter()
