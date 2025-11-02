@@ -7,6 +7,76 @@ use autosar_data::{Element, ElementName, EnumItem};
 
 //##################################################################
 
+/// Trait for PDUs that can contain signals, i.e., ISignalIPdu and NmPdu
+pub trait SignalPdu: AbstractPdu {
+    /// returns an iterator over all signals and signal groups mapped to the PDU
+    fn mapped_signals(&self) -> impl Iterator<Item = ISignalToIPduMapping> + Send + use<Self> {
+        self.element()
+            .get_sub_element(ElementName::ISignalToPduMappings)
+            .into_iter()
+            .flat_map(|mappings| mappings.sub_elements())
+            .filter_map(|elem| ISignalToIPduMapping::try_from(elem).ok())
+    }
+
+    /// map a signal to the `ISignalIPdu` or `NmPdu`
+    ///
+    /// If this signal is part of a signal group, then the group must be mapped first
+    fn map_signal(
+        &self,
+        signal: &ISignal,
+        start_position: u32,
+        byte_order: ByteOrder,
+        update_bit: Option<u32>,
+        transfer_property: TransferProperty,
+    ) -> Result<ISignalToIPduMapping, AutosarAbstractionError>;
+
+    /// map a signal group to the PDU
+    fn map_signal_group(&self, signal_group: &ISignalGroup) -> Result<ISignalToIPduMapping, AutosarAbstractionError>;
+}
+
+// helper to verify signal placement for SignalPdus
+pub(crate) fn verify_signal_mapping(
+    pdu: &impl SignalPdu,
+    signal: &ISignal,
+    start_position: u32,
+    byte_order: ByteOrder,
+    update_bit: Option<u32>,
+    signal_name: &String,
+) -> Result<(), AutosarAbstractionError> {
+    let length = pdu.length().unwrap_or(0);
+    let mut validator = SignalMappingValidator::new(length);
+    for mapping in pdu.mapped_signals() {
+        if let (Some(m_signal), Some(m_start_pos), Some(m_byte_order)) =
+            (mapping.signal(), mapping.start_position(), mapping.byte_order())
+        {
+            let len = m_signal.length().unwrap_or(0);
+            validator.add_signal(m_start_pos, len, m_byte_order, mapping.update_bit());
+        }
+    }
+    if !validator.add_signal(start_position, signal.length().unwrap_or(0), byte_order, update_bit) {
+        return Err(AutosarAbstractionError::InvalidParameter(format!(
+            "Cannot map signal {signal_name} to an overlapping position in the pdu"
+        )));
+    }
+
+    // build a bitmap of all signals that are already mapped in this pdu
+    // add the new signal to the validator bitmap to see if it overlaps any existing signals
+    if let Some(signal_group) = signal.signal_group() {
+        if !pdu
+            .mapped_signals()
+            .filter_map(|mapping| mapping.signal_group())
+            .any(|grp| grp == signal_group)
+        {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "Cannot map signal to pdu, because it is part of an unmapped signal group.".to_string(),
+            ));
+        }
+    }
+    Ok(())
+}
+
+//##################################################################
+
 /// Represents the `IPdus` handled by Com
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ISignalIPdu(Element);
@@ -24,15 +94,6 @@ impl ISignalIPdu {
         Ok(Self(elem_pdu))
     }
 
-    /// returns an iterator over all signals and signal groups mapped to the PDU
-    pub fn mapped_signals(&self) -> impl Iterator<Item = ISignalToIPduMapping> + Send + use<> {
-        self.element()
-            .get_sub_element(ElementName::ISignalToPduMappings)
-            .into_iter()
-            .flat_map(|mappings| mappings.sub_elements())
-            .filter_map(|elem| ISignalToIPduMapping::try_from(elem).ok())
-    }
-
     /// map a signal to the `ISignalIPdu`
     ///
     /// If this signal is part of a signal group, then the group must be mapped first
@@ -48,35 +109,7 @@ impl ISignalIPdu {
             .name()
             .ok_or(AutosarAbstractionError::InvalidParameter("invalid signal".to_string()))?;
 
-        let length = self.length().unwrap_or(0);
-        let mut validator = SignalMappingValidator::new(length);
-        // build a bitmap of all signals that are already mapped in this pdu
-        for mapping in self.mapped_signals() {
-            if let (Some(m_signal), Some(m_start_pos), Some(m_byte_order)) =
-                (mapping.signal(), mapping.start_position(), mapping.byte_order())
-            {
-                let len = m_signal.length().unwrap_or(0);
-                validator.add_signal(m_start_pos, len, m_byte_order, mapping.update_bit());
-            }
-        }
-        // add the new signal to the validator bitmap to see if it overlaps any exisiting signals
-        if !validator.add_signal(start_position, signal.length().unwrap_or(0), byte_order, update_bit) {
-            return Err(AutosarAbstractionError::InvalidParameter(format!(
-                "Cannot map signal {signal_name} to an overalapping position in the pdu"
-            )));
-        }
-
-        if let Some(signal_group) = signal.signal_group() {
-            if !self
-                .mapped_signals()
-                .filter_map(|mapping| mapping.signal_group())
-                .any(|grp| grp == signal_group)
-            {
-                return Err(AutosarAbstractionError::InvalidParameter(
-                    "Cannot map signal to pdu, because it is part of an unmapped signal group.".to_string(),
-                ));
-            }
-        }
+        verify_signal_mapping(self, signal, start_position, byte_order, update_bit, &signal_name)?;
 
         // add a pdu triggering for the newly mapped PDU to each frame triggering of this frame
         for pt in self.pdu_triggerings() {
@@ -274,6 +307,23 @@ impl ISignalIPdu {
     }
 }
 
+impl SignalPdu for ISignalIPdu {
+    fn map_signal(
+        &self,
+        signal: &ISignal,
+        start_position: u32,
+        byte_order: ByteOrder,
+        update_bit: Option<u32>,
+        transfer_property: TransferProperty,
+    ) -> Result<ISignalToIPduMapping, AutosarAbstractionError> {
+        ISignalIPdu::map_signal(self, signal, start_position, byte_order, update_bit, transfer_property)
+    }
+
+    fn map_signal_group(&self, signal_group: &ISignalGroup) -> Result<ISignalToIPduMapping, AutosarAbstractionError> {
+        ISignalIPdu::map_signal_group(self, signal_group)
+    }
+}
+
 impl AbstractPdu for ISignalIPdu {}
 
 impl AbstractIpdu for ISignalIPdu {}
@@ -299,7 +349,7 @@ abstraction_element!(ISignalToIPduMapping, ISignalToIPduMapping);
 impl IdentifiableAbstractionElement for ISignalToIPduMapping {}
 
 impl ISignalToIPduMapping {
-    fn new_with_signal(
+    pub(crate) fn new_with_signal(
         name: &str,
         mappings: &Element,
         signal: &ISignal,
@@ -330,7 +380,7 @@ impl ISignalToIPduMapping {
         Ok(Self(signal_mapping))
     }
 
-    fn new_with_group(
+    pub(crate) fn new_with_group(
         name: &str,
         mappings: &Element,
         signal_group: &ISignalGroup,

@@ -1,8 +1,9 @@
 use crate::communication::{
     AbstractPhysicalChannel, CommunicationDirection, ISignal, ISignalGroup, ISignalTriggering, PhysicalChannel,
+    TransferProperty,
 };
 use crate::{
-    AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement,
+    AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder, EcuInstance, IdentifiableAbstractionElement,
     abstraction_element, make_unique_name,
 };
 use autosar_data::{AutosarDataError, Element, ElementName, EnumItem};
@@ -92,9 +93,124 @@ impl NmPdu {
 
         Ok(Self(elem_pdu))
     }
+
+    /// set the unused bit pattern for this NmPdu
+    pub fn set_unused_bit_pattern(&self, pattern: u8) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::UnusedBitPattern)?
+            .set_character_data(pattern.to_string())?;
+        Ok(())
+    }
+
+    /// get the unused bit pattern for this NmPdu
+    #[must_use]
+    pub fn unused_bit_pattern(&self) -> Option<u8> {
+        self.element()
+            .get_sub_element(ElementName::UnusedBitPattern)?
+            .character_data()?
+            .parse_integer()
+    }
+
+    /// map a signal to the `ISignalIPdu`
+    ///
+    /// If this signal is part of a signal group, then the group must be mapped first
+    pub fn map_signal(
+        &self,
+        signal: &ISignal,
+        start_position: u32,
+        byte_order: ByteOrder,
+        update_bit: Option<u32>,
+        transfer_property: TransferProperty,
+    ) -> Result<ISignalToIPduMapping, AutosarAbstractionError> {
+        let signal_name = signal
+            .name()
+            .ok_or(AutosarAbstractionError::InvalidParameter("invalid signal".to_string()))?;
+
+        verify_signal_mapping(self, signal, start_position, byte_order, update_bit, &signal_name)?;
+
+        // add a pdu triggering for the newly mapped PDU to each frame triggering of this frame
+        for pt in self.pdu_triggerings() {
+            let st = pt.create_signal_triggering(signal)?;
+            for pdu_port in pt.pdu_ports() {
+                if let (Ok(ecu), Some(direction)) = (pdu_port.ecu(), pdu_port.communication_direction()) {
+                    st.connect_to_ecu(&ecu, direction)?;
+                }
+            }
+        }
+
+        // create and return the new mapping
+        let model = self.element().model()?;
+        let base_path = self.element().path()?;
+        let name = make_unique_name(&model, &base_path, &signal_name);
+
+        // the crucial difference between NmPdu and ISignalIPdu is here
+        // NmPdu uses ISignalToIPduMapping, while ISignalIPdu uses ISignalToPduMapping
+        let mappings = self
+            .element()
+            .get_or_create_sub_element(ElementName::ISignalToIPduMappings)?;
+
+        ISignalToIPduMapping::new_with_signal(
+            &name,
+            &mappings,
+            signal,
+            start_position,
+            byte_order,
+            update_bit,
+            transfer_property,
+        )
+    }
+
+    /// map a signal group to the PDU
+    pub fn map_signal_group(
+        &self,
+        signal_group: &ISignalGroup,
+    ) -> Result<ISignalToIPduMapping, AutosarAbstractionError> {
+        let signal_group_name = signal_group.name().ok_or(AutosarAbstractionError::InvalidParameter(
+            "invalid signal group".to_string(),
+        ))?;
+
+        // add a pdu triggering for the newly mapped PDU to each frame triggering of this frame
+        for pt in self.pdu_triggerings() {
+            let st = pt.create_signal_group_triggering(signal_group)?;
+            for pdu_port in pt.pdu_ports() {
+                if let (Ok(ecu), Some(direction)) = (pdu_port.ecu(), pdu_port.communication_direction()) {
+                    st.connect_to_ecu(&ecu, direction)?;
+                }
+            }
+        }
+
+        // create and return the new mapping
+        let model = self.element().model()?;
+        let base_path = self.element().path()?;
+        let name = make_unique_name(&model, &base_path, &signal_group_name);
+
+        // the crucial difference between NmPdu and ISignalIPdu is here
+        // NmPdu uses ISignalToIPduMapping, while ISignalIPdu uses ISignalToPduMapping
+        let mappings = self
+            .element()
+            .get_or_create_sub_element(ElementName::ISignalToIPduMappings)?;
+
+        ISignalToIPduMapping::new_with_group(&name, &mappings, signal_group)
+    }
 }
 
 impl AbstractPdu for NmPdu {}
+impl SignalPdu for NmPdu {
+    fn map_signal(
+        &self,
+        signal: &ISignal,
+        start_position: u32,
+        byte_order: ByteOrder,
+        update_bit: Option<u32>,
+        transfer_property: TransferProperty,
+    ) -> Result<ISignalToIPduMapping, AutosarAbstractionError> {
+        NmPdu::map_signal(self, signal, start_position, byte_order, update_bit, transfer_property)
+    }
+
+    fn map_signal_group(&self, signal_group: &ISignalGroup) -> Result<ISignalToIPduMapping, AutosarAbstractionError> {
+        NmPdu::map_signal_group(self, signal_group)
+    }
+}
 
 impl From<NmPdu> for Pdu {
     fn from(value: NmPdu) -> Self {
@@ -968,6 +1084,38 @@ mod test {
         assert_eq!(pdu_port.communication_direction().unwrap(), CommunicationDirection::Out);
         pdu_port.set_name("new_name").unwrap();
         assert_eq!(pdu_port.name().unwrap(), "new_name");
+    }
+
+    #[test]
+    fn nm_pdu() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00052);
+        let package = model.get_or_create_package("/pkg").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
+
+        let nm_pdu = system.create_nm_pdu("nm_pdu", &package, 1).unwrap();
+        assert_eq!(nm_pdu.length().unwrap(), 1);
+
+        nm_pdu.set_length(8).unwrap();
+        assert_eq!(nm_pdu.length().unwrap(), 8);
+
+        nm_pdu.set_unused_bit_pattern(0xff).unwrap();
+        assert_eq!(nm_pdu.unused_bit_pattern().unwrap(), 0xff);
+
+        // create a signal and map it to the PDU
+        let syssignal = package.create_system_signal("sys_userdata").unwrap();
+        let isignal = system
+            .create_isignal("userdata", &package, 16, &syssignal, None)
+            .unwrap();
+        let mapping = nm_pdu
+            .map_signal(
+                &isignal,
+                0,
+                ByteOrder::MostSignificantByteFirst,
+                Some(16),
+                TransferProperty::Triggered,
+            )
+            .unwrap();
+        assert_eq!(mapping.signal().unwrap(), isignal);
     }
 
     #[test]
