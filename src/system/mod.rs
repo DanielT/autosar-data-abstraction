@@ -2,8 +2,8 @@ use crate::communication::{
     CanCluster, CanFrame, CanTpConfig, Cluster, ContainerIPdu, ContainerIPduHeaderType, DcmIPdu, DiagPduType,
     DoIpTpConfig, EthernetCluster, EventGroupControlType, FlexrayArTpConfig, FlexrayCluster, FlexrayClusterSettings,
     FlexrayFrame, FlexrayTpConfig, Frame, GeneralPurposeIPdu, GeneralPurposeIPduCategory, GeneralPurposePdu,
-    GeneralPurposePduCategory, ISignal, ISignalGroup, ISignalIPdu, MultiplexedIPdu, NPdu, NmConfig, NmPdu, Pdu,
-    RxAcceptContainedIPdu, SecureCommunicationProps, SecuredIPdu, ServiceInstanceCollectionSet, SoAdRoutingGroup,
+    GeneralPurposePduCategory, ISignal, ISignalGroup, ISignalIPdu, LinCluster, MultiplexedIPdu, NPdu, NmConfig, NmPdu,
+    Pdu, RxAcceptContainedIPdu, SecureCommunicationProps, SecuredIPdu, ServiceInstanceCollectionSet, SoAdRoutingGroup,
     SocketConnectionIpduIdentifierSet, SomeipTpConfig, SystemSignal, SystemSignalGroup,
 };
 use crate::datatype::SwBaseType;
@@ -287,6 +287,40 @@ impl System {
         settings: &FlexrayClusterSettings,
     ) -> Result<FlexrayCluster, AutosarAbstractionError> {
         let cluster = FlexrayCluster::new(cluster_name, package, settings)?;
+        self.create_fibex_element_ref_unchecked(cluster.element())?;
+
+        Ok(cluster)
+    }
+
+    /// create a new LIN-CLUSTER
+    ///
+    /// The cluster must have a channel to be valid, but this channel is not created automatically.
+    /// Call [`LinCluster::create_physical_channel`] to create it.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::*;
+    /// # use autosar_data_abstraction::communication::*;
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// let cluster = system.create_lin_cluster("lin_cluster", &package)?;
+    /// cluster.create_physical_channel("can_channel");
+    /// # Ok(())}
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model while trying to create the lin cluster
+    pub fn create_lin_cluster(
+        &self,
+        cluster_name: &str,
+        package: &ArPackage,
+    ) -> Result<LinCluster, AutosarAbstractionError> {
+        let cluster = LinCluster::new(cluster_name, package)?;
         self.create_fibex_element_ref_unchecked(cluster.element())?;
 
         Ok(cluster)
@@ -1293,12 +1327,13 @@ mod test {
             .unwrap();
 
         system.create_ethernet_cluster("EthernetCluster", &package_2).unwrap();
+        system.create_lin_cluster("LinCluster", &package_2).unwrap();
 
         // the ecu-instance is a fourth item in the FIBEX-ELEMENTS of the system, which should not be picked up by the iterator
         let package_3 = model.get_or_create_package("/ECU").unwrap();
         system.create_ecu_instance("Ecu_1", &package_3).unwrap();
 
-        assert_eq!(system.clusters().count(), 3);
+        assert_eq!(system.clusters().count(), 4);
     }
 
     #[test]

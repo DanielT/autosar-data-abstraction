@@ -9,10 +9,12 @@ use crate::{
 mod can;
 mod flexray;
 // ethernet does not use frames. PDUs are transmitted over SomeIp or static SocketConnections
+mod lin;
 
 use autosar_data::{AutosarDataError, Element, ElementName, EnumItem};
 pub use can::*;
 pub use flexray::*;
+pub use lin::*;
 
 //##################################################################
 
@@ -69,6 +71,8 @@ pub enum Frame {
     Can(CanFrame),
     /// The frame is a `FlexRay` frame
     Flexray(FlexrayFrame),
+    /// The frame is a `LIN` frame
+    Lin(LinFrame),
 }
 
 impl AbstractionElement for Frame {
@@ -76,6 +80,7 @@ impl AbstractionElement for Frame {
         match self {
             Self::Can(cf) => cf.element(),
             Self::Flexray(ff) => ff.element(),
+            Self::Lin(lf) => lf.element(),
         }
     }
 }
@@ -267,6 +272,8 @@ pub enum FrameTriggering {
     Can(CanFrameTriggering),
     /// a `FlexRay` frame triggering
     Flexray(FlexrayFrameTriggering),
+    /// a `LIN` frame triggering
+    Lin(LinFrameTriggering),
 }
 
 impl AbstractionElement for FrameTriggering {
@@ -274,6 +281,7 @@ impl AbstractionElement for FrameTriggering {
         match self {
             Self::Can(cft) => cft.element(),
             Self::Flexray(fft) => fft.element(),
+            Self::Lin(lft) => lft.element(),
         }
     }
 }
@@ -291,6 +299,7 @@ impl TryFrom<Element> for FrameTriggering {
         match element.element_name() {
             ElementName::CanFrameTriggering => Ok(CanFrameTriggering::try_from(element)?.into()),
             ElementName::FlexrayFrameTriggering => Ok(FlexrayFrameTriggering::try_from(element)?.into()),
+            ElementName::LinFrameTriggering => Ok(LinFrameTriggering::try_from(element)?.into()),
             _ => Err(AutosarAbstractionError::ConversionError {
                 element,
                 dest: "FrameTriggering".to_string(),
@@ -543,9 +552,8 @@ impl FramePort {
 
 #[cfg(test)]
 mod test {
-    use crate::{AutosarModelAbstraction, SystemCategory};
-
     use super::*;
+    use crate::{AutosarModelAbstraction, SystemCategory};
 
     #[test]
     fn frame() {

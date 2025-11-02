@@ -4,10 +4,12 @@ use autosar_data::{AutosarDataError, Element, ElementName};
 mod can;
 mod ethernet;
 mod flexray;
+mod lin;
 
 pub use can::*;
 pub use ethernet::*;
 pub use flexray::*;
+pub use lin::*;
 
 //##################################################################
 
@@ -21,6 +23,10 @@ pub enum CommunicationController {
     Ethernet(EthernetCommunicationController),
     /// The `CommunicationController` is a [`FlexrayCommunicationController`]
     Flexray(FlexrayCommunicationController),
+    /// The `CommunicationController` is a [`LinMaster`] CommunicationController
+    LinMaster(LinMaster),
+    /// The `CommunicationController` is a [`LinSlave`] CommunicationController
+    LinSlave(LinSlave),
 }
 
 impl AbstractionElement for CommunicationController {
@@ -29,6 +35,8 @@ impl AbstractionElement for CommunicationController {
             CommunicationController::Can(ccc) => ccc.element(),
             CommunicationController::Ethernet(ecc) => ecc.element(),
             CommunicationController::Flexray(fcc) => fcc.element(),
+            CommunicationController::LinMaster(lcc) => lcc.element(),
+            CommunicationController::LinSlave(lcc) => lcc.element(),
         }
     }
 }
@@ -45,6 +53,8 @@ impl TryFrom<Element> for CommunicationController {
             ElementName::FlexrayCommunicationController => {
                 Ok(Self::Flexray(FlexrayCommunicationController::try_from(element)?))
             }
+            ElementName::LinMaster => Ok(Self::LinMaster(LinMaster::try_from(element)?)),
+            ElementName::LinSlave => Ok(Self::LinSlave(LinSlave::try_from(element)?)),
             _ => Err(AutosarAbstractionError::ConversionError {
                 element,
                 dest: "CommunicationController".to_string(),
@@ -71,6 +81,18 @@ impl From<EthernetCommunicationController> for CommunicationController {
 impl From<FlexrayCommunicationController> for CommunicationController {
     fn from(value: FlexrayCommunicationController) -> Self {
         CommunicationController::Flexray(value)
+    }
+}
+
+impl From<LinMaster> for CommunicationController {
+    fn from(value: LinMaster) -> Self {
+        CommunicationController::LinMaster(value)
+    }
+}
+
+impl From<LinSlave> for CommunicationController {
+    fn from(value: LinSlave) -> Self {
+        CommunicationController::LinSlave(value)
     }
 }
 
@@ -136,6 +158,8 @@ pub enum CommunicationConnector {
     Ethernet(EthernetCommunicationConnector),
     /// The `CommunicationConnector` is a [`FlexrayCommunicationConnector`]
     Flexray(FlexrayCommunicationConnector),
+    /// The `CommunicationConnector` is a [`LinCommunicationConnector`]
+    Lin(LinCommunicationConnector),
 }
 
 impl AbstractionElement for CommunicationConnector {
@@ -144,6 +168,7 @@ impl AbstractionElement for CommunicationConnector {
             CommunicationConnector::Can(cc) => cc.element(),
             CommunicationConnector::Ethernet(ec) => ec.element(),
             CommunicationConnector::Flexray(fc) => fc.element(),
+            CommunicationConnector::Lin(lc) => lc.element(),
         }
     }
 }
@@ -160,6 +185,7 @@ impl TryFrom<Element> for CommunicationConnector {
             ElementName::FlexrayCommunicationConnector => {
                 Ok(Self::Flexray(FlexrayCommunicationConnector::try_from(element)?))
             }
+            ElementName::LinCommunicationConnector => Ok(Self::Lin(LinCommunicationConnector::try_from(element)?)),
             _ => Err(AutosarAbstractionError::ConversionError {
                 element,
                 dest: "CommunicationConnector".to_string(),

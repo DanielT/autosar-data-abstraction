@@ -8,6 +8,8 @@ use crate::{
 };
 use autosar_data::{Element, ElementName, EnumItem};
 
+//##################################################################
+
 /// A frame on a CAN bus
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CanFrame(Element);

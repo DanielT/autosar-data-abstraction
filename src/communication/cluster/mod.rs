@@ -4,10 +4,12 @@ use autosar_data::{Element, ElementName};
 mod can;
 mod ethernet;
 mod flexray;
+mod lin;
 
 pub use can::*;
 pub use ethernet::*;
 pub use flexray::*;
+pub use lin::*;
 
 //##################################################################
 
@@ -46,7 +48,9 @@ pub enum Cluster {
     Ethernet(EthernetCluster),
     /// The Cluster is a [`FlexrayCluster`]
     FlexRay(FlexrayCluster),
-    // missing: Lin, TTCAN, J1939, CDD (aka user defined)
+    /// The Cluster is a [`LinCluster`]
+    Lin(LinCluster),
+    // missing: TTCAN, J1939, CDD (aka user defined)
 }
 
 impl AbstractionElement for Cluster {
@@ -55,6 +59,7 @@ impl AbstractionElement for Cluster {
             Cluster::Can(cancluster) => cancluster.element(),
             Cluster::Ethernet(ethcluster) => ethcluster.element(),
             Cluster::FlexRay(flxcluster) => flxcluster.element(),
+            Cluster::Lin(lincluster) => lincluster.element(),
         }
     }
 }
@@ -70,6 +75,7 @@ impl TryFrom<Element> for Cluster {
             ElementName::CanCluster => Ok(CanCluster::try_from(element)?.into()),
             ElementName::EthernetCluster => Ok(EthernetCluster::try_from(element)?.into()),
             ElementName::FlexrayCluster => Ok(FlexrayCluster::try_from(element)?.into()),
+            ElementName::LinCluster => Ok(LinCluster::try_from(element)?.into()),
             _ => Err(AutosarAbstractionError::ConversionError {
                 element,
                 dest: "Cluster".to_string(),
@@ -93,6 +99,12 @@ impl From<EthernetCluster> for Cluster {
 impl From<FlexrayCluster> for Cluster {
     fn from(value: FlexrayCluster) -> Self {
         Cluster::FlexRay(value)
+    }
+}
+
+impl From<LinCluster> for Cluster {
+    fn from(value: LinCluster) -> Self {
+        Cluster::Lin(value)
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::communication::{
     CanCommunicationController, CommunicationController, EthernetCommunicationController,
-    FlexrayCommunicationController,
+    FlexrayCommunicationController, LinMaster, LinSlave,
 };
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
@@ -106,12 +106,67 @@ impl EcuInstance {
     ///
     /// # Errors
     ///
-    /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model while trying to create the ECU-INSTANCE
+    /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model while trying to
+    ///   create the FLEXRAY-COMMUNICATION-CONTROLLER
     pub fn create_flexray_communication_controller(
         &self,
         name: &str,
     ) -> Result<FlexrayCommunicationController, AutosarAbstractionError> {
         FlexrayCommunicationController::new(name, self)
+    }
+
+    /// Create a LIN-MASTER communication controller for this ECU-INSTANCE
+    ///
+    /// The ECU must have one controller per bus it communicates on.
+    /// For example, if it communicates on two LIN buses, then two LIN-MASTER or
+    /// LIN-SLAVE communication controllers are needed.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::*;
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// let ecu_instance = system.create_ecu_instance("ecu_name", &package)?;
+    /// let can_controller = ecu_instance.create_lin_master_communication_controller("LinMasterCtrl")?;
+    /// # Ok(())}
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model while trying to create the LIN-MASTER
+    pub fn create_lin_master_communication_controller(&self, name: &str) -> Result<LinMaster, AutosarAbstractionError> {
+        LinMaster::new(name, self)
+    }
+
+    /// Create a LIN-SLAVE communication controller for this ECU-INSTANCE
+    ///
+    /// The ECU must have one controller per bus it communicates on.
+    /// For example, if it communicates on two LIN buses, then two LIN-MASTER or
+    /// LIN-SLAVE communication controllers are needed.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::*;
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// let ecu_instance = system.create_ecu_instance("ecu_name", &package)?;
+    /// let can_controller = ecu_instance.create_lin_slave_communication_controller("LinSlaveCtrl")?;
+    /// # Ok(())}
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model while trying to create the LIN-MASTER
+    pub fn create_lin_slave_communication_controller(&self, name: &str) -> Result<LinSlave, AutosarAbstractionError> {
+        LinSlave::new(name, self)
     }
 
     /// return an interator over all communication controllers in this `EcuInstance`

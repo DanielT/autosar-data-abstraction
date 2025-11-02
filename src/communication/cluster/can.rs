@@ -173,7 +173,7 @@ impl CanCluster {
     /// #   assert_eq!(channel, can_channel);
     /// }
     /// # Ok(())}
-    /// ````
+    /// ```
     #[must_use]
     pub fn physical_channel(&self) -> Option<CanPhysicalChannel> {
         let channel = self

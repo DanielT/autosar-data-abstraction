@@ -5,10 +5,12 @@ use autosar_data::{Element, ElementName};
 mod can;
 mod ethernet;
 mod flexray;
+mod lin;
 
 pub use can::*;
 pub use ethernet::*;
 pub use flexray::*;
+pub use lin::*;
 
 //##################################################################
 
@@ -98,6 +100,8 @@ pub enum PhysicalChannel {
     Ethernet(EthernetPhysicalChannel),
     /// A `FlexRay` physical channel
     Flexray(FlexrayPhysicalChannel),
+    /// A `LIN` physical channel
+    Lin(LinPhysicalChannel),
 }
 
 impl AbstractPhysicalChannel for PhysicalChannel {
@@ -110,6 +114,7 @@ impl AbstractionElement for PhysicalChannel {
             PhysicalChannel::Can(cpc) => cpc.element(),
             PhysicalChannel::Ethernet(epc) => epc.element(),
             PhysicalChannel::Flexray(fpc) => fpc.element(),
+            PhysicalChannel::Lin(lpc) => lpc.element(),
         }
     }
 }
@@ -124,6 +129,7 @@ impl TryFrom<Element> for PhysicalChannel {
             ElementName::CanPhysicalChannel => Ok(Self::Can(CanPhysicalChannel::try_from(element)?)),
             ElementName::EthernetPhysicalChannel => Ok(Self::Ethernet(EthernetPhysicalChannel::try_from(element)?)),
             ElementName::FlexrayPhysicalChannel => Ok(Self::Flexray(FlexrayPhysicalChannel::try_from(element)?)),
+            ElementName::LinPhysicalChannel => Ok(Self::Lin(LinPhysicalChannel::try_from(element)?)),
             _ => Err(AutosarAbstractionError::ConversionError {
                 element,
                 dest: "PhysicalChannel".to_string(),
