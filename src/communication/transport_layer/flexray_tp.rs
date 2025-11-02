@@ -672,7 +672,7 @@ mod test {
     use super::*;
     use crate::{
         AutosarModelAbstraction, SystemCategory,
-        communication::{FlexrayChannelName, FlexrayClusterSettings},
+        communication::{DiagPduType, FlexrayChannelName, FlexrayClusterSettings},
     };
     use autosar_data::AutosarVersion;
 
@@ -697,9 +697,13 @@ mod test {
             .unwrap();
 
         // create a direct TP SDU (DCM-I-PDU)
-        let tp_sdu = system.create_dcm_ipdu("diag", &package, 1024).unwrap();
+        let tp_sdu = system
+            .create_dcm_ipdu("diag", &package, 1024, DiagPduType::DiagRequest)
+            .unwrap();
         // create a reversed TP SDU (DCM-I-PDU)
-        let reversed_tp_sdu = system.create_dcm_ipdu("diag_rev", &package, 1024).unwrap();
+        let reversed_tp_sdu = system
+            .create_dcm_ipdu("diag_rev", &package, 1024, DiagPduType::DiagResponse)
+            .unwrap();
 
         // create some NPdus
         let npdu1 = system.create_n_pdu("npdu1", &package, 64).unwrap();

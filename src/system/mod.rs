@@ -1,7 +1,7 @@
 use crate::communication::{
-    CanCluster, CanFrame, CanTpConfig, Cluster, ContainerIPdu, ContainerIPduHeaderType, DcmIPdu, DoIpTpConfig,
-    EthernetCluster, EventGroupControlType, FlexrayArTpConfig, FlexrayCluster, FlexrayClusterSettings, FlexrayFrame,
-    FlexrayTpConfig, Frame, GeneralPurposeIPdu, GeneralPurposeIPduCategory, GeneralPurposePdu,
+    CanCluster, CanFrame, CanTpConfig, Cluster, ContainerIPdu, ContainerIPduHeaderType, DcmIPdu, DiagPduType,
+    DoIpTpConfig, EthernetCluster, EventGroupControlType, FlexrayArTpConfig, FlexrayCluster, FlexrayClusterSettings,
+    FlexrayFrame, FlexrayTpConfig, Frame, GeneralPurposeIPdu, GeneralPurposeIPduCategory, GeneralPurposePdu,
     GeneralPurposePduCategory, ISignal, ISignalGroup, ISignalIPdu, MultiplexedIPdu, NPdu, NmConfig, NmPdu, Pdu,
     RxAcceptContainedIPdu, SecureCommunicationProps, SecuredIPdu, ServiceInstanceCollectionSet, SoAdRoutingGroup,
     SocketConnectionIpduIdentifierSet, SomeipTpConfig, SystemSignal, SystemSignalGroup,
@@ -580,7 +580,7 @@ impl System {
     /// # let package = model.get_or_create_package("/pkg1")?;
     /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
     /// let package = model.get_or_create_package("/Pdus")?;
-    /// system.create_dcm_ipdu("pdu", &package, 42)?;
+    /// system.create_dcm_ipdu("pdu", &package, 42, DiagPduType::DiagRequest)?;
     /// # Ok(())}
     /// ```
     ///
@@ -592,8 +592,9 @@ impl System {
         name: &str,
         package: &ArPackage,
         length: u32,
+        diag_pdu_type: DiagPduType,
     ) -> Result<DcmIPdu, AutosarAbstractionError> {
-        let pdu = DcmIPdu::new(name, package, length)?;
+        let pdu = DcmIPdu::new(name, package, length, diag_pdu_type)?;
         self.create_fibex_element_ref_unchecked(pdu.element())?;
 
         Ok(pdu)
@@ -1133,8 +1134,8 @@ mod test {
     use crate::{
         AbstractionElement, AutosarModelAbstraction, IdentifiableAbstractionElement, System,
         communication::{
-            ContainerIPduHeaderType, FlexrayClusterSettings, GeneralPurposeIPduCategory, GeneralPurposePduCategory,
-            RxAcceptContainedIPdu, SecureCommunicationProps,
+            ContainerIPduHeaderType, DiagPduType, FlexrayClusterSettings, GeneralPurposeIPduCategory,
+            GeneralPurposePduCategory, RxAcceptContainedIPdu, SecureCommunicationProps,
         },
         software_component::CompositionSwComponentType,
         system::SystemCategory,
@@ -1374,7 +1375,9 @@ mod test {
             .unwrap();
         let package_2 = model.get_or_create_package("/Pdus").unwrap();
 
-        system.create_dcm_ipdu("DcmIpdu", &package_2, 8).unwrap();
+        system
+            .create_dcm_ipdu("DcmIpdu", &package_2, 8, DiagPduType::DiagRequest)
+            .unwrap();
         system
             .create_general_purpose_pdu("GeneralPurposePdu", &package_2, 8, GeneralPurposePduCategory::DoIp)
             .unwrap();

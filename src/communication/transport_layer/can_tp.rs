@@ -649,7 +649,7 @@ impl CanTpNode {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{AutosarModelAbstraction, SystemCategory};
+    use crate::{AutosarModelAbstraction, SystemCategory, communication::DiagPduType};
     use autosar_data::AutosarVersion;
 
     #[test]
@@ -694,8 +694,12 @@ mod test {
 
         let data_pdu = system.create_n_pdu("data_pdu", &package, 8).unwrap();
         let data_pdu2 = system.create_n_pdu("data_pdu2", &package, 8).unwrap();
-        let tp_sdu = system.create_dcm_ipdu("ipdu", &package, 4096).unwrap();
-        let tp_sdu2 = system.create_dcm_ipdu("ipdu2", &package, 4096).unwrap();
+        let tp_sdu = system
+            .create_dcm_ipdu("ipdu", &package, 4096, DiagPduType::DiagRequest)
+            .unwrap();
+        let tp_sdu2 = system
+            .create_dcm_ipdu("ipdu2", &package, 4096, DiagPduType::DiagResponse)
+            .unwrap();
 
         let connection = can_tp_config
             .create_can_tp_connection(

@@ -263,14 +263,40 @@ abstraction_element!(DcmIPdu, DcmIPdu);
 impl IdentifiableAbstractionElement for DcmIPdu {}
 
 impl DcmIPdu {
-    pub(crate) fn new(name: &str, package: &ArPackage, length: u32) -> Result<Self, AutosarAbstractionError> {
+    pub(crate) fn new(
+        name: &str,
+        package: &ArPackage,
+        length: u32,
+        diag_pdu_type: DiagPduType,
+    ) -> Result<Self, AutosarAbstractionError> {
         let pkg_elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let elem_pdu = pkg_elements.create_named_sub_element(ElementName::DcmIPdu, name)?;
         elem_pdu
             .create_sub_element(ElementName::Length)?
             .set_character_data(length.to_string())?;
+        let dcm_ipdu = Self(elem_pdu);
+        dcm_ipdu.set_diag_pdu_type(diag_pdu_type)?;
 
-        Ok(Self(elem_pdu))
+        Ok(dcm_ipdu)
+    }
+
+    /// set the type of this DcmIPdu
+    pub fn set_diag_pdu_type(&self, pdu_type: DiagPduType) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::DiagPduType)?
+            .set_character_data::<EnumItem>(pdu_type.into())?;
+        Ok(())
+    }
+
+    /// get the type of this DcmIPdu
+    #[must_use]
+    pub fn diag_pdu_type(&self) -> Option<DiagPduType> {
+        let enum_item = self
+            .element()
+            .get_sub_element(ElementName::DiagPduType)?
+            .character_data()?
+            .enum_value()?;
+        DiagPduType::try_from(enum_item).ok()
     }
 }
 
@@ -287,6 +313,41 @@ impl From<DcmIPdu> for Pdu {
 impl From<DcmIPdu> for IPdu {
     fn from(value: DcmIPdu) -> Self {
         IPdu::DcmIPdu(value)
+    }
+}
+
+//##################################################################
+
+/// The type of a DcmIPdu
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum DiagPduType {
+    /// Diagnostic Request
+    DiagRequest,
+    /// Diagnostic Response
+    DiagResponse,
+}
+
+impl TryFrom<EnumItem> for DiagPduType {
+    type Error = AutosarAbstractionError;
+
+    fn try_from(value: EnumItem) -> Result<Self, Self::Error> {
+        match value {
+            EnumItem::DiagRequest => Ok(DiagPduType::DiagRequest),
+            EnumItem::DiagResponse => Ok(DiagPduType::DiagResponse),
+            _ => Err(AutosarAbstractionError::ValueConversionError {
+                value: value.to_string(),
+                dest: "DiagPduType".to_string(),
+            }),
+        }
+    }
+}
+
+impl From<DiagPduType> for EnumItem {
+    fn from(value: DiagPduType) -> Self {
+        match value {
+            DiagPduType::DiagRequest => EnumItem::DiagRequest,
+            DiagPduType::DiagResponse => EnumItem::DiagResponse,
+        }
     }
 }
 
@@ -937,7 +998,9 @@ mod test {
         let isignal_ipdu = system.create_isignal_ipdu("isignal_ipdu", &package, 1).unwrap();
         let nm_pdu = system.create_nm_pdu("nm_pdu", &package, 1).unwrap();
         let n_pdu = system.create_n_pdu("n_pdu", &package, 1).unwrap();
-        let dcm_ipdu = system.create_dcm_ipdu("dcm_ipdu", &package, 1).unwrap();
+        let dcm_ipdu = system
+            .create_dcm_ipdu("dcm_ipdu", &package, 1, DiagPduType::DiagRequest)
+            .unwrap();
         let gp_pdu = system
             .create_general_purpose_pdu("gp_pdu", &package, 1, GeneralPurposePduCategory::Sd)
             .unwrap();
@@ -1203,7 +1266,9 @@ mod test {
 
         let isignal_ipdu = system.create_isignal_ipdu("isignal_ipdu", &package, 1).unwrap();
         let n_pdu = system.create_n_pdu("n_pdu", &package, 1).unwrap();
-        let dcm_ipdu = system.create_dcm_ipdu("dcm_ipdu", &package, 1).unwrap();
+        let dcm_ipdu = system
+            .create_dcm_ipdu("dcm_ipdu", &package, 1, DiagPduType::DiagResponse)
+            .unwrap();
         let gp_ipdu = system
             .create_general_purpose_ipdu("gp_ipdu", &package, 1, GeneralPurposeIPduCategory::Xcp)
             .unwrap();

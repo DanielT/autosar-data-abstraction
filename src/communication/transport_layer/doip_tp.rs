@@ -240,7 +240,7 @@ mod test {
     use crate::{
         AutosarModelAbstraction, SystemCategory,
         communication::{
-            CommunicationDirection, IPv4AddressSource, NetworkEndpointAddress, SocketAddressType, TpConfig,
+            CommunicationDirection, DiagPduType, IPv4AddressSource, NetworkEndpointAddress, SocketAddressType, TpConfig,
         },
     };
     use autosar_data::AutosarVersion;
@@ -310,7 +310,9 @@ mod test {
             .unwrap();
 
         // create a DCM_I_Pdu
-        let dcm_i_pdu = system.create_dcm_ipdu("Diag", &package, 1024).unwrap();
+        let dcm_i_pdu = system
+            .create_dcm_ipdu("Diag", &package, 1024, DiagPduType::DiagRequest)
+            .unwrap();
 
         // create an IPduIdentifier, which is used to map the PDU to both sides of the socket connection
         let ipdu_identifier_set_package = model.get_or_create_package("/Network/IpduIdentifierSets").unwrap();
