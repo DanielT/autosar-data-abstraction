@@ -565,6 +565,148 @@ impl MultiplexedIPdu {
 
         Ok(Self(elem_pdu))
     }
+
+    /// set the ISignalIPdu containing the static part of this multiplexed ipdu
+    pub fn set_static_part(&self, static_ipdu: &ISignalIPdu) -> Result<(), AutosarAbstractionError> {
+        let prev_static_part = self.static_part();
+
+        self.element()
+            .get_or_create_sub_element(ElementName::StaticParts)?
+            .get_or_create_sub_element(ElementName::StaticPart)?
+            .get_or_create_sub_element(ElementName::IPduRef)?
+            .set_reference_target(static_ipdu.element())?;
+
+        self.update_pdu_triggerings(prev_static_part.as_ref(), static_ipdu)?;
+
+        Ok(())
+    }
+
+    /// get the ISignalIPdu containing the static part of this multiplexed ipdu
+    #[must_use]
+    pub fn static_part(&self) -> Option<ISignalIPdu> {
+        let ipdu_elem = self
+            .element()
+            .get_sub_element(ElementName::StaticParts)?
+            .get_sub_element(ElementName::StaticPart)?
+            .get_sub_element(ElementName::IPduRef)?
+            .get_reference_target()
+            .ok()?;
+        ISignalIPdu::try_from(ipdu_elem).ok()
+    }
+
+    /// add a dynamic part alternative to this multiplexed ipdu
+    /// `selector_code` is the value of the multiplexor that selects this dynamic part
+    /// `initial_dynamic_part` indicates whether this is the initial dynamic part; only one dynamic part can be initial
+    ///
+    /// All dynamic parts must have the same length
+    pub fn add_dynamic_part(
+        &self,
+        dynamic_ipdu: &ISignalIPdu,
+        selector_code: u16,
+        initial_dynamic_part: bool,
+    ) -> Result<DynamicPartAlternative, AutosarAbstractionError> {
+        let dp_alternatives = self
+            .element()
+            .get_or_create_sub_element(ElementName::DynamicParts)?
+            .get_or_create_sub_element(ElementName::DynamicPart)?
+            .get_or_create_sub_element(ElementName::DynamicPartAlternatives)?;
+
+        DynamicPartAlternative::new(&dp_alternatives, dynamic_ipdu, selector_code, initial_dynamic_part)
+    }
+
+    /// list all dynamic part alternatives of this multiplexed ipdu
+    pub fn dynamic_part_alternatives(&self) -> impl Iterator<Item = DynamicPartAlternative> {
+        let dp_alternatives_elem = self
+            .element()
+            .get_sub_element(ElementName::DynamicParts)
+            .and_then(|e| e.get_sub_element(ElementName::DynamicPart))
+            .and_then(|e| e.get_sub_element(ElementName::DynamicPartAlternatives));
+
+        dp_alternatives_elem
+            .into_iter()
+            .flat_map(|e| e.sub_elements())
+            .filter_map(|elem| DynamicPartAlternative::try_from(elem).ok())
+    }
+
+    /// set the selector field of this multiplexed ipdu
+    ///
+    /// The selector field should exist as a signal in each dynamic part
+    pub fn set_selector_field(
+        &self,
+        length: u8,
+        start_position: u32,
+        byte_order: ByteOrder,
+    ) -> Result<(), AutosarAbstractionError> {
+        if length == 0 || length > 16 {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "selector field length must be between 1 and 16".to_string(),
+            ));
+        }
+        self.element()
+            .get_or_create_sub_element(ElementName::SelectorFieldLength)?
+            .set_character_data(length as u64)?;
+        self.element()
+            .get_or_create_sub_element(ElementName::SelectorFieldStartPosition)?
+            .set_character_data(start_position as u64)?;
+        self.element()
+            .get_or_create_sub_element(ElementName::SelectorFieldByteOrder)?
+            .set_character_data::<EnumItem>(byte_order.into())?;
+        Ok(())
+    }
+
+    /// get the selector field of this multiplexed ipdu
+    pub fn selector_field(&self) -> Option<(u8, u32, ByteOrder)> {
+        let length = self
+            .element()
+            .get_sub_element(ElementName::SelectorFieldLength)?
+            .character_data()?
+            .parse_integer()?;
+        let start_position = self
+            .element()
+            .get_sub_element(ElementName::SelectorFieldStartPosition)?
+            .character_data()?
+            .parse_integer()?;
+        let byte_order_enum = self
+            .element()
+            .get_sub_element(ElementName::SelectorFieldByteOrder)?
+            .character_data()?
+            .enum_value()?;
+        let byte_order = ByteOrder::try_from(byte_order_enum).ok()?;
+        Some((length, start_position, byte_order))
+    }
+
+    // Update the pdu triggerings when the static part or a dynamic part is changed
+    // Also used when the multiplexed ipdu is newly mapped to a frame
+    pub(crate) fn update_pdu_triggerings(
+        &self,
+        old_ipdu: Option<&ISignalIPdu>,
+        new_ipdu: &ISignalIPdu,
+    ) -> Result<(), AutosarAbstractionError> {
+        // note: usually, the MultiplexedIPdu is triggered exactly once, and thus the pdu_triggerings list has exactly one entry
+        // remove the pdu triggering(s) of the previous ipdu
+        if let Some(old_ipdu) = old_ipdu {
+            for pt in old_ipdu.pdu_triggerings() {
+                // Todo: implement pt.remove()?;
+                if let Ok(Some(pt_parent)) = pt.element().parent() {
+                    let _ = pt_parent.remove_sub_element(pt.element().clone());
+                }
+            }
+        }
+
+        // create pdu triggerings for the new ipdu part in channels where this multiplexed ipdu is triggered
+        for multiplex_pt in self.pdu_triggerings() {
+            if let Ok(channel) = multiplex_pt.physical_channel() {
+                let new_pt = PduTriggering::new(&Pdu::ISignalIPdu(new_ipdu.clone()), &channel)?;
+                for pp in multiplex_pt.pdu_ports() {
+                    if let (Ok(ecu), Some(direction)) = (pp.ecu(), pp.communication_direction()) {
+                        let _ = new_pt.create_pdu_port(&ecu, direction);
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
 
 impl AbstractPdu for MultiplexedIPdu {}
@@ -580,6 +722,95 @@ impl From<MultiplexedIPdu> for Pdu {
 impl From<MultiplexedIPdu> for IPdu {
     fn from(value: MultiplexedIPdu) -> Self {
         IPdu::MultiplexedIPdu(value)
+    }
+}
+
+//##################################################################
+
+/// A dynamic part alternative of a multiplexed PDU
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DynamicPartAlternative(Element);
+abstraction_element!(DynamicPartAlternative, DynamicPartAlternative);
+
+impl DynamicPartAlternative {
+    fn new(
+        parent: &Element,
+        dynamic_ipdu: &ISignalIPdu,
+        selector_code: u16,
+        initial_dynamic_part: bool,
+    ) -> Result<Self, AutosarAbstractionError> {
+        let dp_alt_elem = parent.create_sub_element(ElementName::DynamicPartAlternative)?;
+        let dp_alt = Self(dp_alt_elem);
+        dp_alt.set_ipdu(dynamic_ipdu)?;
+        dp_alt.set_selector_field_code(selector_code)?;
+        dp_alt.set_initial_dynamic_part(initial_dynamic_part)?;
+
+        Ok(dp_alt)
+    }
+
+    /// set the `ISignalIPdu` referenced by this dynamic part alternative
+    pub fn set_ipdu(&self, ipdu: &ISignalIPdu) -> Result<(), AutosarAbstractionError> {
+        let old_ipdu = self.ipdu();
+        self.element()
+            .get_or_create_sub_element(ElementName::IPduRef)?
+            .set_reference_target(ipdu.element())?;
+
+        self.multiplexed_ipdu()?
+            .update_pdu_triggerings(old_ipdu.as_ref(), ipdu)?;
+
+        Ok(())
+    }
+
+    /// get the `ISignalIPdu` referenced by this dynamic part alternative
+    #[must_use]
+    pub fn ipdu(&self) -> Option<ISignalIPdu> {
+        let ipdu_elem = self
+            .element()
+            .get_sub_element(ElementName::IPduRef)?
+            .get_reference_target()
+            .ok()?;
+        ISignalIPdu::try_from(ipdu_elem).ok()
+    }
+
+    /// set the selector field code of this dynamic part alternative
+    pub fn set_selector_field_code(&self, code: u16) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::SelectorFieldCode)?
+            .set_character_data(code as u64)?;
+        Ok(())
+    }
+
+    /// get the selector field code of this dynamic part alternative
+    #[must_use]
+    pub fn selector_field_code(&self) -> Option<u16> {
+        self.element()
+            .get_sub_element(ElementName::SelectorFieldCode)?
+            .character_data()?
+            .parse_integer()
+    }
+
+    /// set whether this is the initial dynamic part
+    pub fn set_initial_dynamic_part(&self, initial: bool) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::InitialDynamicPart)?
+            .set_character_data(initial)?;
+        Ok(())
+    }
+
+    /// check whether this is the initial dynamic part
+    #[must_use]
+    pub fn is_initial_dynamic_part(&self) -> Option<bool> {
+        self.element()
+            .get_sub_element(ElementName::InitialDynamicPart)?
+            .character_data()?
+            .parse_bool()
+    }
+
+    /// get the multiplexed ipdu containing this dynamic part alternative
+    pub fn multiplexed_ipdu(&self) -> Result<MultiplexedIPdu, AutosarAbstractionError> {
+        let parent_elem = self.element().named_parent()?;
+        let parent_elem = parent_elem.unwrap(); // unwrap is safe here because the parent must exist
+        MultiplexedIPdu::try_from(parent_elem)
     }
 }
 
@@ -1219,7 +1450,7 @@ mod test {
     }
 
     #[test]
-    fn create_general_purpose_ipdu() {
+    fn general_purpose_ipdu() {
         let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
         let package = model.get_or_create_package("/pkg").unwrap();
         let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
@@ -1256,6 +1487,52 @@ mod test {
             GeneralPurposeIPduCategory::Dlt
         );
         assert!(GeneralPurposeIPduCategory::from_str("invalid").is_err());
+    }
+
+    #[test]
+    fn multiplexed_ipdu() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+        let package = model.get_or_create_package("/pkg").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
+
+        let multiplexed_ipdu = system.create_multiplexed_ipdu("multiplexed_ipdu", &package, 1).unwrap();
+        assert_eq!(multiplexed_ipdu.length().unwrap(), 1);
+
+        multiplexed_ipdu.set_length(16).unwrap();
+        assert_eq!(multiplexed_ipdu.length().unwrap(), 16);
+
+        let static_ipdu = system.create_isignal_ipdu("static_ipdu", &package, 8).unwrap();
+        multiplexed_ipdu.set_static_part(&static_ipdu).unwrap();
+        assert_eq!(multiplexed_ipdu.static_part().unwrap(), static_ipdu);
+
+        let dynamic_ipdu = system.create_isignal_ipdu("dynamic_ipdu", &package, 8).unwrap();
+        let dp_alt = multiplexed_ipdu.add_dynamic_part(&dynamic_ipdu, 0, true).unwrap();
+        assert_eq!(dp_alt.ipdu().unwrap(), dynamic_ipdu);
+        assert_eq!(dp_alt.selector_field_code().unwrap(), 0);
+        assert_eq!(dp_alt.is_initial_dynamic_part().unwrap(), true);
+        assert_eq!(dp_alt.multiplexed_ipdu().unwrap(), multiplexed_ipdu);
+        assert_eq!(multiplexed_ipdu.dynamic_part_alternatives().count(), 1);
+
+        multiplexed_ipdu
+            .set_selector_field(8, 16, ByteOrder::MostSignificantByteFirst)
+            .unwrap();
+        let (start_bit, length, byte_order) = multiplexed_ipdu.selector_field().unwrap();
+        assert_eq!(start_bit, 8);
+        assert_eq!(length, 16);
+        assert_eq!(byte_order, ByteOrder::MostSignificantByteFirst);
+
+        let cluster = system.create_can_cluster("cluster", &package, None).unwrap();
+        let channel = cluster.create_physical_channel("channel").unwrap();
+        let frame = system.create_can_frame("frame", &package, 64).unwrap();
+        channel
+            .trigger_frame(&frame, 0x33, CanAddressingMode::Standard, CanFrameType::CanFd)
+            .unwrap();
+        let _mapping = frame
+            .map_pdu(&multiplexed_ipdu, 0, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+
+        assert_eq!(channel.frame_triggerings().count(), 1);
+        assert_eq!(channel.pdu_triggerings().count(), 3); // multiplex pdu + static part + dynamic part
     }
 
     #[test]

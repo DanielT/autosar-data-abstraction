@@ -179,6 +179,18 @@ impl Frame {
             .element()
             .get_or_create_sub_element(ElementName::PduToFrameMappings)?;
 
+        // if the PDU is a multiplexed IPdu, make sure the component IPdus have pdu triggerings
+        if let Pdu::MultiplexedIPdu(mpdu) = pdu {
+            if let Some(static_ipdu) = mpdu.static_part() {
+                mpdu.update_pdu_triggerings(None, &static_ipdu)?;
+            }
+            for dynamic_part in mpdu.dynamic_part_alternatives() {
+                if let Some(dynamic_ipdu) = dynamic_part.ipdu() {
+                    mpdu.update_pdu_triggerings(None, &dynamic_ipdu)?;
+                }
+            }
+        }
+
         PduToFrameMapping::new(&name, &mappings, pdu, start_position, byte_order, update_bit)
     }
 }
