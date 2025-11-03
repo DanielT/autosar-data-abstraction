@@ -553,10 +553,9 @@ impl FlexrayCluster {
             if let Some(existing_channel_name) = FlexrayPhysicalChannel::try_from(existing_channel)
                 .ok()
                 .and_then(|channel| channel.channel_name())
+                && existing_channel_name == channel_name
             {
-                if existing_channel_name == channel_name {
-                    return Err(AutosarAbstractionError::ItemAlreadyExists);
-                }
+                return Err(AutosarAbstractionError::ItemAlreadyExists);
             }
         }
 

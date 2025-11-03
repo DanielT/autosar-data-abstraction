@@ -630,10 +630,10 @@ impl ISignalTriggering {
         for signal_port in self.signal_ports() {
             if let (Ok(existing_ecu), Some(existing_direction)) =
                 (signal_port.ecu(), signal_port.communication_direction())
+                && existing_ecu == *ecu
+                && existing_direction == direction
             {
-                if existing_ecu == *ecu && existing_direction == direction {
-                    return Ok(signal_port);
-                }
+                return Ok(signal_port);
             }
         }
 

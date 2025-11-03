@@ -71,12 +71,12 @@ impl SystemMapping {
             for comp_proto in current_composition.instances() {
                 // this condition should never fail - it only returns none if comp_proto is the root
                 // composition, which we already know is not true
-                if let Ok(Some(comp_type)) = comp_proto.parent_composition() {
-                    if root_composition_type == comp_type || root_composition_type.is_parent_of(&comp_type) {
-                        context_composition_prototypes.push(comp_proto.clone());
-                        current_composition = comp_type;
-                        break;
-                    }
+                if let Ok(Some(comp_type)) = comp_proto.parent_composition()
+                    && (root_composition_type == comp_type || root_composition_type.is_parent_of(&comp_type))
+                {
+                    context_composition_prototypes.push(comp_proto.clone());
+                    current_composition = comp_type;
+                    break;
                 }
             }
         }

@@ -76,10 +76,10 @@ pub trait AbstractPhysicalChannel: AbstractionElement + Into<PhysicalChannel> {
         // get a connector referenced by this physical channel which is contained in the ecu_instance
         // iterate over the CommunicationConnectorRefConditionals
         for connector in self.connectors() {
-            if let Ok(connector_ecu_instance) = connector.ecu_instance() {
-                if connector_ecu_instance == *ecu_instance {
-                    return Some(connector);
-                }
+            if let Ok(connector_ecu_instance) = connector.ecu_instance()
+                && connector_ecu_instance == *ecu_instance
+            {
+                return Some(connector);
             }
         }
 

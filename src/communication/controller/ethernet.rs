@@ -160,20 +160,19 @@ impl EthernetCommunicationController {
 
         // if the PhysicalChannel has VLAN info AND if there is a coupling port in this CommunicationController
         // then the coupling port should link to the PhysicalChannel / VLAN
-        if let Some(EthernetVlanInfo { .. }) = eth_channel.vlan_info() {
-            if let Some(coupling_port) = self
+        if let Some(EthernetVlanInfo { .. }) = eth_channel.vlan_info()
+            && let Some(coupling_port) = self
                 .0
                 .get_sub_element(ElementName::EthernetCommunicationControllerVariants)
                 .and_then(|eccv| eccv.get_sub_element(ElementName::EthernetCommunicationControllerConditional))
                 .and_then(|eccc| eccc.get_sub_element(ElementName::CouplingPorts))
                 .and_then(|cps| cps.get_sub_element(ElementName::CouplingPort))
-            {
-                coupling_port
-                    .get_or_create_sub_element(ElementName::VlanMemberships)
-                    .and_then(|vms| vms.create_sub_element(ElementName::VlanMembership))
-                    .and_then(|vm| vm.create_sub_element(ElementName::VlanRef))
-                    .and_then(|vr| vr.set_reference_target(eth_channel.element()))?;
-            }
+        {
+            coupling_port
+                .get_or_create_sub_element(ElementName::VlanMemberships)
+                .and_then(|vms| vms.create_sub_element(ElementName::VlanMembership))
+                .and_then(|vm| vm.create_sub_element(ElementName::VlanRef))
+                .and_then(|vr| vr.set_reference_target(eth_channel.element()))?;
         }
 
         Ok(connector)
@@ -251,24 +250,22 @@ impl Iterator for EthernetCtrlChannelsIterator {
         let model = self.model.as_ref()?;
         let connector_iter = self.connector_iter.as_mut()?;
         for connector in connector_iter.by_ref() {
-            if connector.element_name() == ElementName::EthernetCommunicationConnector {
-                if let Some(commcontroller_of_connector) = connector
+            if connector.element_name() == ElementName::EthernetCommunicationConnector
+                && let Some(commcontroller_of_connector) = connector
                     .get_sub_element(ElementName::CommControllerRef)
                     .and_then(|ccr| ccr.get_reference_target().ok())
+                && commcontroller_of_connector == self.comm_controller
+            {
+                for ref_origin in model
+                    .get_references_to(&connector.path().ok()?)
+                    .iter()
+                    .filter_map(WeakElement::upgrade)
+                    .filter_map(|elem| elem.named_parent().ok().flatten())
                 {
-                    if commcontroller_of_connector == self.comm_controller {
-                        for ref_origin in model
-                            .get_references_to(&connector.path().ok()?)
-                            .iter()
-                            .filter_map(WeakElement::upgrade)
-                            .filter_map(|elem| elem.named_parent().ok().flatten())
-                        {
-                            // This assumes that each connector will only ever be referenced by at most one
-                            // PhysicalChannel, which is true for well-formed files.
-                            if ref_origin.element_name() == ElementName::EthernetPhysicalChannel {
-                                return EthernetPhysicalChannel::try_from(ref_origin).ok();
-                            }
-                        }
+                    // This assumes that each connector will only ever be referenced by at most one
+                    // PhysicalChannel, which is true for well-formed files.
+                    if ref_origin.element_name() == ElementName::EthernetPhysicalChannel {
+                        return EthernetPhysicalChannel::try_from(ref_origin).ok();
                     }
                 }
             }

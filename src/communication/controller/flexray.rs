@@ -190,24 +190,22 @@ impl Iterator for FlexrayCtrlChannelsIterator {
         let model = self.model.as_ref()?;
         let connector_iter = self.connector_iter.as_mut()?;
         for connector in connector_iter.by_ref() {
-            if connector.element_name() == ElementName::FlexrayCommunicationConnector {
-                if let Some(commcontroller_of_connector) = connector
+            if connector.element_name() == ElementName::FlexrayCommunicationConnector
+                && let Some(commcontroller_of_connector) = connector
                     .get_sub_element(ElementName::CommControllerRef)
                     .and_then(|ccr| ccr.get_reference_target().ok())
+                && commcontroller_of_connector == self.comm_controller
+            {
+                for ref_origin in model
+                    .get_references_to(&connector.path().ok()?)
+                    .iter()
+                    .filter_map(WeakElement::upgrade)
+                    .filter_map(|elem| elem.named_parent().ok().flatten())
                 {
-                    if commcontroller_of_connector == self.comm_controller {
-                        for ref_origin in model
-                            .get_references_to(&connector.path().ok()?)
-                            .iter()
-                            .filter_map(WeakElement::upgrade)
-                            .filter_map(|elem| elem.named_parent().ok().flatten())
-                        {
-                            // This assumes that each connector will only ever be referenced by at most one
-                            // PhysicalChannel, which is true for well-formed files.
-                            if ref_origin.element_name() == ElementName::FlexrayPhysicalChannel {
-                                return FlexrayPhysicalChannel::try_from(ref_origin).ok();
-                            }
-                        }
+                    // This assumes that each connector will only ever be referenced by at most one
+                    // PhysicalChannel, which is true for well-formed files.
+                    if ref_origin.element_name() == ElementName::FlexrayPhysicalChannel {
+                        return FlexrayPhysicalChannel::try_from(ref_origin).ok();
                     }
                 }
             }

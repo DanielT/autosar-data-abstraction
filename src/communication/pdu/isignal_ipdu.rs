@@ -61,16 +61,15 @@ pub(crate) fn verify_signal_mapping(
 
     // build a bitmap of all signals that are already mapped in this pdu
     // add the new signal to the validator bitmap to see if it overlaps any existing signals
-    if let Some(signal_group) = signal.signal_group() {
-        if !pdu
+    if let Some(signal_group) = signal.signal_group()
+        && !pdu
             .mapped_signals()
             .filter_map(|mapping| mapping.signal_group())
             .any(|grp| grp == signal_group)
-        {
-            return Err(AutosarAbstractionError::InvalidParameter(
-                "Cannot map signal to pdu, because it is part of an unmapped signal group.".to_string(),
-            ));
-        }
+    {
+        return Err(AutosarAbstractionError::InvalidParameter(
+            "Cannot map signal to pdu, because it is part of an unmapped signal group.".to_string(),
+        ));
     }
     Ok(())
 }

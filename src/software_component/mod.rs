@@ -173,12 +173,12 @@ impl CompositionSwComponentType {
         component_type: &T,
     ) -> Result<SwComponentPrototype, AutosarAbstractionError> {
         let component_type = component_type.clone().into();
-        if let SwComponentType::Composition(composition_component) = &component_type {
-            if composition_component.is_parent_of(self) {
-                return Err(AutosarAbstractionError::InvalidParameter(
-                    "Creating a cycle in the composition hierarchy".to_string(),
-                ));
-            }
+        if let SwComponentType::Composition(composition_component) = &component_type
+            && composition_component.is_parent_of(self)
+        {
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "Creating a cycle in the composition hierarchy".to_string(),
+            ));
         }
 
         let components = self.element().get_or_create_sub_element(ElementName::Components)?;

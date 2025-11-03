@@ -466,14 +466,14 @@ impl SwcModeSwitchEvent {
             )));
         }
         // verify that the second mode_declaration is part of the mode declaration group of the context port interface
-        if let Some(second_mode_declaration) = second_mode_declaration {
-            if second_mode_declaration.mode_declaration_group()? != mode_declaration_group {
-                return Err(AutosarAbstractionError::InvalidParameter(format!(
-                    "ModeDeclaration {} is not part of ModeDeclarationGroup {}",
-                    second_mode_declaration.name().as_deref().unwrap_or("(invalid)"),
-                    mode_declaration_group.name().as_deref().unwrap_or("(invalid)")
-                )));
-            }
+        if let Some(second_mode_declaration) = second_mode_declaration
+            && second_mode_declaration.mode_declaration_group()? != mode_declaration_group
+        {
+            return Err(AutosarAbstractionError::InvalidParameter(format!(
+                "ModeDeclaration {} is not part of ModeDeclarationGroup {}",
+                second_mode_declaration.name().as_deref().unwrap_or("(invalid)"),
+                mode_declaration_group.name().as_deref().unwrap_or("(invalid)")
+            )));
         }
 
         let _ = self.element().remove_sub_element_kind(ElementName::ModeIrefs);

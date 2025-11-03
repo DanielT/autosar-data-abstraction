@@ -614,12 +614,12 @@ impl EthernetPhysicalChannel {
         // the "unicast socket" must be configured as Unicast
         match unicast_socket.socket_address_type() {
             Some(SocketAddressType::Unicast(opt_socket_ecu)) => {
-                if let Some(socket_ecu) = opt_socket_ecu {
-                    if &socket_ecu != ecu {
-                        return Err(AutosarAbstractionError::InvalidParameter(
-                            "The unicast socket belongs to a different ECU".to_string(),
-                        ));
-                    }
+                if let Some(socket_ecu) = opt_socket_ecu
+                    && &socket_ecu != ecu
+                {
+                    return Err(AutosarAbstractionError::InvalidParameter(
+                        "The unicast socket belongs to a different ECU".to_string(),
+                    ));
                 }
             }
             None => {

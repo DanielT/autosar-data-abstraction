@@ -1018,10 +1018,11 @@ impl PduTriggering {
         direction: CommunicationDirection,
     ) -> Result<IPduPort, AutosarAbstractionError> {
         for pdu_port in self.pdu_ports() {
-            if let (Ok(existing_ecu), Some(existing_direction)) = (pdu_port.ecu(), pdu_port.communication_direction()) {
-                if existing_ecu == *ecu && existing_direction == direction {
-                    return Ok(pdu_port);
-                }
+            if let (Ok(existing_ecu), Some(existing_direction)) = (pdu_port.ecu(), pdu_port.communication_direction())
+                && existing_ecu == *ecu
+                && existing_direction == direction
+            {
+                return Ok(pdu_port);
             }
         }
 

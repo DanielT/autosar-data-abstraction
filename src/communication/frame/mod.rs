@@ -149,12 +149,12 @@ impl Frame {
             .ok_or(AutosarAbstractionError::InvalidParameter("invalid PDU".to_string()))?;
         for mapping in self.mapped_pdus() {
             // verify that all PDU mappings in this frame use the same byte order
-            if let Some(mapped_byte_order) = mapping.byte_order() {
-                if mapped_byte_order != byte_order {
-                    return Err(AutosarAbstractionError::InvalidParameter(
-                        "All mapped PDUs must use the same byte order".to_string(),
-                    ));
-                }
+            if let Some(mapped_byte_order) = mapping.byte_order()
+                && mapped_byte_order != byte_order
+            {
+                return Err(AutosarAbstractionError::InvalidParameter(
+                    "All mapped PDUs must use the same byte order".to_string(),
+                ));
             }
 
             // todo? check if the new PDU overlaps any existing ones
@@ -332,10 +332,10 @@ impl FrameTriggering {
         for frame_port in self.frame_ports() {
             if let (Ok(existing_ecu), Some(existing_direction)) =
                 (frame_port.ecu(), frame_port.communication_direction())
+                && existing_ecu == *ecu
+                && existing_direction == direction
             {
-                if existing_ecu == *ecu && existing_direction == direction {
-                    return Ok(frame_port);
-                }
+                return Ok(frame_port);
             }
         }
 
@@ -472,7 +472,7 @@ impl PduToFrameMapping {
     /// New values set here must match the configured byte order.
     pub fn set_start_position(&self, start_position: u32) -> Result<(), AutosarAbstractionError> {
         if (self.byte_order() == Some(ByteOrder::MostSignificantByteFirst) && (start_position % 8 != 7))
-            || (self.byte_order() == Some(ByteOrder::MostSignificantByteLast) && (start_position % 8 != 0))
+            || (self.byte_order() == Some(ByteOrder::MostSignificantByteLast) && !start_position.is_multiple_of(8))
         {
             return Err(AutosarAbstractionError::InvalidParameter(
                 "PDUs must be byte-aligned".to_string(),

@@ -1054,10 +1054,10 @@ impl System {
     /// There does not seem to be any benefit to having multiple mappings for a single system, so this function
     /// will return the first mapping if it exists. Otherwise a new mapping will be created with the provided name.
     pub fn get_or_create_mapping(&self, name: &str) -> Result<SystemMapping, AutosarAbstractionError> {
-        if let Some(mapping) = self.0.get_sub_element(ElementName::Mappings) {
-            if let Some(mapping) = mapping.get_sub_element(ElementName::SystemMapping) {
-                return SystemMapping::try_from(mapping);
-            }
+        if let Some(mapping) = self.0.get_sub_element(ElementName::Mappings)
+            && let Some(mapping) = mapping.get_sub_element(ElementName::SystemMapping)
+        {
+            return SystemMapping::try_from(mapping);
         }
         SystemMapping::new(name, self)
     }
