@@ -615,7 +615,7 @@ impl MultiplexedIPdu {
     }
 
     /// list all dynamic part alternatives of this multiplexed ipdu
-    pub fn dynamic_part_alternatives(&self) -> impl Iterator<Item = DynamicPartAlternative> {
+    pub fn dynamic_part_alternatives(&self) -> impl Iterator<Item = DynamicPartAlternative> + Send + use<> {
         let dp_alternatives_elem = self
             .element()
             .get_sub_element(ElementName::DynamicParts)
