@@ -387,6 +387,19 @@ impl SocketConnectionIpduIdentifier {
         Ok((scii, pt))
     }
 
+    /// remove this `SocketConnectionIpduIdentifier`
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_pdu_triggering = self.pdu_triggering();
+
+        AbstractionElement::remove(self, deep)?;
+
+        if let Some(pt) = opt_pdu_triggering {
+            pt.remove(deep)?;
+        }
+
+        Ok(())
+    }
+
     /// get the `SocketConnection` containing this `SocketConnectionIpduIdentifier`
     pub fn socket_connection(&self) -> Result<SocketConnection, AutosarAbstractionError> {
         // SOCKET-CONNECTION > PDUS > SOCKET-CONNECTION-IPDU-IDENTIFIER
@@ -398,10 +411,8 @@ impl SocketConnectionIpduIdentifier {
     pub fn trigger_pdu(&self, pdu: &Pdu) -> Result<PduTriggering, AutosarAbstractionError> {
         if let Some(old_pt) = self.pdu_triggering() {
             // there is already a PduTriggering in this SocketConnectionIpduIdentifier
-            // remove it first -- ideally this should be old_pt.remove() but that doesn't exist yet
-            if let Ok(Some(parent)) = old_pt.element().parent() {
-                parent.remove_sub_element(old_pt.element().clone())?;
-            }
+            // remove it first
+            old_pt.remove(false)?;
         }
         let channel = self
             .socket_connection()?

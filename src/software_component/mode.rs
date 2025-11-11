@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, Element, IdentifiableAbstractionElement,
-    abstraction_element,
+    abstraction_element, get_reference_parents, software_component::SwcModeSwitchEvent,
 };
 use autosar_data::ElementName;
 
@@ -28,6 +28,14 @@ impl ModeDeclarationGroup {
         mode_declaration_group.set_category(category)?;
 
         Ok(mode_declaration_group)
+    }
+
+    /// Remove this `ModeDeclarationGroup` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        for mode_declaration in self.mode_declarations() {
+            mode_declaration.remove(deep)?;
+        }
+        AbstractionElement::remove(self, deep)
     }
 
     /// Set the category of the mode declaration group
@@ -168,6 +176,23 @@ impl ModeDeclaration {
         Ok(Self(mode_declaration))
     }
 
+    /// Remove this `ModeDeclaration` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            if named_parent.element_name() == ElementName::SwcModeSwitchEvent
+                && let Ok(swc_mode_switch_event) = SwcModeSwitchEvent::try_from(named_parent)
+            {
+                swc_mode_switch_event.remove(deep)?;
+            }
+        }
+
+        Ok(())
+    }
+
     /// Set the value that should be used to represent the mode in the RTE
     pub fn set_value(&self, value: Option<u64>) -> Result<(), AutosarAbstractionError> {
         if let Some(value) = value {
@@ -205,7 +230,10 @@ impl ModeDeclaration {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::AutosarModelAbstraction;
+    use crate::{
+        AutosarModelAbstraction,
+        software_component::{AbstractSwComponentType, AtomicSwComponentType, ModeActivationKind},
+    };
     use autosar_data::AutosarVersion;
 
     #[test]
@@ -251,5 +279,48 @@ mod test {
         mode_declaration_group_2
             .set_initial_mode(&mode_declaration)
             .unwrap_err(); // should fail, because mode_declaration is not part of the group
+    }
+
+    #[test]
+    fn remove_mode_declaration() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/Pkg").unwrap();
+
+        // create a mode group
+        let mode_declaration_group = package.create_mode_declaration_group("test_group", None).unwrap();
+        let mode_declaration = mode_declaration_group.create_mode_declaration("test_mode").unwrap();
+
+        // create a mode switch interface referencing the mode declaration group
+        let mode_switch_interface = package.create_mode_switch_interface("TestModeSwitchInterface").unwrap();
+        let _mode_if_group = mode_switch_interface
+            .create_mode_group("ModeDeclarationGroup", &mode_declaration_group)
+            .unwrap();
+
+        // create a SWC type with a mode port
+        let swc_type = package.create_application_sw_component_type("TestSwcType").unwrap();
+        let port = swc_type.create_r_port("RPort", &mode_switch_interface).unwrap();
+
+        // create SWC internal behavior with a mode switch event referencing the mode declaration
+        let ib = swc_type.create_swc_internal_behavior("InternalBehavior").unwrap();
+        let runnable = ib.create_runnable_entity("RunnableEntity").unwrap();
+        let _swc_mode_switch_event = ib
+            .create_mode_switch_event(
+                "ModeSwitchEvent",
+                &runnable,
+                ModeActivationKind::OnEntry,
+                &port,
+                &mode_declaration,
+                None,
+            )
+            .unwrap();
+
+        assert_eq!(mode_declaration_group.mode_declarations().count(), 1);
+
+        mode_declaration.remove(true).unwrap();
+
+        // after removal, the mode declaration group should have no mode declarations
+        assert_eq!(mode_declaration_group.mode_declarations().count(), 0);
+        // the mode switch event should also be removed, as it became invalid when the mode declaration was removed
+        assert_eq!(ib.events().count(), 0);
     }
 }

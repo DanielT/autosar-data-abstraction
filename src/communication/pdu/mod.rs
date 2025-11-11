@@ -1,10 +1,10 @@
 use crate::communication::{
-    AbstractPhysicalChannel, CommunicationDirection, ISignal, ISignalGroup, ISignalTriggering, PhysicalChannel,
-    TransferProperty,
+    AbstractPhysicalChannel, CommunicationDirection, ISignal, ISignalGroup, ISignalTriggering, PduToFrameMapping,
+    PhysicalChannel, SoConIPduIdentifier, SomeipTpConnection, TransferProperty,
 };
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder, EcuInstance, IdentifiableAbstractionElement,
-    abstraction_element, make_unique_name,
+    abstraction_element, get_reference_parents, is_used_system_element, make_unique_name,
 };
 use autosar_data::{AutosarDataError, Element, ElementName, EnumItem};
 use std::str::FromStr;
@@ -92,6 +92,33 @@ impl NmPdu {
             .set_character_data(length.to_string())?;
 
         Ok(Self(elem_pdu))
+    }
+
+    /// remove this `NmPdu` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all triggerings of this PDU
+        for pdu_triggering in self.pdu_triggerings() {
+            let _ = pdu_triggering.element().remove_sub_element_kind(ElementName::IPduRef);
+            let _ = pdu_triggering.remove(deep);
+        }
+
+        for signal_mapping in self.mapped_signals() {
+            let _ = signal_mapping.remove(deep);
+        }
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            if named_parent.element_name() == ElementName::PduToFrameMapping
+                && let Ok(pdu_to_frame_mapping) = PduToFrameMapping::try_from(named_parent)
+            {
+                pdu_to_frame_mapping.remove(deep)?;
+            }
+        }
+
+        Ok(())
     }
 
     /// set the unused bit pattern for this NmPdu
@@ -195,7 +222,17 @@ impl NmPdu {
 }
 
 impl AbstractPdu for NmPdu {}
+
 impl SignalPdu for NmPdu {
+    /// returns an iterator over all signals and signal groups mapped to the PDU
+    fn mapped_signals(&self) -> impl Iterator<Item = ISignalToIPduMapping> + Send + use<> {
+        self.element()
+            .get_sub_element(ElementName::ISignalToIPduMappings)
+            .into_iter()
+            .flat_map(|mappings| mappings.sub_elements())
+            .filter_map(|elem| ISignalToIPduMapping::try_from(elem).ok())
+    }
+
     fn map_signal(
         &self,
         signal: &ISignal,
@@ -235,6 +272,29 @@ impl NPdu {
             .set_character_data(length.to_string())?;
 
         Ok(Self(elem_pdu))
+    }
+
+    /// remove this `NPdu` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all triggerings of this PDU
+        for pdu_triggering in self.pdu_triggerings() {
+            let _ = pdu_triggering.element().remove_sub_element_kind(ElementName::IPduRef);
+            let _ = pdu_triggering.remove(deep);
+        }
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            if named_parent.element_name() == ElementName::PduToFrameMapping
+                && let Ok(pdu_to_frame_mapping) = PduToFrameMapping::try_from(named_parent)
+            {
+                pdu_to_frame_mapping.remove(deep)?;
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -278,6 +338,29 @@ impl DcmIPdu {
         dcm_ipdu.set_diag_pdu_type(diag_pdu_type)?;
 
         Ok(dcm_ipdu)
+    }
+
+    /// remove this `DcmIPdu` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all triggerings of this PDU
+        for pdu_triggering in self.pdu_triggerings() {
+            let _ = pdu_triggering.element().remove_sub_element_kind(ElementName::IPduRef);
+            let _ = pdu_triggering.remove(deep);
+        }
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            if named_parent.element_name() == ElementName::PduToFrameMapping
+                && let Ok(pdu_to_frame_mapping) = PduToFrameMapping::try_from(named_parent)
+            {
+                pdu_to_frame_mapping.remove(deep)?;
+            }
+        }
+
+        Ok(())
     }
 
     /// set the type of this DcmIPdu
@@ -376,6 +459,29 @@ impl GeneralPurposePdu {
         Ok(pdu)
     }
 
+    /// remove this `GeneralPurposePdu` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all triggerings of this PDU
+        for pdu_triggering in self.pdu_triggerings() {
+            let _ = pdu_triggering.element().remove_sub_element_kind(ElementName::IPduRef);
+            let _ = pdu_triggering.remove(deep);
+        }
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            if named_parent.element_name() == ElementName::PduToFrameMapping
+                && let Ok(pdu_to_frame_mapping) = PduToFrameMapping::try_from(named_parent)
+            {
+                pdu_to_frame_mapping.remove(deep)?;
+            }
+        }
+
+        Ok(())
+    }
+
     /// set the category of this PDU
     pub fn set_category(&self, category: GeneralPurposePduCategory) -> Result<(), AutosarAbstractionError> {
         self.element()
@@ -468,6 +574,29 @@ impl GeneralPurposeIPdu {
         pdu.set_category(category)?;
 
         Ok(pdu)
+    }
+
+    /// remove this `GeneralPurposeIPdu` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all triggerings of this PDU
+        for pdu_triggering in self.pdu_triggerings() {
+            let _ = pdu_triggering.element().remove_sub_element_kind(ElementName::IPduRef);
+            let _ = pdu_triggering.remove(deep);
+        }
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            if named_parent.element_name() == ElementName::PduToFrameMapping
+                && let Ok(pdu_to_frame_mapping) = PduToFrameMapping::try_from(named_parent)
+            {
+                pdu_to_frame_mapping.remove(deep)?;
+            }
+        }
+
+        Ok(())
     }
 
     /// set the category of this PDU
@@ -564,6 +693,46 @@ impl MultiplexedIPdu {
             .set_character_data(length.to_string())?;
 
         Ok(Self(elem_pdu))
+    }
+
+    /// remove this `GeneralPurposeIPdu` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all triggerings of this PDU
+        for pdu_triggering in self.pdu_triggerings() {
+            let _ = pdu_triggering.element().remove_sub_element_kind(ElementName::IPduRef);
+            let _ = pdu_triggering.remove(deep);
+        }
+
+        let opt_static_pdu = self.static_part();
+
+        for dynamic_part in self.dynamic_part_alternatives() {
+            dynamic_part.remove(deep)?;
+        }
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            if named_parent.element_name() == ElementName::PduToFrameMapping
+                && let Ok(pdu_to_frame_mapping) = PduToFrameMapping::try_from(named_parent)
+            {
+                pdu_to_frame_mapping.remove(deep)?;
+            }
+        }
+
+        if let Some(ipdu) = opt_static_pdu {
+            let mut triggerings = ipdu.pdu_triggerings();
+            // because the multiplexed ipdu does not keep a reference to the pdu triggering of it's parts,
+            // we don't know which PDU triggering to remove if there is more than one
+            if triggerings.len() == 1
+                && let Some(pdu_triggering) = triggerings.pop()
+            {
+                pdu_triggering.remove(deep)?;
+            }
+        }
+
+        Ok(())
     }
 
     /// set the ISignalIPdu containing the static part of this multiplexed ipdu
@@ -686,10 +855,7 @@ impl MultiplexedIPdu {
         // remove the pdu triggering(s) of the previous ipdu
         if let Some(old_ipdu) = old_ipdu {
             for pt in old_ipdu.pdu_triggerings() {
-                // Todo: implement pt.remove()?;
-                if let Ok(Some(pt_parent)) = pt.element().parent() {
-                    let _ = pt_parent.remove_sub_element(pt.element().clone());
-                }
+                pt.remove(false)?;
             }
         }
 
@@ -746,6 +912,27 @@ impl DynamicPartAlternative {
         dp_alt.set_initial_dynamic_part(initial_dynamic_part)?;
 
         Ok(dp_alt)
+    }
+
+    /// remove this dynamic part alternative from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all triggerings of this PDU
+        let opt_ipdu = self.ipdu();
+
+        AbstractionElement::remove(self, deep)?;
+
+        if let Some(ipdu) = opt_ipdu {
+            let mut triggerings = ipdu.pdu_triggerings();
+            // because the multiplexed ipdu does not keep a reference to the pdu triggering of its parts,
+            // we don't know which PDU triggering to remove if there is more than one
+            if triggerings.len() == 1
+                && let Some(pdu_triggering) = triggerings.pop()
+            {
+                pdu_triggering.remove(deep)?;
+            }
+        }
+
+        Ok(())
     }
 
     /// set the `ISignalIPdu` referenced by this dynamic part alternative
@@ -880,6 +1067,23 @@ impl TryFrom<Element> for Pdu {
 impl IdentifiableAbstractionElement for Pdu {}
 impl AbstractPdu for Pdu {}
 
+impl Pdu {
+    /// remove this `Pdu` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        match self {
+            Pdu::ISignalIPdu(pdu) => pdu.remove(deep),
+            Pdu::NmPdu(pdu) => pdu.remove(deep),
+            Pdu::NPdu(pdu) => pdu.remove(deep),
+            Pdu::DcmIPdu(pdu) => pdu.remove(deep),
+            Pdu::GeneralPurposePdu(pdu) => pdu.remove(deep),
+            Pdu::GeneralPurposeIPdu(pdu) => pdu.remove(deep),
+            Pdu::ContainerIPdu(pdu) => pdu.remove(deep),
+            Pdu::SecuredIPdu(pdu) => pdu.remove(deep),
+            Pdu::MultiplexedIPdu(pdu) => pdu.remove(deep),
+        }
+    }
+}
+
 //##################################################################
 
 /// Wrapper for all Pdu types. It is used as a return value for functions that can return any Pdu type
@@ -953,6 +1157,21 @@ impl IdentifiableAbstractionElement for IPdu {}
 impl AbstractPdu for IPdu {}
 impl AbstractIpdu for IPdu {}
 
+impl IPdu {
+    /// remove this `IPdu` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        match self {
+            IPdu::ISignalIPdu(pdu) => pdu.remove(deep),
+            IPdu::NPdu(pdu) => pdu.remove(deep),
+            IPdu::DcmIPdu(pdu) => pdu.remove(deep),
+            IPdu::GeneralPurposeIPdu(pdu) => pdu.remove(deep),
+            IPdu::ContainerIPdu(pdu) => pdu.remove(deep),
+            IPdu::SecuredIPdu(pdu) => pdu.remove(deep),
+            IPdu::MultiplexedIPdu(pdu) => pdu.remove(deep),
+        }
+    }
+}
+
 //##################################################################
 
 /// a `PduTriggering` triggers a PDU in a frame or ethernet connection
@@ -992,6 +1211,51 @@ impl PduTriggering {
         }
 
         Ok(pt)
+    }
+
+    /// remove this `PduTriggering` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_pdu = self.pdu();
+
+        for signal_triggering in self.signal_triggerings() {
+            signal_triggering.remove(deep)?;
+        }
+
+        for pdu_port in self.pdu_ports() {
+            pdu_port.remove(deep)?;
+        }
+
+        // removal of PayloadRefs from SecuredIPdus is handled by AbstractionElement::remove
+        // removal of ContainedPduTriggeringRefs from ContainerIPdus is handled by AbstractionElement::remove
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, parent) in ref_parents {
+            if named_parent.element_name() == ElementName::SoConIPduIdentifier
+                && let Ok(socon_ipdu_identifier) = SoConIPduIdentifier::try_from(named_parent)
+            {
+                socon_ipdu_identifier.remove(deep)?;
+            } else if parent.element_name() == ElementName::SomeipTpConnection {
+                if let Ok(someip_tp_connection) = SomeipTpConnection::try_from(parent) {
+                    someip_tp_connection.remove(deep)?;
+                }
+            } else if parent.element_name() == ElementName::PduTriggeringRefConditional
+                && let Ok(Some(parent_parent)) = parent.parent()
+            {
+                parent_parent.remove_sub_element(parent)?;
+            }
+        }
+
+        if deep && let Some(pdu) = opt_pdu {
+            // check if the PDU became unused; if so remove it too
+            if !is_used_system_element(pdu.element()) {
+                pdu.remove(deep)?;
+            }
+        }
+
+        Ok(())
     }
 
     /// get the Pdu that is triggered by this pdu triggering
@@ -1603,5 +1867,126 @@ mod test {
         // any Ipdu can be converted to a Pdu
         let pdu: Pdu = ipdu.clone().into();
         assert_eq!(pdu.element(), ipdu.element());
+    }
+
+    #[test]
+    fn remove() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+        let package = model.get_or_create_package("/pkg").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
+
+        let isignal_ipdu = system.create_isignal_ipdu("isignal_ipdu", &package, 1).unwrap();
+        let n_pdu = system.create_n_pdu("n_pdu", &package, 1).unwrap();
+        let dcm_ipdu = system
+            .create_dcm_ipdu("dcm_ipdu", &package, 1, DiagPduType::DiagResponse)
+            .unwrap();
+        let gp_ipdu = system
+            .create_general_purpose_ipdu("gp_ipdu", &package, 1, GeneralPurposeIPduCategory::Xcp)
+            .unwrap();
+        let container_ipdu = system
+            .create_container_ipdu(
+                "container_ipdu",
+                &package,
+                1,
+                ContainerIPduHeaderType::LongHeader,
+                RxAcceptContainedIPdu::AcceptConfigured,
+            )
+            .unwrap();
+        let secured_ipdu = system
+            .create_secured_ipdu("secured_ipdu", &package, 1, &SecureCommunicationProps::default())
+            .unwrap();
+        let multiplexed_ipdu = system.create_multiplexed_ipdu("multiplexed_ipdu", &package, 1).unwrap();
+
+        assert!(!is_used_system_element(isignal_ipdu.element()));
+        assert!(!is_used_system_element(n_pdu.element()));
+        assert!(!is_used_system_element(dcm_ipdu.element()));
+        assert!(!is_used_system_element(gp_ipdu.element()));
+        assert!(!is_used_system_element(container_ipdu.element()));
+        assert!(!is_used_system_element(secured_ipdu.element()));
+        assert!(!is_used_system_element(multiplexed_ipdu.element()));
+
+        let can_cluster = system.create_can_cluster("cluster", &package, None).unwrap();
+        let channel = can_cluster.create_physical_channel("channel").unwrap();
+        let frame1 = system.create_can_frame("frame", &package, 64).unwrap();
+        channel
+            .trigger_frame(&frame1, 0x123, CanAddressingMode::Standard, CanFrameType::Can20)
+            .unwrap();
+        let _mapping = frame1
+            .map_pdu(&isignal_ipdu, 0, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+        let frame2 = system.create_can_frame("frame2", &package, 64).unwrap();
+        channel
+            .trigger_frame(&frame2, 0x124, CanAddressingMode::Standard, CanFrameType::Can20)
+            .unwrap();
+        let _mapping = frame2
+            .map_pdu(&n_pdu, 0, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+        let frame3 = system.create_can_frame("frame3", &package, 64).unwrap();
+        channel
+            .trigger_frame(&frame3, 0x125, CanAddressingMode::Standard, CanFrameType::Can20)
+            .unwrap();
+        let _mapping = frame3
+            .map_pdu(&dcm_ipdu, 0, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+        let frame4 = system.create_can_frame("frame4", &package, 64).unwrap();
+        channel
+            .trigger_frame(&frame4, 0x126, CanAddressingMode::Standard, CanFrameType::Can20)
+            .unwrap();
+        let _mapping = frame4
+            .map_pdu(&gp_ipdu, 0, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+        let frame5 = system.create_can_frame("frame5", &package, 64).unwrap();
+        channel
+            .trigger_frame(&frame5, 0x127, CanAddressingMode::Standard, CanFrameType::Can20)
+            .unwrap();
+        let _mapping = frame5
+            .map_pdu(&container_ipdu, 0, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+        let frame6 = system.create_can_frame("frame6", &package, 64).unwrap();
+        channel
+            .trigger_frame(&frame6, 0x128, CanAddressingMode::Standard, CanFrameType::Can20)
+            .unwrap();
+        let _mapping = frame6
+            .map_pdu(&secured_ipdu, 0, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+        let frame7 = system.create_can_frame("frame7", &package, 64).unwrap();
+        channel
+            .trigger_frame(&frame7, 0x129, CanAddressingMode::Standard, CanFrameType::Can20)
+            .unwrap();
+        let _mapping = frame7
+            .map_pdu(&multiplexed_ipdu, 0, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+
+        assert_eq!(channel.pdu_triggerings().count(), 7);
+
+        // add static and dynamic parts to the multiplexed ipdu
+        let static_part_pdu = system.create_isignal_ipdu("static_part_pdu", &package, 8).unwrap();
+        multiplexed_ipdu.set_static_part(&static_part_pdu).unwrap();
+        let dynamic_part_pdu = system.create_isignal_ipdu("dynamic_part_pdu", &package, 8).unwrap();
+        multiplexed_ipdu.add_dynamic_part(&dynamic_part_pdu, 0, true).unwrap();
+
+        assert_eq!(channel.pdu_triggerings().count(), 9); // static + dynamic part added
+
+        // add a contained IPdu to the container ipdu
+        let contained_ipdu = system.create_isignal_ipdu("contained_ipdu", &package, 8).unwrap();
+        container_ipdu.map_ipdu(&contained_ipdu, &channel).unwrap();
+
+        // add a payload pdu to the secured ipdu
+        let payload_ipdu = system.create_isignal_ipdu("payload_ipdu", &package, 8).unwrap();
+        secured_ipdu.set_payload_ipdu(&payload_ipdu, &channel).unwrap();
+
+        assert_eq!(channel.pdu_triggerings().count(), 11); // contained + payload added
+
+        // remove all pdus deeply
+        isignal_ipdu.remove(true).unwrap();
+        n_pdu.remove(true).unwrap();
+        dcm_ipdu.remove(true).unwrap();
+        gp_ipdu.remove(true).unwrap();
+        container_ipdu.remove(true).unwrap();
+        secured_ipdu.remove(true).unwrap();
+        multiplexed_ipdu.remove(true).unwrap();
+
+        // all PDU triggerings, including for contained and payload pdus, should be removed
+        assert_eq!(channel.pdu_triggerings().count(), 0);
     }
 }

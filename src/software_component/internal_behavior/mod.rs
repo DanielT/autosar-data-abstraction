@@ -28,6 +28,21 @@ impl SwcInternalBehavior {
         Ok(Self(swc_internal_behavior))
     }
 
+    /// remove the `SwcInternalBehavior` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all events
+        for event in self.events() {
+            event.remove(deep)?;
+        }
+
+        // remove all runnable entities
+        for runnable in self.runnable_entities() {
+            runnable.remove(deep)?;
+        }
+
+        AbstractionElement::remove(self, deep)
+    }
+
     /// Get the software component type that contains the `SwcInternalBehavior`
     #[must_use]
     pub fn sw_component_type(&self) -> Option<SwComponentType> {
@@ -186,6 +201,19 @@ impl RunnableEntity {
         Ok(Self(runnable_entity))
     }
 
+    /// remove the `RunnableEntity` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let event_list = self.events();
+
+        AbstractionElement::remove(self, deep)?;
+
+        for event in event_list {
+            event.remove(deep)?;
+        }
+
+        Ok(())
+    }
+
     /// Get the `SwcInternalBehavior` that contains the `RunnableEntity`
     #[must_use]
     pub fn swc_internal_behavior(&self) -> Option<SwcInternalBehavior> {
@@ -193,7 +221,7 @@ impl RunnableEntity {
         SwcInternalBehavior::try_from(parent).ok()
     }
 
-    /// Iterate over all events that can trigger the `RunnableEntity`
+    /// List all events that can trigger the `RunnableEntity`
     #[must_use]
     pub fn events(&self) -> Vec<RTEEvent> {
         let model_result = self.element().model();
@@ -1233,5 +1261,39 @@ mod test {
         assert_eq!(mode_switch_point.mode_group().unwrap().0, mode_group);
         assert_eq!(mode_switch_point.mode_group().unwrap().1, p_port.into());
         assert_eq!(runnable.mode_switch_points().count(), 1);
+    }
+
+    #[test]
+    fn remove_runnable_entity() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+
+        // create a software component type with an internal behavior
+        let app_swc = package
+            .create_application_sw_component_type("AppSwComponentType")
+            .unwrap();
+        let swc_internal_behavior = app_swc
+            .create_swc_internal_behavior("AppSwComponentType_InternalBehavior")
+            .unwrap();
+        assert_eq!(app_swc.swc_internal_behaviors().count(), 1);
+        assert_eq!(
+            swc_internal_behavior.sw_component_type().unwrap(),
+            app_swc.clone().into()
+        );
+
+        // create a runnable entity
+        let runnable = swc_internal_behavior.create_runnable_entity("Runnable1").unwrap();
+        assert_eq!(runnable.swc_internal_behavior().unwrap(), swc_internal_behavior);
+        assert_eq!(swc_internal_behavior.runnable_entities().count(), 1);
+
+        // create an init event, which triggers runnable
+        let init_event = swc_internal_behavior.create_init_event("InitEvent", &runnable).unwrap();
+        assert_eq!(init_event.runnable_entity().unwrap(), runnable);
+
+        // remove the runnable entity
+        runnable.remove(true).unwrap();
+        assert_eq!(swc_internal_behavior.runnable_entities().count(), 0);
+        // check that the init event has also been removed
+        assert_eq!(swc_internal_behavior.events().count(), 0);
     }
 }

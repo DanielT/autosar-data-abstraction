@@ -1,6 +1,6 @@
 use crate::{
     AbstractionElement, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
-    software_component,
+    get_reference_parents, is_used, software_component,
 };
 use autosar_data::{Element, ElementName};
 use software_component::{AbstractPortInterface, PortInterface, SwComponentType};
@@ -28,16 +28,43 @@ impl RPortPrototype {
         Ok(Self(r_port_prototype))
     }
 
+    /// remove the `RPortPrototype` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_port_interface = self.port_interface();
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        if deep
+            && let Some(port_interface) = opt_port_interface
+            && !is_used(port_interface.element())
+        {
+            port_interface.remove(true)?;
+        }
+
+        for (named_parent, _parent) in ref_parents {
+            match named_parent.element_name() {
+                ElementName::DelegationSwConnector
+                | ElementName::AssemblySwConnector
+                | ElementName::PassThroughSwConnector => {
+                    if let Ok(connector) = software_component::SwConnector::try_from(named_parent) {
+                        connector.remove(deep)?;
+                    };
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
+    }
+
     /// Get the port interface of the port prototype
-    pub fn port_interface(&self) -> Result<PortInterface, AutosarAbstractionError> {
+    pub fn port_interface(&self) -> Option<PortInterface> {
         let interface_elem = self
             .element()
             .get_sub_element(ElementName::RequiredInterfaceTref)
-            .and_then(|r| r.get_reference_target().ok())
-            .ok_or(AutosarAbstractionError::InvalidParameter(
-                "RPortPrototype is incomplete: RequiredInterfaceTref is missing".to_string(),
-            ))?;
-        PortInterface::try_from(interface_elem)
+            .and_then(|r| r.get_reference_target().ok())?;
+        PortInterface::try_from(interface_elem).ok()
     }
 
     /// Get the component type containing the port prototype
@@ -70,16 +97,43 @@ impl PPortPrototype {
         Ok(Self(p_port_prototype))
     }
 
+    /// remove the `PPortPrototype` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_port_interface = self.port_interface();
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        if deep
+            && let Some(port_interface) = opt_port_interface
+            && !is_used(port_interface.element())
+        {
+            port_interface.remove(true)?;
+        }
+
+        for (named_parent, _parent) in ref_parents {
+            match named_parent.element_name() {
+                ElementName::DelegationSwConnector
+                | ElementName::AssemblySwConnector
+                | ElementName::PassThroughSwConnector => {
+                    if let Ok(connector) = software_component::SwConnector::try_from(named_parent) {
+                        connector.remove(deep)?;
+                    };
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
+    }
+
     /// Get the port interface of the port prototype
-    pub fn port_interface(&self) -> Result<PortInterface, AutosarAbstractionError> {
+    pub fn port_interface(&self) -> Option<PortInterface> {
         let interface_elem = self
             .element()
             .get_sub_element(ElementName::ProvidedInterfaceTref)
-            .and_then(|r| r.get_reference_target().ok())
-            .ok_or(AutosarAbstractionError::InvalidParameter(
-                "PPortPrototype is incomplete: ProvidedInterfaceTref is missing".to_string(),
-            ))?;
-        PortInterface::try_from(interface_elem)
+            .and_then(|r| r.get_reference_target().ok())?;
+        PortInterface::try_from(interface_elem).ok()
     }
 
     /// Get the component type containing the port prototype
@@ -118,16 +172,43 @@ impl PRPortPrototype {
         Ok(Self(pr_port_prototype))
     }
 
+    /// remove the `PRPortPrototype` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_port_interface = self.port_interface();
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        if deep
+            && let Some(port_interface) = opt_port_interface
+            && !is_used(port_interface.element())
+        {
+            port_interface.remove(true)?;
+        }
+
+        for (named_parent, _parent) in ref_parents {
+            match named_parent.element_name() {
+                ElementName::DelegationSwConnector
+                | ElementName::AssemblySwConnector
+                | ElementName::PassThroughSwConnector => {
+                    if let Ok(connector) = software_component::SwConnector::try_from(named_parent) {
+                        connector.remove(deep)?;
+                    };
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
+    }
+
     /// Get the port interface of the port prototype
-    pub fn port_interface(&self) -> Result<PortInterface, AutosarAbstractionError> {
+    pub fn port_interface(&self) -> Option<PortInterface> {
         let interface_elem = self
             .element()
             .get_sub_element(ElementName::ProvidedRequiredInterfaceTref)
-            .and_then(|r| r.get_reference_target().ok())
-            .ok_or(AutosarAbstractionError::InvalidParameter(
-                "PRPortPrototype is incomplete: ProvidedRequiredInterfaceTref is missing".to_string(),
-            ))?;
-        PortInterface::try_from(interface_elem)
+            .and_then(|r| r.get_reference_target().ok())?;
+        PortInterface::try_from(interface_elem).ok()
     }
 
     /// Get the component type containing the port prototype
@@ -198,7 +279,7 @@ impl TryFrom<Element> for PortPrototype {
 
 impl PortPrototype {
     /// Get the port interface of the port prototype
-    pub fn port_interface(&self) -> Result<PortInterface, AutosarAbstractionError> {
+    pub fn port_interface(&self) -> Option<PortInterface> {
         match self {
             PortPrototype::R(port) => port.port_interface(),
             PortPrototype::P(port) => port.port_interface(),
@@ -210,6 +291,15 @@ impl PortPrototype {
     pub fn component_type(&self) -> Result<SwComponentType, AutosarAbstractionError> {
         let component_type_elem = self.element().named_parent()?.unwrap();
         SwComponentType::try_from(component_type_elem)
+    }
+
+    /// remove the `PortPrototype` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        match self {
+            PortPrototype::R(port) => port.remove(deep),
+            PortPrototype::P(port) => port.remove(deep),
+            PortPrototype::PR(port) => port.remove(deep),
+        }
     }
 }
 
@@ -315,5 +405,44 @@ mod test {
         assert_eq!(ports[14], r_port.into());
         assert_eq!(ports[15], p_port.into());
         assert_eq!(ports[16], pr_port.into());
+    }
+
+    #[test]
+    fn remove_port() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+        let sender_receiver_interface = package.create_sender_receiver_interface("TestInterface").unwrap();
+
+        let composition_type = package.create_composition_sw_component_type("comp_parent").unwrap();
+        let r_port = composition_type
+            .create_r_port("port_r", &sender_receiver_interface)
+            .unwrap();
+        let p_port = composition_type
+            .create_p_port("port_p", &sender_receiver_interface)
+            .unwrap();
+        let pr_port = composition_type
+            .create_pr_port("port_pr", &sender_receiver_interface)
+            .unwrap();
+
+        // Create an application component type to delegate ports to
+        let app_swc_type = package.create_application_sw_component_type("app_swc").unwrap();
+        let app_r_port = app_swc_type
+            .create_r_port("app_port_r", &sender_receiver_interface)
+            .unwrap();
+        let app_prototype = composition_type.create_component("app_proto", &app_swc_type).unwrap();
+        // connect the local r_port to the r_port of the application component prototype
+        composition_type
+            .create_delegation_connector("delegation_connector", &app_r_port, &app_prototype, &r_port)
+            .unwrap();
+        assert_eq!(composition_type.connectors().count(), 1);
+
+        assert_eq!(composition_type.ports().count(), 3);
+        r_port.remove(true).unwrap();
+        assert_eq!(composition_type.connectors().count(), 0);
+        assert_eq!(composition_type.ports().count(), 2);
+        p_port.remove(true).unwrap();
+        assert_eq!(composition_type.ports().count(), 1);
+        pr_port.remove(true).unwrap();
+        assert_eq!(composition_type.ports().count(), 0);
     }
 }

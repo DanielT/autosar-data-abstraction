@@ -1,9 +1,10 @@
 use crate::communication::{
-    CanCommunicationController, CommunicationController, EthernetCommunicationController,
-    FlexrayCommunicationController, LinMaster, LinSlave,
+    CanCommunicationController, CanTpEcu, CommunicationController, EthernetCommunicationController,
+    FlexrayCommunicationController, FlexrayTpEcu, LinMaster, LinSlave, NmEcu,
 };
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
+    get_reference_parents,
 };
 use autosar_data::{Element, ElementName};
 
@@ -22,6 +23,41 @@ impl EcuInstance {
         let elem_ecu_instance = elem_pkg_elements.create_named_sub_element(ElementName::EcuInstance, name)?;
 
         Ok(EcuInstance(elem_ecu_instance))
+    }
+
+    /// remove this `EcuInstance` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all communication controllers of this ECU
+        for controller in self.communication_controllers() {
+            controller.remove(deep)?;
+        }
+
+        let ref_parents = get_reference_parents(&self.0)?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (_named_parent, parent) in ref_parents {
+            match parent.element_name() {
+                ElementName::NmEcu => {
+                    if let Ok(nm_ecu) = NmEcu::try_from(parent) {
+                        nm_ecu.remove(deep)?;
+                    };
+                }
+                ElementName::CanTpEcu => {
+                    if let Ok(can_tp_ecu) = CanTpEcu::try_from(parent) {
+                        can_tp_ecu.remove(deep)?;
+                    };
+                }
+                ElementName::FlexrayTpEcu => {
+                    if let Ok(frtp_ecu) = FlexrayTpEcu::try_from(parent) {
+                        frtp_ecu.remove(deep)?;
+                    };
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
     }
 
     /// Create a CAN-COMMUNICATION-CONTROLLER for this ECU-INSTANCE

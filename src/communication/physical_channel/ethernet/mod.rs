@@ -68,6 +68,41 @@ impl EthernetPhysicalChannel {
         Ok(physical_channel)
     }
 
+    /// remove this `FlexrayPhysicalChannel` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all socket connection bundles of this physical channel
+        for scb in self.socket_connection_bundles() {
+            scb.remove(deep)?;
+        }
+
+        // remove all socket addresses of this physical channel
+        for sa in self.socket_addresses() {
+            sa.remove(deep)?;
+        }
+
+        // remove all network endpoints of this physical channel
+        for ne in self.network_endpoints() {
+            ne.remove(deep)?;
+        }
+
+        // remove all pdu triggerings of this physical channel
+        for pt in self.pdu_triggerings() {
+            pt.remove(deep)?;
+        }
+
+        // remove all signal triggerings of this physical channel
+        for st in self.signal_triggerings() {
+            st.remove(deep)?;
+        }
+
+        // remove all connectors using this physical channel
+        for connector in self.connectors() {
+            connector.remove(deep)?;
+        }
+
+        AbstractionElement::remove(self, deep)
+    }
+
     /// set the VLAN information for this channel
     ///
     /// The supplied VLAN info must be unique - there cannot be two VLANs with the same vlan identifier.
@@ -1181,6 +1216,20 @@ impl SoConIPduIdentifier {
         Ok(scii)
     }
 
+    /// remove this `SoConIPduIdentifier`
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_pdu_triggering = self.pdu_triggering();
+
+        AbstractionElement::remove(self, deep)?;
+
+        // remove the referenced PduTriggering
+        if let Some(pt) = opt_pdu_triggering {
+            let _ = pt.remove(deep);
+        }
+
+        Ok(())
+    }
+
     /// create a new `PduTriggering` for the pdu and reference it in this `SoConIPduIdentifier`
     pub fn set_pdu<T: AbstractPdu>(
         &self,
@@ -1192,22 +1241,18 @@ impl SoConIPduIdentifier {
     }
 
     fn set_pdu_internal(&self, pdu: &Pdu, channel: &EthernetPhysicalChannel) -> Result<(), AutosarAbstractionError> {
-        if let Some(pt_old) = self
-            .element()
-            .get_sub_element(ElementName::PduTriggeringRef)
-            .and_then(|pt| pt.get_reference_target().ok())
+        if let Some(pt_ref_elem) = self.element().get_sub_element(ElementName::PduTriggeringRef)
+            && let Ok(pt_old) = pt_ref_elem.get_reference_target()
         {
             let pt_old = PduTriggering::try_from(pt_old)?;
             if let Some(old_pdu) = pt_old.pdu() {
                 if old_pdu == *pdu {
                     return Ok(());
                 }
-                // remove old pdu_triggering - ideally this should use a remove() method on the
-                // PduTriggering, but for now there is a "manual" implementation
-                channel
-                    .element()
-                    .get_sub_element(ElementName::PduTriggerings)
-                    .and_then(|pts| pts.remove_sub_element(pt_old.element().clone()).ok());
+                // remove the reference to the old PduTriggering. This prevents
+                // pt_old.remove() from also removing this SoConIPduIdentifier
+                let _ = self.element().remove_sub_element(pt_ref_elem);
+                let _ = pt_old.remove(false);
             }
         }
         let pt_new = PduTriggering::new(pdu, &PhysicalChannel::Ethernet(channel.clone()))?;
@@ -1861,5 +1906,76 @@ mod test {
         assert_eq!(ssc.ipdu_identifiers().count(), 1);
         assert_eq!(ssc.ipdu_identifiers().next().unwrap(), socon_ipdu_identifier);
         assert_eq!(ssc.socket_address().unwrap(), local_socket);
+    }
+
+    #[test]
+    fn remove_channel() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let pkg = model.get_or_create_package("/test").unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
+        let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
+        let channel = cluster.create_physical_channel("Channel", None).unwrap();
+
+        let remote_address = NetworkEndpointAddress::IPv4 {
+            address: Some("192.168.0.1".to_string()),
+            address_source: Some(IPv4AddressSource::Fixed),
+            default_gateway: None,
+            network_mask: None,
+        };
+        let remote_endpoint = channel
+            .create_network_endpoint("RemoteAddress", remote_address, None)
+            .unwrap();
+        let remote_socket = channel
+            .create_socket_address(
+                "RemoteSocket",
+                &remote_endpoint,
+                &TpConfig::UdpTp {
+                    port_number: Some(12345),
+                    port_dynamically_assigned: None,
+                },
+                SocketAddressType::Unicast(None),
+            )
+            .unwrap();
+        let local_address = NetworkEndpointAddress::IPv4 {
+            address: Some("192.168.0.2".to_string()),
+            address_source: Some(IPv4AddressSource::Fixed),
+            default_gateway: None,
+            network_mask: None,
+        };
+        let local_endpoint = channel
+            .create_network_endpoint("LocalAddress", local_address, None)
+            .unwrap();
+        let local_socket = channel
+            .create_socket_address(
+                "LocalSocket",
+                &local_endpoint,
+                &TpConfig::UdpTp {
+                    port_number: Some(12346),
+                    port_dynamically_assigned: None,
+                },
+                SocketAddressType::Unicast(None),
+            )
+            .unwrap();
+
+        let scb = channel
+            .create_socket_connection_bundle("SocketConnectionBundle", &local_socket)
+            .unwrap();
+        let sc = scb.create_bundled_connection(&remote_socket).unwrap();
+
+        let isignal_ipdu = system.create_isignal_ipdu("IPdu", &pkg, 0).unwrap();
+        sc.create_socket_connection_ipdu_identifier(&isignal_ipdu, 0xdeadbeef, None, None)
+            .unwrap();
+
+        assert_eq!(channel.socket_connection_bundles().count(), 1);
+        assert_eq!(channel.socket_addresses().count(), 2);
+        assert_eq!(channel.network_endpoints().count(), 2);
+        assert_eq!(channel.pdu_triggerings().count(), 1);
+
+        channel.remove(true).unwrap();
+
+        assert_eq!(cluster.physical_channels().count(), 0);
+
+        // the isignal ipdu was unused and got removed because deep=true
+        assert!(isignal_ipdu.element().parent().is_err());
     }
 }

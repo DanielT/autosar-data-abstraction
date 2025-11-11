@@ -114,7 +114,7 @@ impl SystemMapping {
         port_prototype: &T,
         context_components: &[&SwComponentPrototype],
         root_composition_prototype: Option<&RootSwCompositionPrototype>,
-    ) -> Result<(), AutosarAbstractionError> {
+    ) -> Result<SenderReceiverToSignalMapping, AutosarAbstractionError> {
         self.map_sender_receiver_to_signal_internal(
             signal,
             data_element,
@@ -131,10 +131,10 @@ impl SystemMapping {
         port_prototype: &PortPrototype,
         context_components: &[&SwComponentPrototype],
         root_composition_prototype: Option<&RootSwCompositionPrototype>,
-    ) -> Result<(), AutosarAbstractionError> {
+    ) -> Result<SenderReceiverToSignalMapping, AutosarAbstractionError> {
         // sanity checks
         // the port must be a sender/receiver port
-        let PortInterface::SenderReceiverInterface(interface) = port_prototype.port_interface()? else {
+        let Some(PortInterface::SenderReceiverInterface(interface)) = port_prototype.port_interface() else {
             return Err(AutosarAbstractionError::InvalidParameter(
                 "The port prototype must be a sender/receiver port".to_string(),
             ));
@@ -165,30 +165,15 @@ impl SystemMapping {
 
         // create the mapping
         let data_mappings = self.element().get_or_create_sub_element(ElementName::DataMappings)?;
-        let sr_mapping = data_mappings.create_sub_element(ElementName::SenderReceiverToSignalMapping)?;
 
-        let iref = sr_mapping.create_sub_element(ElementName::DataElementIref)?;
-        iref.create_sub_element(ElementName::ContextPortRef)?
-            .set_reference_target(port_prototype.element())?;
-        iref.create_sub_element(ElementName::TargetDataPrototypeRef)?
-            .set_reference_target(data_element.element())?;
-
-        // the list of context components is ordered, with the root composition prototype at the beginning
-        for comp_proto in context_components {
-            iref.create_sub_element(ElementName::ContextComponentRef)?
-                .set_reference_target(comp_proto.element())?;
-        }
-
-        if let Some(root_composition_prototype) = root_composition_prototype {
-            iref.create_sub_element(ElementName::ContextCompositionRef)?
-                .set_reference_target(root_composition_prototype.element())?;
-        }
-
-        sr_mapping
-            .create_sub_element(ElementName::SystemSignalRef)?
-            .set_reference_target(signal.element())?;
-
-        Ok(())
+        SenderReceiverToSignalMapping::new(
+            &data_mappings,
+            signal,
+            data_element,
+            port_prototype,
+            context_components,
+            root_composition_prototype,
+        )
     }
 }
 
@@ -252,6 +237,69 @@ impl SwcToEcuMapping {
             .get_sub_element(ElementName::EcuInstanceRef)
             .and_then(|r| r.get_reference_target().ok())
             .and_then(|target| EcuInstance::try_from(target).ok())
+    }
+}
+
+//#########################################################
+
+/// A `SenderReceiverToSignalMapping` contains a mapping between a sender/receiver port and a system signal
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SenderReceiverToSignalMapping(Element);
+abstraction_element!(SenderReceiverToSignalMapping, SenderReceiverToSignalMapping);
+
+impl SenderReceiverToSignalMapping {
+    pub(crate) fn new(
+        parent: &Element,
+        signal: &SystemSignal,
+        data_element: &VariableDataPrototype,
+        port_prototype: &PortPrototype,
+        context_components: &[&SwComponentPrototype],
+        root_composition_prototype: Option<&RootSwCompositionPrototype>,
+    ) -> Result<Self, AutosarAbstractionError> {
+        let sr_mapping = parent.create_sub_element(ElementName::SenderReceiverToSignalMapping)?;
+        let iref = sr_mapping.create_sub_element(ElementName::DataElementIref)?;
+        iref.create_sub_element(ElementName::ContextPortRef)?
+            .set_reference_target(port_prototype.element())?;
+        iref.create_sub_element(ElementName::TargetDataPrototypeRef)?
+            .set_reference_target(data_element.element())?;
+
+        // the list of context components is ordered, with the root composition prototype at the beginning
+        for comp_proto in context_components {
+            iref.create_sub_element(ElementName::ContextComponentRef)?
+                .set_reference_target(comp_proto.element())?;
+        }
+
+        if let Some(root_composition_prototype) = root_composition_prototype {
+            iref.create_sub_element(ElementName::ContextCompositionRef)?
+                .set_reference_target(root_composition_prototype.element())?;
+        }
+
+        sr_mapping
+            .create_sub_element(ElementName::SystemSignalRef)?
+            .set_reference_target(signal.element())?;
+
+        Ok(Self(sr_mapping))
+    }
+
+    /// Get the system signal that is the target of this mapping
+    #[must_use]
+    pub fn system_signal(&self) -> Option<SystemSignal> {
+        let element = self
+            .element()
+            .get_sub_element(ElementName::SystemSignalRef)
+            .and_then(|r| r.get_reference_target().ok())?;
+        SystemSignal::try_from(element).ok()
+    }
+
+    /// Get the data element that is mapped to the signal
+    #[must_use]
+    pub fn data_element(&self) -> Option<VariableDataPrototype> {
+        let element = self
+            .element()
+            .get_sub_element(ElementName::DataElementIref)
+            .and_then(|iref| iref.get_sub_element(ElementName::TargetDataPrototypeRef))
+            .and_then(|r| r.get_reference_target().ok())?;
+        VariableDataPrototype::try_from(element).ok()
     }
 }
 

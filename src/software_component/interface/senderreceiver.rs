@@ -1,8 +1,9 @@
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, Element, IdentifiableAbstractionElement,
-    abstraction_element,
+    SenderReceiverToSignalMapping, abstraction_element,
     datatype::{AbstractAutosarDataType, AutosarDataType, ValueSpecification},
-    software_component::AbstractPortInterface,
+    get_reference_parents,
+    software_component::{AbstractPortInterface, DataReceivedEvent, PortPrototype},
 };
 use autosar_data::ElementName;
 
@@ -25,6 +26,30 @@ impl SenderReceiverInterface {
             elements.create_named_sub_element(ElementName::SenderReceiverInterface, name)?;
 
         Ok(Self(sender_receiver_interface))
+    }
+
+    /// remove this `SenderReceiverInterface` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        for data_element in self.data_elements() {
+            data_element.remove(true)?;
+        }
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            match named_parent.element_name() {
+                ElementName::PPortPrototype | ElementName::RPortPrototype | ElementName::PrPortPrototype => {
+                    if let Ok(port) = PortPrototype::try_from(named_parent) {
+                        port.remove(deep)?;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
     }
 
     /// Add a new data element to the sender receiver interface
@@ -63,6 +88,28 @@ impl VariableDataPrototype {
             .set_reference_target(data_type)?;
 
         Ok(Self(vdp))
+    }
+
+    /// Remove this `VariableDataPrototype` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let ref_parents = get_reference_parents(self.element())?;
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, parent) in ref_parents {
+            if named_parent.element_name() == ElementName::DataReceivedEvent {
+                if let Ok(event) = DataReceivedEvent::try_from(named_parent) {
+                    event.remove(deep)?;
+                }
+            } else if named_parent.element_name() == ElementName::SystemMapping
+                && parent.element_name() == ElementName::DataElementIref
+                && let Ok(Some(parent_parent)) = parent.parent()
+                && let Ok(mapping) = SenderReceiverToSignalMapping::try_from(parent_parent)
+            {
+                mapping.remove(deep)?;
+            }
+        }
+
+        Ok(())
     }
 
     /// Get the interface containing the data element
@@ -122,7 +169,7 @@ mod test {
             AutosarDataType, BaseTypeEncoding, ImplementationDataTypeSettings, NumericalValueSpecification,
             ValueSpecification,
         },
-        software_component::AbstractPortInterface,
+        software_component::{AbstractPortInterface, AbstractSwComponentType},
     };
     use autosar_data::AutosarVersion;
 
@@ -189,5 +236,21 @@ mod test {
         assert!(sr_interface.is_service().unwrap());
         sr_interface.set_is_service(None).unwrap();
         assert_eq!(sr_interface.is_service(), None);
+    }
+
+    #[test]
+    fn remove() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+        let sender_receiver_interface = package.create_sender_receiver_interface("TestInterface").unwrap();
+
+        let composition_type = package.create_composition_sw_component_type("comp_parent").unwrap();
+        let _composition_r_port = composition_type
+            .create_r_port("port_r", &sender_receiver_interface)
+            .unwrap();
+
+        assert_eq!(composition_type.ports().count(), 1);
+        sender_receiver_interface.remove(true).unwrap();
+        assert_eq!(composition_type.ports().count(), 0);
     }
 }

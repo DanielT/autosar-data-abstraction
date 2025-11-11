@@ -1,6 +1,9 @@
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, Element, IdentifiableAbstractionElement,
-    abstraction_element, datatype,
+    abstraction_element,
+    datatype::{self, DataTypeMap},
+    get_reference_parents, is_used,
+    software_component::{ArgumentDataPrototype, ParameterDataPrototype, VariableDataPrototype},
 };
 use autosar_data::{ElementName, EnumItem};
 use datatype::{AbstractAutosarDataType, CompuMethod, DataConstr, Unit};
@@ -26,6 +29,18 @@ impl ApplicationArrayDataType {
     ) -> Result<Self, AutosarAbstractionError> {
         let element_type = element_type.clone().into();
         Self::new_internal(name, package, &element_type, size)
+    }
+
+    /// remove the application array data type from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        if let Some(array_element) = self.array_element() {
+            array_element.remove(deep)?;
+        }
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        remove_helper(ref_parents, deep)
     }
 
     fn new_internal(
@@ -233,6 +248,22 @@ impl ApplicationArrayElement {
         Ok(application_array_element)
     }
 
+    /// remove the application array element from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_data_type = self.data_type();
+
+        AbstractionElement::remove(self, deep)?;
+
+        if deep
+            && let Some(data_type) = opt_data_type
+            && !is_used(data_type.element())
+        {
+            data_type.remove(deep)?;
+        }
+
+        Ok(())
+    }
+
     /// set the data type of the array element
     pub fn set_data_type<T: Into<ApplicationDataType> + AbstractionElement>(
         &self,
@@ -292,6 +323,18 @@ impl ApplicationRecordDataType {
         Ok(Self(application_record_data_type))
     }
 
+    /// remove the application record data type from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        for record_element in self.record_elements() {
+            record_element.remove(deep)?;
+        }
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        remove_helper(ref_parents, deep)
+    }
+
     /// create a new element in the record data type
     pub fn create_record_element<T: Into<ApplicationDataType> + Clone>(
         &self,
@@ -334,6 +377,22 @@ impl ApplicationRecordElement {
         application_record_element.set_data_type(data_type)?;
 
         Ok(application_record_element)
+    }
+
+    /// remove the application record element from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_data_type = self.data_type();
+
+        AbstractionElement::remove(self, deep)?;
+
+        if deep
+            && let Some(data_type) = opt_data_type
+            && !is_used(data_type.element())
+        {
+            data_type.remove(deep)?;
+        }
+
+        Ok(())
     }
 
     /// set the data type of the record element
@@ -402,6 +461,36 @@ impl ApplicationPrimitiveDataType {
         application_primitive_data_type.set_data_constraint(data_constraint)?;
 
         Ok(application_primitive_data_type)
+    }
+
+    /// remove the application primitive data type from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_compu_method = self.compu_method();
+        let opt_unit = self.unit();
+        let opt_data_constraint = self.data_constraint();
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        if deep {
+            if let Some(compu_method) = opt_compu_method
+                && !is_used(compu_method.element())
+            {
+                compu_method.remove(deep)?;
+            }
+            if let Some(unit) = opt_unit
+                && !is_used(unit.element())
+            {
+                unit.remove(deep)?;
+            }
+            if let Some(data_constraint) = opt_data_constraint
+                && !is_used(data_constraint.element())
+            {
+                data_constraint.remove(deep)?;
+            }
+        }
+
+        remove_helper(ref_parents, deep)
     }
 
     /// set the category of the primitive data type
@@ -669,6 +758,58 @@ impl ApplicationDataType {
             .character_data()?
             .string_value()
     }
+
+    /// remove the application record data type from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        match self {
+            ApplicationDataType::Array(e) => e.remove(deep),
+            ApplicationDataType::Record(e) => e.remove(deep),
+            ApplicationDataType::Primitive(e) => e.remove(deep),
+        }
+    }
+}
+
+//#########################################################
+
+fn remove_helper(ref_parents: Vec<(Element, Element)>, deep: bool) -> Result<(), AutosarAbstractionError> {
+    for (named_parent, parent) in ref_parents {
+        match named_parent.element_name() {
+            ElementName::Element => {
+                if let Ok(app_data_type_ref) = ApplicationArrayElement::try_from(named_parent) {
+                    app_data_type_ref.remove(deep)?;
+                }
+            }
+            ElementName::ApplicationRecordElement => {
+                if let Ok(app_data_type_ref) = ApplicationRecordElement::try_from(named_parent) {
+                    app_data_type_ref.remove(deep)?;
+                }
+            }
+            ElementName::DataTypeMappingSet => {
+                // don't remove the whole mapping set, only the mapping
+                if let Ok(data_type_map) = DataTypeMap::try_from(parent) {
+                    data_type_map.remove(deep)?;
+                }
+            }
+            ElementName::ParameterDataPrototype => {
+                if let Ok(param_prototype) = ParameterDataPrototype::try_from(named_parent) {
+                    param_prototype.remove(deep)?;
+                }
+            }
+            ElementName::VariableDataPrototype => {
+                if let Ok(var_data_prototype) = VariableDataPrototype::try_from(parent) {
+                    var_data_prototype.remove(deep)?;
+                }
+            }
+            ElementName::ArgumentDataPrototype => {
+                if let Ok(arg_data_prototype) = ArgumentDataPrototype::try_from(parent) {
+                    arg_data_prototype.remove(deep)?;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    Ok(())
 }
 
 //#########################################################
@@ -676,7 +817,11 @@ impl ApplicationDataType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::AutosarModelAbstraction;
+    use crate::{
+        AutosarModelAbstraction,
+        datatype::{BaseTypeEncoding, ImplementationDataTypeSettings},
+        software_component::ArgumentDirection,
+    };
     use autosar_data::AutosarVersion;
     use datatype::{CompuMethodContent, CompuMethodLinearContent};
 
@@ -878,5 +1023,71 @@ mod tests {
 
         let result = ApplicationDataType::try_from(package.element().clone());
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn remove() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/DataTypes").unwrap();
+        let element_type = package
+            .create_application_primitive_data_type(
+                "AppPrimitive",
+                ApplicationPrimitiveCategory::Value,
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+        let array_data_type = package
+            .create_application_array_data_type("AppArray", &element_type, ApplicationArraySize::Fixed(10))
+            .unwrap();
+
+        // create a matching implementation data type
+        let base_type = package
+            .create_sw_base_type("uint8", 8, BaseTypeEncoding::TwosComplement, None, None, Some("uint8"))
+            .unwrap();
+        let impl_array = package
+            .create_implementation_data_type(&ImplementationDataTypeSettings::Array {
+                name: "ImplArray".to_string(),
+                length: 10,
+                element_type: Box::new(ImplementationDataTypeSettings::Value {
+                    name: "ImplPrimitive".to_string(),
+                    base_type,
+                    compu_method: None,
+                    data_constraint: None,
+                }),
+            })
+            .unwrap();
+
+        // create a data type mapping that maps the implementation array to the application array
+        let data_type_mapping_set = package.create_data_type_mapping_set("DataTypeMappingSet").unwrap();
+        data_type_mapping_set
+            .create_data_type_map(&impl_array, &array_data_type)
+            .unwrap();
+
+        // create a SenderReceiverInterface that uses the application array data type
+        let sr_interface = package.create_sender_receiver_interface("SRInterface").unwrap();
+        let _vdp = sr_interface.create_data_element("VDP", &array_data_type).unwrap();
+        // create a client-server interface that uses the application array data type
+        let cs_interface = package.create_client_server_interface("CSInterface").unwrap();
+        let cso = cs_interface.create_operation("ADP").unwrap();
+        let _adp = cso
+            .create_argument("ADP", &array_data_type, ArgumentDirection::In)
+            .unwrap();
+
+        // create an application record data type that uses the application array data type
+        let record_data_type = package.create_application_record_data_type("AppRecord").unwrap();
+        let _record_element = record_data_type
+            .create_record_element("RecordElement", &array_data_type)
+            .unwrap();
+
+        // remove the application array data type deeply
+        array_data_type.remove(true).unwrap();
+
+        // check that all related elements have been removed
+        assert_eq!(data_type_mapping_set.data_type_maps().count(), 0);
+        assert_eq!(sr_interface.data_elements().count(), 0);
+        assert_eq!(cso.arguments().count(), 0);
+        assert_eq!(record_data_type.record_elements().count(), 0);
     }
 }

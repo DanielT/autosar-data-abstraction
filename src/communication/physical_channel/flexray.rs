@@ -29,6 +29,31 @@ impl FlexrayPhysicalChannel {
         }
     }
 
+    /// remove this `FlexrayPhysicalChannel` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all frame triggerings of this physical channel
+        for ft in self.frame_triggerings() {
+            ft.remove(deep)?;
+        }
+
+        // remove all pdu triggerings of this physical channel
+        for pt in self.pdu_triggerings() {
+            pt.remove(deep)?;
+        }
+
+        // remove all signal triggerings of this physical channel
+        for st in self.signal_triggerings() {
+            st.remove(deep)?;
+        }
+
+        // remove all connectors using this physical channel
+        for connector in self.connectors() {
+            connector.remove(deep)?;
+        }
+
+        AbstractionElement::remove(self, deep)
+    }
+
     /// get the cluster containing this physical channel
     ///
     /// # Example
@@ -143,8 +168,8 @@ pub enum FlexrayChannelName {
 #[cfg(test)]
 mod test {
     use crate::{
-        AbstractionElement, AutosarModelAbstraction, SystemCategory,
-        communication::{FlexrayChannelName, FlexrayClusterSettings},
+        AbstractionElement, AutosarModelAbstraction, ByteOrder, SystemCategory,
+        communication::{AbstractFrame, FlexrayChannelName, FlexrayClusterSettings},
     };
     use autosar_data::{AutosarVersion, ElementName};
 
@@ -173,5 +198,37 @@ mod test {
         // now there is no longer a channel A
         let channel2 = cluster.create_physical_channel("channel_name2", FlexrayChannelName::A);
         assert!(channel2.is_ok());
+    }
+
+    #[test]
+    fn remove_channel() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let pkg = model.get_or_create_package("/test").unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
+        let settings = FlexrayClusterSettings::default();
+        let cluster = system.create_flexray_cluster("FlxCluster", &pkg, &settings).unwrap();
+
+        let channel = cluster
+            .create_physical_channel("channel_name", FlexrayChannelName::A)
+            .unwrap();
+
+        let frame = system.create_flexray_frame("FlexrayFrame", &pkg, 8).unwrap();
+        let timing = crate::communication::FlexrayCommunicationCycle::Repetition {
+            base_cycle: 1,
+            cycle_repetition: crate::communication::CycleRepetition::C1,
+        };
+        let _ = channel.trigger_frame(&frame, 1, &timing).unwrap();
+        let isignal_ipdu = system.create_isignal_ipdu("ISignalIPdu", &pkg, 8).unwrap();
+        let _ = frame
+            .map_pdu(&isignal_ipdu, 0, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+
+        channel.remove(true).unwrap();
+
+        assert!(cluster.physical_channels().channel_a.is_none());
+        assert!(cluster.physical_channels().channel_b.is_none());
+
+        // the PDU was removed, because it was unused and deep removal was requested
+        assert!(isignal_ipdu.element().parent().is_err());
     }
 }

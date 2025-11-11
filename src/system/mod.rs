@@ -2,8 +2,9 @@ use crate::communication::{
     CanCluster, CanFrame, CanTpConfig, Cluster, ContainerIPdu, ContainerIPduHeaderType, DcmIPdu, DiagPduType,
     DoIpTpConfig, EthernetCluster, EventGroupControlType, FlexrayArTpConfig, FlexrayCluster, FlexrayClusterSettings,
     FlexrayFrame, FlexrayTpConfig, Frame, GeneralPurposeIPdu, GeneralPurposeIPduCategory, GeneralPurposePdu,
-    GeneralPurposePduCategory, ISignal, ISignalGroup, ISignalIPdu, LinCluster, MultiplexedIPdu, NPdu, NmConfig, NmPdu,
-    Pdu, RxAcceptContainedIPdu, SecureCommunicationProps, SecuredIPdu, ServiceInstanceCollectionSet, SoAdRoutingGroup,
+    GeneralPurposePduCategory, ISignal, ISignalGroup, ISignalIPdu, LinCluster, LinEventTriggeredFrame,
+    LinSporadicFrame, LinUnconditionalFrame, MultiplexedIPdu, NPdu, NmConfig, NmPdu, Pdu, RxAcceptContainedIPdu,
+    SecureCommunicationProps, SecuredIPdu, ServiceInstanceCollectionSet, SoAdRoutingGroup,
     SocketConnectionIpduIdentifierSet, SomeipTpConfig, SystemSignal, SystemSignalGroup,
 };
 use crate::datatype::SwBaseType;
@@ -73,6 +74,54 @@ impl System {
         system.set_category(category)?;
 
         Ok(system)
+    }
+
+    /// remove this `System` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all ECU instances of this System
+        for mapping in self
+            .0
+            .get_sub_element(ElementName::Mappings)
+            .into_iter()
+            .flat_map(|mappings| mappings.sub_elements())
+            .filter_map(|mapping| SystemMapping::try_from(mapping).ok())
+        {
+            mapping.remove(deep)?;
+        }
+
+        if let Some(root_sw_comp) = self.root_sw_composition() {
+            root_sw_comp.remove(deep)?;
+        }
+
+        // lots of elements that are not directly nested in the system are connected to it
+        // all of these are deleted if `deep` is requested
+        if deep {
+            for cluster in self.clusters() {
+                cluster.remove(deep)?;
+            }
+
+            for frame in self.frames() {
+                frame.remove(deep)?;
+            }
+
+            for pdu in self.pdus() {
+                pdu.remove(deep)?;
+            }
+
+            for isignal in self.isignals() {
+                isignal.remove(deep)?;
+            }
+
+            for isignal_group in self.isignal_groups() {
+                isignal_group.remove(deep)?;
+            }
+
+            if let Some(nm_config) = self.nm_config() {
+                nm_config.remove(deep)?;
+            }
+        }
+
+        AbstractionElement::remove(self, deep)
     }
 
     /// set the category of the system
@@ -386,6 +435,51 @@ impl System {
         self.create_fibex_element_ref_unchecked(flexray_frame.element())?;
 
         Ok(flexray_frame)
+    }
+
+    /// create a new [`LinEventTriggeredFrame`]
+    ///
+    /// This new frame needs to be linked to a `LinPhysicalChannel`
+    pub fn create_lin_event_triggered_frame(
+        &self,
+        name: &str,
+        package: &ArPackage,
+        byte_length: u64,
+    ) -> Result<LinEventTriggeredFrame, AutosarAbstractionError> {
+        let lin_event_triggered_frame = LinEventTriggeredFrame::new(name, package, byte_length)?;
+        self.create_fibex_element_ref_unchecked(lin_event_triggered_frame.element())?;
+
+        Ok(lin_event_triggered_frame)
+    }
+
+    /// create a new [`LinSporadicFrame`]
+    ///
+    /// This new frame needs to be linked to a `LinPhysicalChannel`
+    pub fn create_lin_sporadic_frame(
+        &self,
+        name: &str,
+        package: &ArPackage,
+        byte_length: u64,
+    ) -> Result<LinSporadicFrame, AutosarAbstractionError> {
+        let lin_sporadic_frame = LinSporadicFrame::new(name, package, byte_length)?;
+        self.create_fibex_element_ref_unchecked(lin_sporadic_frame.element())?;
+
+        Ok(lin_sporadic_frame)
+    }
+
+    /// create a new [`LinUnconditionalFrame`]
+    ///
+    /// This new frame needs to be linked to a `LinPhysicalChannel`
+    pub fn create_lin_unconditional_frame(
+        &self,
+        name: &str,
+        package: &ArPackage,
+        byte_length: u64,
+    ) -> Result<LinUnconditionalFrame, AutosarAbstractionError> {
+        let lin_unconditional_frame = LinUnconditionalFrame::new(name, package, byte_length)?;
+        self.create_fibex_element_ref_unchecked(lin_unconditional_frame.element())?;
+
+        Ok(lin_unconditional_frame)
     }
 
     /// iterate over all Frames in the System
@@ -1163,6 +1257,33 @@ impl FusedIterator for EcuInstanceIterator {}
 
 //#########################################################
 
+/// check if the system element is used anywhere
+pub(crate) fn is_used_system_element(element: &Element) -> bool {
+    let Ok(model) = element.model() else {
+        // not connected to model -> unused
+        return false;
+    };
+    let Ok(path) = element.path() else {
+        // not connected to model any more -> unused
+        // this case is only reachable through a race condition (parallel deletion)
+        return false;
+    };
+    let references = model.get_references_to(&path);
+
+    // it is unused if there is either a single FIBEX-ELEMENT-REF (typical), or no reference at all (edge case)
+    if let [weak_elem] = references.as_slice()
+        && weak_elem
+            .upgrade()
+            .is_none_or(|elem| elem.element_name() == ElementName::FibexElementRef)
+    {
+        false
+    } else {
+        !references.is_empty()
+    }
+}
+
+//#########################################################
+
 #[cfg(test)]
 mod test {
     use crate::{
@@ -1347,12 +1468,21 @@ mod test {
 
         system.create_can_frame("CanFrame", &package_2, 8).unwrap();
         system.create_flexray_frame("FlexrayFrame", &package_2, 8).unwrap();
+        system
+            .create_lin_event_triggered_frame("LinEventTriggeredFrame", &package_2, 8)
+            .unwrap();
+        system
+            .create_lin_unconditional_frame("LinUnconditionalFrame", &package_2, 8)
+            .unwrap();
+        system
+            .create_lin_sporadic_frame("LinSporadicFrame", &package_2, 8)
+            .unwrap();
 
         // the ecu-instance is a third item in the FIBEX-ELEMENTS of the system, which should not be picked up by the iterator
         let package_3 = model.get_or_create_package("/ECU").unwrap();
         system.create_ecu_instance("Ecu_1", &package_3).unwrap();
 
-        assert_eq!(system.frames().count(), 2);
+        assert_eq!(system.frames().count(), 5);
     }
 
     #[test]

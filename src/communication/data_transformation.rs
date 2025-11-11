@@ -1,6 +1,6 @@
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder, IdentifiableAbstractionElement,
-    abstraction_element,
+    abstraction_element, get_reference_parents, is_used,
 };
 use autosar_data::{AutosarVersion, Element, ElementName, EnumItem};
 
@@ -19,6 +19,19 @@ impl DataTransformationSet {
         let transformation_set = elements.create_named_sub_element(ElementName::DataTransformationSet, name)?;
 
         Ok(Self(transformation_set))
+    }
+
+    /// remove this `DataTransformationSet` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        for transformation_tech in self.transformation_technologies() {
+            transformation_tech.remove(deep)?;
+        }
+
+        for data_transformation in self.data_transformations() {
+            data_transformation.remove(deep)?;
+        }
+
+        AbstractionElement::remove(self, deep)
     }
 
     /// Create a new `DataTransformation` in the `DataTransformationSet`
@@ -143,6 +156,32 @@ impl DataTransformation {
         Ok(Self(transformation))
     }
 
+    /// remove this `DataTransformation` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let transformation_technologies: Vec<_> = self.transformation_technologies().collect();
+        let opt_data_transformation_set = self.data_transformation_set();
+
+        AbstractionElement::remove(self, deep)?;
+
+        if deep {
+            // also remove the DataTransformationSet if it contains no other data transformations
+            if let Some(dts) = opt_data_transformation_set
+                && dts.data_transformations().count() == 0
+            {
+                dts.remove(true)?;
+            }
+
+            for ttech in transformation_technologies {
+                if !is_used(ttech.element()) {
+                    // remove unused TransformationTechnologies
+                    ttech.remove(true)?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     /// get the `DataTransformationSet` that contains this `DataTransformation`
     #[must_use]
     pub fn data_transformation_set(&self) -> Option<DataTransformationSet> {
@@ -203,6 +242,36 @@ impl TransformationTechnology {
         ttech.set_config(config)?;
 
         Ok(ttech)
+    }
+
+    /// remove this `TransformationTechnology` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_data_transformation_set = self.data_transformation_set();
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            match named_parent.element_name() {
+                ElementName::EndToEndTransformationISignalProps | ElementName::SomeipTransformationISignalProps => {
+                    if let Ok(component) = TransformationISignalProps::try_from(named_parent) {
+                        component.remove(deep)?;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        if deep {
+            // also remove the DataTransformationSet if it became unused
+            if let Some(dts) = opt_data_transformation_set
+                && !is_used(dts.element())
+            {
+                dts.remove(true)?;
+            }
+        }
+
+        Ok(())
     }
 
     /// Set the configuration of the `TransformationTechnology`
@@ -1044,6 +1113,22 @@ impl EndToEndTransformationISignalProps {
         Ok(e2e_props)
     }
 
+    /// remove this `EndToEndTransformationISignalProps` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_transformer = self.transformer();
+
+        AbstractionElement::remove(self, deep)?;
+
+        if deep
+            && let Some(transformer) = opt_transformer
+            && !is_used(transformer.element())
+        {
+            transformer.remove(true)?;
+        }
+
+        Ok(())
+    }
+
     fn inner_element(&self) -> Option<Element> {
         self.0
             .get_sub_element(ElementName::EndToEndTransformationISignalPropsVariants)?
@@ -1227,6 +1312,22 @@ impl SomeIpTransformationISignalProps {
         someip_props.set_transformer(transformer)?;
 
         Ok(someip_props)
+    }
+
+    /// remove the `SomeipTransformationISignalPropsConditional` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_transformer = self.transformer();
+
+        AbstractionElement::remove(self, deep)?;
+
+        if deep
+            && let Some(transformer) = opt_transformer
+            && !is_used(transformer.element())
+        {
+            transformer.remove(true)?;
+        }
+
+        Ok(())
     }
 
     fn inner_element(&self) -> Option<Element> {
@@ -1497,6 +1598,16 @@ impl TryFrom<Element> for TransformationISignalProps {
                 element,
                 dest: "TransformationISignalProps".to_string(),
             }),
+        }
+    }
+}
+
+impl TransformationISignalProps {
+    /// remove this `TransformationISignalProps` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        match self {
+            TransformationISignalProps::E2E(e2e_props) => e2e_props.remove(deep),
+            TransformationISignalProps::SomeIp(someip_props) => someip_props.remove(deep),
         }
     }
 }

@@ -1,6 +1,10 @@
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
-    communication::{AbstractCluster, FlexrayChannelName, FlexrayPhysicalChannel},
+    communication::{
+        AbstractCluster, FlexrayArTpConfig, FlexrayChannelName, FlexrayNmCluster, FlexrayPhysicalChannel,
+        FlexrayTpConfig,
+    },
+    get_reference_parents,
 };
 use autosar_data::{Element, ElementName, EnumItem};
 
@@ -38,6 +42,47 @@ impl FlexrayCluster {
         flexray_cluster.update_settings(settings);
 
         Ok(flexray_cluster)
+    }
+
+    /// remove this `FlexrayCluster` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove the physical channels, if they exist
+        let channels_info = self.physical_channels();
+        if let Some(channel_a) = channels_info.channel_a {
+            channel_a.remove(deep)?;
+        }
+        if let Some(channel_b) = channels_info.channel_b {
+            channel_b.remove(deep)?;
+        }
+        let ref_parents = get_reference_parents(self.element())?;
+
+        // delegate to the trait implementation to clean up all other references to the element and the element itself
+        AbstractionElement::remove(self, deep)?;
+
+        // check if any FlexrayTpConfig, FlexrayArTpConfig or FlexrayNmCluster uses this FlexrayCluster
+        // The cluster reference is mandatory these elements, so we remove them together with the cluster
+        for (named_parent, _parent) in ref_parents {
+            match named_parent.element_name() {
+                ElementName::FlexrayTpConfig => {
+                    if let Ok(flexray_tp_config) = FlexrayTpConfig::try_from(named_parent) {
+                        flexray_tp_config.remove(deep)?;
+                    }
+                }
+                ElementName::FlexrayArTpConfig => {
+                    if let Ok(flexray_ar_tp_config) = FlexrayArTpConfig::try_from(named_parent) {
+                        flexray_ar_tp_config.remove(deep)?;
+                    }
+                }
+                ElementName::FlexrayNmCluster => {
+                    if let Ok(flexray_nm_cluster) = FlexrayNmCluster::try_from(named_parent) {
+                        flexray_nm_cluster.remove(deep)?;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
     }
 
     /// update the cluster settings
@@ -956,8 +1001,8 @@ impl Default for FlexrayClusterSettings {
 #[cfg(test)]
 mod test {
     use crate::{
-        AutosarModelAbstraction, SystemCategory,
-        communication::{AbstractCluster, FlexrayChannelName, FlexrayClusterSettings},
+        AbstractionElement, AutosarModelAbstraction, SystemCategory,
+        communication::{AbstractCluster, FlexrayChannelName, FlexrayClusterSettings, FlexrayNmClusterSettings},
     };
     use autosar_data::AutosarVersion;
 
@@ -1133,5 +1178,41 @@ mod test {
         settings.sync_frame_id_count_max = 1;
         assert!(!settings.verify());
         settings.sync_frame_id_count_max = settings2.sync_frame_id_count_max;
+    }
+
+    #[test]
+    fn remove_cluster() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+        let pkg = model.get_or_create_package("/test").unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
+        let settings = FlexrayClusterSettings::default();
+        let cluster = system.create_flexray_cluster("FlxCluster", &pkg, &settings).unwrap();
+        let channel = cluster
+            .create_physical_channel("Channel1", FlexrayChannelName::A)
+            .unwrap();
+
+        let nm_config = system.create_nm_config("NmConfig", &pkg).unwrap();
+        let settings = FlexrayNmClusterSettings {
+            nm_data_cycle: 5,
+            nm_remote_sleep_indication_time: 5.0,
+            nm_repeat_message_time: 5.0,
+            nm_repetition_cycle: 5,
+            nm_voting_cycle: 5,
+        };
+        let fr_nm_cluster = nm_config
+            .create_flexray_nm_cluster("FrNmCluster", &settings, &cluster)
+            .unwrap();
+        let fr_tp_config = system.create_flexray_tp_config("FrTpConfig", &pkg, &cluster).unwrap();
+        let fr_ar_tp_config = system
+            .create_flexray_ar_tp_config("FrArTpConfig", &pkg, &cluster)
+            .unwrap();
+
+        cluster.remove(true).unwrap();
+
+        // check that the cluster and its channel are removed
+        assert!(channel.element().path().is_err());
+        assert!(fr_nm_cluster.element().path().is_err());
+        assert!(fr_tp_config.element().path().is_err());
+        assert!(fr_ar_tp_config.element().path().is_err());
     }
 }

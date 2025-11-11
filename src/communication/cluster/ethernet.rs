@@ -1,6 +1,9 @@
-use crate::communication::{AbstractCluster, EthernetPhysicalChannel, EthernetVlanInfo};
+use crate::communication::{
+    AbstractCluster, DoIpTpConfig, EthernetPhysicalChannel, EthernetVlanInfo, SomeipTpConfig, UdpNmCluster,
+};
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
+    get_reference_parents,
 };
 use autosar_data::{Element, ElementName};
 
@@ -24,6 +27,43 @@ impl EthernetCluster {
         }
 
         Ok(EthernetCluster(elem_cluster))
+    }
+
+    /// remove this `EthernetCluster` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all the physical channels
+        for channel in self.physical_channels() {
+            channel.remove(deep)?;
+        }
+        let ref_parents = get_reference_parents(self.element())?;
+
+        // delegate to the trait implementation to clean up all other references to the element and the element itself
+        AbstractionElement::remove(self, deep)?;
+
+        // check if any DoipTpConfig, or UdpNmCluster or SomeIpTpConfig uses this EthernetCluster
+        // The cluster reference is mandatory these elements, so we remove them together with the cluster
+        for (named_parent, _parent) in ref_parents {
+            match named_parent.element_name() {
+                ElementName::DoIpTpConfig => {
+                    if let Ok(doip_tp_config) = DoIpTpConfig::try_from(named_parent) {
+                        doip_tp_config.remove(deep)?;
+                    }
+                }
+                ElementName::UdpNmCluster => {
+                    if let Ok(udp_nm_cluster) = UdpNmCluster::try_from(named_parent) {
+                        udp_nm_cluster.remove(deep)?;
+                    }
+                }
+                ElementName::SomeipTpConfig => {
+                    if let Ok(someip_tp_config) = SomeipTpConfig::try_from(named_parent) {
+                        someip_tp_config.remove(deep)?;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
     }
 
     /// Create a new physical channel for the cluster
@@ -104,8 +144,8 @@ impl AbstractCluster for EthernetCluster {}
 #[cfg(test)]
 mod test {
     use crate::{
-        AutosarModelAbstraction, SystemCategory,
-        communication::{AbstractCluster, EthernetVlanInfo},
+        AbstractionElement, AutosarModelAbstraction, SystemCategory,
+        communication::{AbstractCluster, EthernetVlanInfo, UdpNmClusterSettings},
     };
     use autosar_data::AutosarVersion;
 
@@ -169,5 +209,41 @@ mod test {
 
         let count = cluster.physical_channels().count();
         assert_eq!(count, 3);
+    }
+
+    #[test]
+    fn remove_cluster() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+        let pkg = model.get_or_create_package("/test").unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
+        let pkg2 = model.get_or_create_package("/ethernet").unwrap();
+        let cluster = system.create_ethernet_cluster("EthCluster", &pkg2).unwrap();
+        let channel = cluster.create_physical_channel("Channel1", None).unwrap();
+
+        let doip_tp_config = system.create_doip_tp_config("DoIpTpConfig", &pkg2, &cluster).unwrap();
+        let nm_config = system.create_nm_config("NmConfig", &pkg2).unwrap();
+        let settings = UdpNmClusterSettings {
+            nm_msg_cycle_time: 5.0,
+            nm_msg_timeout_time: 5.0,
+            nm_network_timeout: 5.0,
+            nm_remote_sleep_indication_time: 5.0,
+            nm_repeat_message_time: 5.0,
+            nm_wait_bus_sleep_time: 5.0,
+        };
+        let udp_nm_cluster = nm_config
+            .create_udp_nm_cluster("UdpNmCluster", &settings, &cluster)
+            .unwrap();
+
+        let someip_tp_config = system
+            .create_someip_tp_config("SomeipTpConfig", &pkg2, &cluster)
+            .unwrap();
+        // remove the cluster
+        let result = cluster.remove(true);
+        assert!(result.is_ok());
+        // check that the channel, DoIpTpConfig, UdpNmCluster and SomeIpTpConfig are also removed
+        assert!(channel.element().path().is_err());
+        assert!(doip_tp_config.element().path().is_err());
+        assert!(udp_nm_cluster.element().path().is_err());
+        assert!(someip_tp_config.element().path().is_err());
     }
 }

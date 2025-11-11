@@ -2,7 +2,8 @@ use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, Element, EnumItem, IdentifiableAbstractionElement,
     abstraction_element,
     datatype::{self, AbstractAutosarDataType},
-    software_component::AbstractPortInterface,
+    get_reference_parents,
+    software_component::{AbstractPortInterface, OperationInvokedEvent, PortPrototype},
 };
 use autosar_data::ElementName;
 use datatype::AutosarDataType;
@@ -25,6 +26,30 @@ impl ClientServerInterface {
         let client_server_interface = elements.create_named_sub_element(ElementName::ClientServerInterface, name)?;
 
         Ok(Self(client_server_interface))
+    }
+
+    /// remove this `ClientServerInterface` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        for operation in self.operations() {
+            operation.remove(true)?;
+        }
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            match named_parent.element_name() {
+                ElementName::PPortPrototype | ElementName::RPortPrototype | ElementName::PrPortPrototype => {
+                    if let Ok(port) = PortPrototype::try_from(named_parent) {
+                        port.remove(deep)?;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
     }
 
     /// Add a possible error to the client server interface
@@ -111,6 +136,22 @@ impl ClientServerOperation {
     fn new(name: &str, parent_element: &Element) -> Result<Self, AutosarAbstractionError> {
         let operation = parent_element.create_named_sub_element(ElementName::ClientServerOperation, name)?;
         Ok(Self(operation))
+    }
+
+    /// Remove this `ClientServerOperation` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let ref_parents = get_reference_parents(self.element())?;
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            if named_parent.element_name() == ElementName::OperationInvokedEvent
+                && let Ok(event) = OperationInvokedEvent::try_from(named_parent)
+            {
+                event.remove(deep)?;
+            }
+        }
+
+        Ok(())
     }
 
     /// Add an argument to the operation
@@ -277,7 +318,7 @@ impl ArgumentDataPrototype {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::AutosarModelAbstraction;
+    use crate::{AutosarModelAbstraction, software_component::AbstractSwComponentType};
     use autosar_data::AutosarVersion;
     use datatype::{BaseTypeEncoding, ImplementationDataTypeSettings};
 
@@ -328,5 +369,21 @@ mod test {
         assert!(!client_server_interface.is_service().unwrap());
         client_server_interface.set_is_service(None).unwrap();
         assert_eq!(client_server_interface.is_service(), None);
+    }
+
+    #[test]
+    fn remove() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+        let client_server_interface = ClientServerInterface::new("TestInterface", &package).unwrap();
+
+        let composition_type = package.create_composition_sw_component_type("comp_parent").unwrap();
+        let _composition_r_port = composition_type
+            .create_r_port("port_r", &client_server_interface)
+            .unwrap();
+
+        assert_eq!(composition_type.ports().count(), 1);
+        client_server_interface.remove(true).unwrap();
+        assert_eq!(composition_type.ports().count(), 0);
     }
 }

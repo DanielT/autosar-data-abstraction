@@ -4,7 +4,7 @@ use crate::communication::{
 };
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder, EcuInstance, IdentifiableAbstractionElement,
-    abstraction_element, make_unique_name,
+    abstraction_element, is_used_system_element, make_unique_name,
 };
 use autosar_data::{Element, ElementName, EnumItem};
 
@@ -26,6 +26,26 @@ impl CanFrame {
             .set_character_data(byte_length.to_string())?;
 
         Ok(Self(can_frame))
+    }
+
+    /// remove this `CanFrame` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        for pdu_mapping in self.mapped_pdus() {
+            pdu_mapping.remove(deep)?;
+        }
+
+        // get all frame triggerings using this frame
+        let frame_triggerings = self.frame_triggerings();
+
+        // remove the element itself
+        AbstractionElement::remove(self, deep)?;
+
+        // remove the frame triggerings
+        for ft in frame_triggerings {
+            ft.remove(deep)?;
+        }
+
+        Ok(())
     }
 }
 
@@ -111,6 +131,33 @@ impl CanFrameTriggering {
         }
 
         Ok(ft)
+    }
+
+    /// remove this `CanFrameTriggering` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_frame = self.frame();
+
+        // remove all pdu triggerings of this frame triggering
+        for pt in self.pdu_triggerings() {
+            pt.remove(deep)?;
+        }
+        for frame_port in self.frame_ports() {
+            frame_port.remove(deep)?;
+        }
+
+        AbstractionElement::remove(self, deep)?;
+
+        // if deep, check if the frame became unused because of this frame triggering removal
+        // if so remove it too
+        if deep && let Some(frame) = opt_frame {
+            // check if any frame became unused because of this frame triggering removal
+            // if so remove it too
+            if !is_used_system_element(frame.element()) {
+                frame.remove(deep)?;
+            }
+        }
+
+        Ok(())
     }
 
     /// set the can id associated with this frame
@@ -388,5 +435,85 @@ mod test {
         assert_eq!(port2.communication_direction().unwrap(), CommunicationDirection::In);
         port2.set_communication_direction(CommunicationDirection::Out).unwrap();
         assert_eq!(port2.communication_direction().unwrap(), CommunicationDirection::Out);
+    }
+
+    #[test]
+    fn remove_frame_triggering() {
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+        let system = package.create_system("System", SystemCategory::EcuExtract).unwrap();
+        let can_cluster = system.create_can_cluster("Cluster", &package, None).unwrap();
+        let channel = can_cluster.create_physical_channel("Channel").unwrap();
+
+        let frame = system.create_can_frame("frame", &package, 8).unwrap();
+        let pdu = system.create_isignal_ipdu("pdu", &package, 8).unwrap();
+
+        let frame_triggering = channel
+            .trigger_frame(&frame, 0x123, CanAddressingMode::Standard, CanFrameType::Can20)
+            .unwrap();
+
+        let _mapping = frame
+            .map_pdu(&pdu, 0, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+
+        assert_eq!(frame.mapped_pdus().count(), 1);
+        assert_eq!(frame.frame_triggerings().len(), 1);
+        assert_eq!(channel.frame_triggerings().count(), 1);
+
+        // remove the frame triggering
+        frame_triggering.remove(false).unwrap();
+        // the frame remains because we did a shallow removal
+        assert_eq!(system.frames().count(), 1);
+
+        // re-create the frame triggering
+        let frame_triggering = channel
+            .trigger_frame(&frame, 0x123, CanAddressingMode::Standard, CanFrameType::Can20)
+            .unwrap();
+        // remove the frame triggering with deep=true
+        frame_triggering.remove(true).unwrap();
+
+        // the frame triggering should be removed
+        assert_eq!(channel.frame_triggerings().count(), 0);
+        // the frame should be removed because it became unused
+        assert_eq!(system.frames().count(), 0);
+        // the mapping should be removed because the frame was removed
+        assert_eq!(frame.mapped_pdus().count(), 0);
+        // the pdu was also removed, because it became unused and we did a deep removal
+        assert_eq!(system.pdus().count(), 0);
+
+        assert_eq!(channel.frame_triggerings().count(), 0);
+        assert_eq!(channel.pdu_triggerings().count(), 0);
+    }
+
+    #[test]
+    fn remove_frame() {
+        let model = AutosarModelAbstraction::create("test", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+        let system = package.create_system("System", SystemCategory::EcuExtract).unwrap();
+        let can_cluster = system.create_can_cluster("Cluster", &package, None).unwrap();
+        let channel = can_cluster.create_physical_channel("Channel").unwrap();
+        let frame = system.create_can_frame("frame", &package, 8).unwrap();
+        let pdu = system.create_isignal_ipdu("pdu", &package, 8).unwrap();
+        let frame_triggering = channel
+            .trigger_frame(&frame, 0x123, CanAddressingMode::Standard, CanFrameType::Can20)
+            .unwrap();
+        let mapping = frame
+            .map_pdu(&pdu, 0, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+        assert_eq!(frame.mapped_pdus().count(), 1);
+        assert_eq!(frame.frame_triggerings().len(), 1);
+        assert_eq!(channel.frame_triggerings().count(), 1);
+        // remove the frame with deep=false
+        frame.remove(false).unwrap();
+        // the frame should be removed
+        assert_eq!(system.frames().count(), 0);
+        // the mapping should be removed
+        assert!(mapping.element().path().is_err());
+        // the pdu should still exist
+        assert_eq!(system.pdus().count(), 1);
+        // the frame triggering should be removed
+        assert!(frame_triggering.element().path().is_err());
+        assert_eq!(channel.frame_triggerings().count(), 0);
+        assert_eq!(channel.pdu_triggerings().count(), 0);
     }
 }

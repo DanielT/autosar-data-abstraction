@@ -138,6 +138,18 @@ impl TryFrom<Element> for PhysicalChannel {
     }
 }
 
+impl PhysicalChannel {
+    /// remove this `PhysicalChannel` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        match self {
+            PhysicalChannel::Can(cpc) => cpc.remove(deep),
+            PhysicalChannel::Ethernet(epc) => epc.remove(deep),
+            PhysicalChannel::Flexray(fpc) => fpc.remove(deep),
+            PhysicalChannel::Lin(lpc) => lpc.remove(deep),
+        }
+    }
+}
+
 //##################################################################
 
 #[cfg(test)]

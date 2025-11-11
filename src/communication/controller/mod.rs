@@ -96,6 +96,19 @@ impl From<LinSlave> for CommunicationController {
     }
 }
 
+impl CommunicationController {
+    /// remove this `CommunicationController` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        match self {
+            CommunicationController::Can(can_ctrl) => can_ctrl.remove(deep),
+            CommunicationController::Ethernet(eth_ctrl) => eth_ctrl.remove(deep),
+            CommunicationController::Flexray(flx_ctrl) => flx_ctrl.remove(deep),
+            CommunicationController::LinMaster(lin_master) => lin_master.remove(deep),
+            CommunicationController::LinSlave(lin_slave) => lin_slave.remove(deep),
+        }
+    }
+}
+
 //##################################################################
 
 /// A trait for all communication controllers
@@ -232,16 +245,21 @@ mod tests {
         let can_ctrl = ecu.create_can_communication_controller("can").unwrap();
         let ethernet_ctrl = ecu.create_ethernet_communication_controller("ethernet", None).unwrap();
         let flexray_ctrl = ecu.create_flexray_communication_controller("flexray").unwrap();
+        let lin_master_ctrl = ecu.create_lin_master_communication_controller("lin_master").unwrap();
+        let lin_slave_ctrl = ecu.create_lin_slave_communication_controller("lin_slave").unwrap();
 
         let can_cc: CommunicationController = can_ctrl.clone().into();
         let ethernet_cc: CommunicationController = ethernet_ctrl.clone().into();
         let flexray_cc: CommunicationController = flexray_ctrl.clone().into();
+        let lin_master_cc: CommunicationController = lin_master_ctrl.clone().into();
+        let lin_slave_cc: CommunicationController = lin_slave_ctrl.clone().into();
 
         let can_cluster = system.create_can_cluster("can_cluster", &package, None).unwrap();
         let ethernet_cluster = system.create_ethernet_cluster("ethernet_cluster", &package).unwrap();
         let flexray_cluster = system
             .create_flexray_cluster("flexray_cluster", &package, &FlexrayClusterSettings::default())
             .unwrap();
+        let lin_cluster = system.create_lin_cluster("lin_cluster", &package).unwrap();
 
         let can_channel = can_cluster.create_physical_channel("can_channel").unwrap();
         let ethernet_channel = ethernet_cluster
@@ -250,6 +268,7 @@ mod tests {
         let flexray_channel = flexray_cluster
             .create_physical_channel("flexray_channel", FlexrayChannelName::A)
             .unwrap();
+        let lin_channel = lin_cluster.create_physical_channel("lin_channel").unwrap();
 
         let can_connector = can_ctrl
             .connect_physical_channel("can_connector", &can_channel)
@@ -260,6 +279,12 @@ mod tests {
         let flexray_connector = flexray_ctrl
             .connect_physical_channel("flexray_connector", &flexray_channel)
             .unwrap();
+        let lin_connector = lin_master_ctrl
+            .connect_physical_channel("lin_connector", &lin_channel)
+            .unwrap();
+        let lin_slave_connector = lin_slave_ctrl
+            .connect_physical_channel("lin_slave_connector", &lin_channel)
+            .unwrap();
 
         let connector: CommunicationConnector = CommunicationConnector::Can(can_connector.clone());
         assert_eq!(connector.controller().unwrap(), can_cc);
@@ -267,9 +292,23 @@ mod tests {
         assert_eq!(connector.controller().unwrap(), ethernet_cc);
         let connector = CommunicationConnector::Flexray(flexray_connector.clone());
         assert_eq!(connector.controller().unwrap(), flexray_cc);
+        let connector = CommunicationConnector::Lin(lin_connector.clone());
+        assert_eq!(connector.controller().unwrap(), lin_master_cc);
+        let connector = CommunicationConnector::Lin(lin_slave_connector.clone());
+        assert_eq!(connector.controller().unwrap(), lin_slave_cc);
 
         assert_eq!(can_cc.element().item_name().unwrap(), "can");
         assert_eq!(ethernet_cc.element().item_name().unwrap(), "ethernet");
         assert_eq!(flexray_cc.element().item_name().unwrap(), "flexray");
+        assert_eq!(lin_master_cc.element().item_name().unwrap(), "lin_master");
+        assert_eq!(lin_slave_cc.element().item_name().unwrap(), "lin_slave");
+
+        assert_eq!(ecu.communication_controllers().count(), 5);
+        can_cc.remove(true).unwrap();
+        ethernet_cc.remove(true).unwrap();
+        flexray_cc.remove(true).unwrap();
+        lin_master_cc.remove(true).unwrap();
+        lin_slave_cc.remove(true).unwrap();
+        assert_eq!(ecu.communication_controllers().count(), 0);
     }
 }

@@ -1,5 +1,6 @@
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
+    datatype::Unit, is_used,
 };
 use autosar_data::{AttributeName, Element, ElementName};
 
@@ -29,6 +30,22 @@ impl CompuMethod {
         Ok(compu_method)
     }
 
+    /// Remove the `CompuMethod` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_unit = self.unit();
+
+        AbstractionElement::remove(self, deep)?;
+
+        if deep
+            && let Some(unit) = opt_unit
+            && !is_used(unit.element())
+        {
+            unit.remove(deep)?;
+        }
+
+        Ok(())
+    }
+
     /// Get the category of the `CompuMethod`
     #[must_use]
     pub fn category(&self) -> Option<CompuMethodCategory> {
@@ -39,6 +56,31 @@ impl CompuMethod {
             .string_value()?;
 
         CompuMethodCategory::try_from(category.as_str()).ok()
+    }
+
+    /// Set the unit of the `CompuMethod`
+    pub fn set_unit(&self, unit: Option<&Unit>) -> Result<(), AutosarAbstractionError> {
+        if let Some(unit) = unit {
+            self.element()
+                .get_or_create_sub_element(ElementName::UnitRef)?
+                .set_reference_target(unit.element())?;
+        } else {
+            let _ = self.element().remove_sub_element_kind(ElementName::UnitRef);
+        }
+
+        Ok(())
+    }
+
+    /// Get the unit of the `CompuMethod`
+    #[must_use]
+    pub fn unit(&self) -> Option<Unit> {
+        let unit_elem = self
+            .element()
+            .get_sub_element(ElementName::UnitRef)?
+            .get_reference_target()
+            .ok()?;
+
+        Unit::try_from(unit_elem).ok()
     }
 
     /// Apply `CompumethodContent` to the `CompuMethod`

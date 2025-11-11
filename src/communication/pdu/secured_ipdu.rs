@@ -1,6 +1,9 @@
-use crate::communication::{AbstractIpdu, AbstractPdu, AbstractPhysicalChannel, IPdu, Pdu, PduTriggering};
+use crate::communication::{
+    AbstractIpdu, AbstractPdu, AbstractPhysicalChannel, IPdu, Pdu, PduToFrameMapping, PduTriggering,
+};
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
+    get_reference_parents,
 };
 use autosar_data::{Element, ElementName};
 
@@ -26,6 +29,36 @@ impl SecuredIPdu {
         secured_ipdu.set_secure_communication_props(secure_props)?;
 
         Ok(secured_ipdu)
+    }
+
+    /// remove this `SecuredIPdu` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_pdu_triggering = self.payload_pdu_triggering();
+
+        // remove all triggerings of this PDU
+        for pdu_triggering in self.pdu_triggerings() {
+            let _ = pdu_triggering.element().remove_sub_element_kind(ElementName::IPduRef);
+            let _ = pdu_triggering.remove(deep);
+        }
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            if named_parent.element_name() == ElementName::PduToFrameMapping
+                && let Ok(pdu_to_frame_mapping) = PduToFrameMapping::try_from(named_parent)
+            {
+                pdu_to_frame_mapping.remove(deep)?;
+            }
+        }
+
+        // if there is a payload pdu triggering, remove it too
+        if let Some(pdu_triggering) = opt_pdu_triggering {
+            pdu_triggering.remove(deep)?;
+        }
+
+        Ok(())
     }
 
     /// set the properties of the secured communication
@@ -74,6 +107,9 @@ impl SecuredIPdu {
         ipdu: &T,
         physical_channel: &U,
     ) -> Result<PduTriggering, AutosarAbstractionError> {
+        if let Some(ppt) = self.payload_pdu_triggering() {
+            ppt.remove(false)?;
+        }
         let pdu_triggering = PduTriggering::new(&ipdu.clone().into(), &physical_channel.clone().into())?;
         self.0
             .get_or_create_sub_element(ElementName::PayloadRef)?
@@ -88,6 +124,11 @@ impl SecuredIPdu {
     /// In this case the payload is transmitted separately from the
     /// cryptographic data, so the `PduTriggering` already exists.
     pub fn set_payload_pdu_triggering(&self, pdu_triggering: &PduTriggering) -> Result<(), AutosarAbstractionError> {
+        if let Some(ppt) = self.payload_pdu_triggering()
+            && ppt != *pdu_triggering
+        {
+            ppt.remove(false)?;
+        }
         self.0
             .get_or_create_sub_element(ElementName::PayloadRef)?
             .set_reference_target(pdu_triggering.element())?;

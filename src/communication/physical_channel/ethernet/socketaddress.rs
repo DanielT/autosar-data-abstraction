@@ -1,9 +1,10 @@
 use crate::communication::{
     AbstractPhysicalChannel, ConsumedServiceInstanceV1, EthernetPhysicalChannel, NetworkEndpoint,
-    ProvidedServiceInstanceV1, StaticSocketConnection, TcpRole,
+    ProvidedServiceInstanceV1, SocketConnection, SocketConnectionBundle, StaticSocketConnection, TcpRole,
 };
 use crate::{
     AbstractionElement, AutosarAbstractionError, EcuInstance, IdentifiableAbstractionElement, abstraction_element,
+    get_reference_parents,
 };
 use autosar_data::{Element, ElementName};
 
@@ -120,6 +121,43 @@ impl SocketAddress {
         }
 
         Ok(Self(elem))
+    }
+
+    /// remove this `SocketAddress` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        for static_socket_connection in self.static_socket_connections() {
+            static_socket_connection.remove(deep)?;
+        }
+
+        for provided_service_instance in self.provided_service_instances() {
+            provided_service_instance.remove(deep)?;
+        }
+
+        for consumed_service_instance in self.consumed_service_instances() {
+            consumed_service_instance.remove(deep)?;
+        }
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            match named_parent.element_name() {
+                ElementName::SocketConnectionBundle => {
+                    if let Ok(socket_connection_bundle) = SocketConnectionBundle::try_from(named_parent) {
+                        socket_connection_bundle.remove(deep)?;
+                    }
+                }
+                ElementName::SocketConnection => {
+                    if let Ok(socket_connection) = SocketConnection::try_from(named_parent) {
+                        socket_connection.remove(deep)?;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
     }
 
     /// get the network endpoint of this `SocketAddress`

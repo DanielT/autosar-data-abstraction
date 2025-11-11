@@ -1,4 +1,3 @@
-use crate::IdentifiableAbstractionElement;
 use crate::communication::{
     AbstractPhysicalChannel, CommunicationDirection, DataTransformation, EndToEndTransformationISignalProps,
     PhysicalChannel, SomeIpTransformationISignalProps, TransformationTechnology,
@@ -7,6 +6,10 @@ use crate::datatype::{CompuMethod, DataConstr, SwBaseType, Unit, ValueSpecificat
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, EcuInstance, abstraction_element,
     communication::ISignalToIPduMapping, make_unique_name,
+};
+use crate::{
+    IdentifiableAbstractionElement, SenderReceiverToSignalMapping, get_reference_parents, is_used,
+    is_used_system_element,
 };
 use autosar_data::{AutosarDataError, Element, ElementName, EnumItem, WeakElement};
 
@@ -49,6 +52,65 @@ impl ISignal {
         }
 
         Ok(isignal)
+    }
+
+    /// remove this `ISignal` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let signal_mappings = self.mappings();
+        let signal_triggerings = self.signal_triggerings();
+
+        for transformation_prop in self.transformation_isignal_props() {
+            transformation_prop.remove(deep)?;
+        }
+
+        let data_transformations: Vec<DataTransformation> = self.data_transformations().collect();
+
+        let opt_signal_group = self.signal_group();
+        let opt_system_signal = self.system_signal();
+        let opt_datatype = self.datatype();
+
+        AbstractionElement::remove(self, deep)?;
+
+        // remove all mappings of this signal
+        for signal_mapping in signal_mappings {
+            signal_mapping.remove(deep)?;
+        }
+        // remove all triggerings of this signal
+        for signal_triggering in signal_triggerings {
+            signal_triggering.remove(deep)?;
+        }
+
+        if deep {
+            if let Some(signal_group) = opt_signal_group
+                && signal_group.signals().count() == 0
+            {
+                // remove the signal group if it became empty
+                signal_group.remove(deep)?;
+            }
+
+            if let Some(datatype) = opt_datatype
+                && !is_used(datatype.element())
+            {
+                // remove the data type if it is no longer used
+                datatype.remove(deep)?;
+            }
+
+            if let Some(system_signal) = opt_system_signal
+                && !is_used(system_signal.element())
+            {
+                // remove the system signal if it is no longer used
+                system_signal.remove(deep)?;
+            }
+
+            for data_transformation in data_transformations {
+                if !is_used(data_transformation.element()) {
+                    // remove unused data transformations
+                    data_transformation.remove(deep)?;
+                }
+            }
+        }
+
+        Ok(())
     }
 
     /// set the data type for this signal
@@ -286,6 +348,54 @@ impl SystemSignal {
         Ok(Self(elem_syssignal))
     }
 
+    /// remove this `SystemSignal` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all references from ISignals to this system signal
+        let model = self.element().model()?;
+        let path = self.element().path()?;
+        let referrers = model.get_references_to(&path);
+        for elem in referrers
+            .iter()
+            .filter_map(WeakElement::upgrade)
+            .filter_map(|refelem| refelem.named_parent().ok().flatten())
+        {
+            if let Ok(isignal) = ISignal::try_from(elem) {
+                isignal.remove(deep)?;
+            }
+        }
+
+        let opt_unit = self.unit();
+        let opt_compu_method = self.compu_method();
+        let opt_data_constr = self.data_constr();
+
+        AbstractionElement::remove(self, deep)?;
+
+        if deep {
+            if let Some(unit) = opt_unit
+                && !is_used(unit.element())
+            {
+                // remove the unit if it became unused
+                unit.remove(deep)?;
+            }
+
+            if let Some(compu_method) = opt_compu_method
+                && !is_used(compu_method.element())
+            {
+                // remove the compu method if it became unused
+                compu_method.remove(deep)?;
+            }
+
+            if let Some(data_constr) = opt_data_constr
+                && !is_used(data_constr.element())
+            {
+                // remove the data constraint if it became unused
+                data_constr.remove(deep)?;
+            }
+        }
+
+        Ok(())
+    }
+
     /// get the signal group that contains this signal
     pub fn signal_group(&self) -> Option<SystemSignalGroup> {
         let path = self.element().path().ok()?;
@@ -400,6 +510,48 @@ impl ISignalGroup {
             .set_reference_target(system_signal_group.element())?;
 
         Ok(Self(elem_isiggrp))
+    }
+
+    /// remove this `ISignalGroup` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let signals = if deep {
+            self.signals().collect::<Vec<_>>()
+        } else {
+            vec![]
+        };
+
+        let opt_system_signal_group = self.system_signal_group();
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (_named_parent, parent) in ref_parents {
+            if parent.element_name() == ElementName::SenderReceiverToSignalMapping
+                && let Ok(sender_receiver_to_signal_mapping) = SenderReceiverToSignalMapping::try_from(parent)
+            {
+                sender_receiver_to_signal_mapping.remove(deep)?;
+            }
+        }
+
+        if deep {
+            // remove all signals that were part of this group
+            for signal in signals {
+                if !is_used_system_element(signal.element()) {
+                    // only remove unused signals
+                    signal.remove(deep)?;
+                }
+            }
+
+            // remove the system signal group if it became unused
+            if let Some(system_signal_group) = opt_system_signal_group
+                && !is_used(system_signal_group.element())
+            {
+                system_signal_group.remove(deep)?;
+            }
+        }
+
+        Ok(())
     }
 
     /// Add a signal to the signal group
@@ -590,6 +742,26 @@ impl ISignalTriggering {
         Ok(pt)
     }
 
+    /// remove this `ISignalTriggering` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_signal = self.signal();
+        for sp in self.signal_ports() {
+            sp.remove(deep)?;
+        }
+
+        AbstractionElement::remove(self, deep)?;
+
+        if deep
+            && let Some(signal) = opt_signal
+            && !is_used_system_element(signal.element())
+        {
+            // remove the signal if it became unused
+            signal.remove(deep)?;
+        }
+
+        Ok(())
+    }
+
     pub(crate) fn new_group(
         signal_group: &ISignalGroup,
         channel: &PhysicalChannel,
@@ -664,6 +836,16 @@ impl ISignalTriggering {
             .set_reference_target(&sp_elem)?;
 
         Ok(ISignalPort(sp_elem))
+    }
+
+    /// get the signal that is triggered by this triggering
+    pub fn signal(&self) -> Option<ISignal> {
+        let signal_elem = self
+            .element()
+            .get_sub_element(ElementName::ISignalRef)?
+            .get_reference_target()
+            .ok()?;
+        ISignal::try_from(signal_elem).ok()
     }
 
     /// create an iterator over all signal ports that are connected to this signal triggering
@@ -774,8 +956,8 @@ mod tests {
     use crate::{
         AutosarModelAbstraction, ByteOrder, SystemCategory,
         communication::{
-            AbstractFrame, AbstractPdu, CanAddressingMode, CanFrameType, DataTransformationSet, SomeIpMessageType,
-            SomeIpTransformationTechnologyConfig, TransformationTechnologyConfig,
+            AbstractFrame, AbstractPdu, CanAddressingMode, CanFrameType, DataTransformationSet, SignalPdu,
+            SomeIpMessageType, SomeIpTransformationTechnologyConfig, TransformationTechnologyConfig,
         },
         datatype::{BaseTypeEncoding, CompuMethodContent, NumericalValueSpecification, SwBaseType, Unit},
     };
@@ -1001,5 +1183,42 @@ mod tests {
         assert_eq!(signal_port.communication_direction(), Some(CommunicationDirection::Out));
         signal_port.set_name("new_name").unwrap();
         assert_eq!(signal_port.name().unwrap(), "new_name");
+    }
+
+    #[test]
+    fn test_remove_signal() {
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/test").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
+        let sw_base_type =
+            SwBaseType::new("sw_base_type", &package, 8, BaseTypeEncoding::None, None, None, None).unwrap();
+        let sys_signal = package.create_system_signal("sys_signal").unwrap();
+        let signal = system
+            .create_isignal("signal", &package, 8, &sys_signal, Some(&sw_base_type))
+            .unwrap();
+
+        let cluster = system.create_can_cluster("cluster", &package, None).unwrap();
+        let channel = cluster.create_physical_channel("channel").unwrap();
+        let can_frame = system.create_can_frame("frame", &package, 8).unwrap();
+        channel
+            .trigger_frame(&can_frame, 0x100, CanAddressingMode::Standard, CanFrameType::Can20)
+            .unwrap();
+        let pdu = system.create_isignal_ipdu("pdu", &package, 8).unwrap();
+        can_frame
+            .map_pdu(&pdu, 0, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+        pdu.map_signal(
+            &signal,
+            0,
+            ByteOrder::MostSignificantByteLast,
+            None,
+            TransferProperty::Pending,
+        )
+        .unwrap();
+
+        signal.remove(true).unwrap();
+
+        assert_eq!(channel.signal_triggerings().count(), 0);
+        assert_eq!(pdu.mapped_signals().count(), 0);
     }
 }

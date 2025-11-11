@@ -42,6 +42,27 @@ impl EthernetCommunicationController {
         Ok(Self(ctrl))
     }
 
+    /// remove this `EthernetCommunicationController` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all the connectors using this controller
+        let ecu_instance = self.ecu_instance()?;
+        for connector in ecu_instance
+            .element()
+            .get_sub_element(ElementName::Connectors)
+            .iter()
+            .flat_map(|connectors| connectors.sub_elements())
+            .filter_map(|conn| EthernetCommunicationConnector::try_from(conn).ok())
+        {
+            if let Ok(controller_of_connector) = connector.controller()
+                && controller_of_connector == self
+            {
+                connector.remove(deep)?;
+            }
+        }
+
+        AbstractionElement::remove(self, deep)
+    }
+
     /// return an iterator over the [`EthernetPhysicalChannel`]s connected to this controller
     ///
     /// # Example
@@ -362,5 +383,27 @@ mod test {
         conn_parent.remove_sub_element(connector.element().clone()).unwrap();
         let result = connector.controller();
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn remove_controller() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+        let pkg = model.get_or_create_package("/test").unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
+        let ecu = system.create_ecu_instance("ECU", &pkg).unwrap();
+        let controller = ecu
+            .create_ethernet_communication_controller("Controller", None)
+            .unwrap();
+        let cluster = system.create_ethernet_cluster("EthCluster", &pkg).unwrap();
+        let channel = cluster.create_physical_channel("C1", None).unwrap();
+        let connector = controller
+            .connect_physical_channel("connection_name", &channel)
+            .unwrap();
+
+        // remove the controller (also removes the connector)
+        controller.remove(true).unwrap();
+
+        assert_eq!(ecu.communication_controllers().count(), 0);
+        assert!(connector.element().path().is_err());
     }
 }

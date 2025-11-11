@@ -2,7 +2,8 @@ use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, Element, IdentifiableAbstractionElement,
     abstraction_element,
     datatype::{AbstractAutosarDataType, AutosarDataType, ValueSpecification},
-    software_component::ModeDeclarationGroup,
+    get_reference_parents,
+    software_component::{ModeDeclarationGroup, PortPrototype},
 };
 use autosar_data::ElementName;
 
@@ -30,6 +31,30 @@ impl ModeSwitchInterface {
         let mode_switch_interface = elements.create_named_sub_element(ElementName::ModeSwitchInterface, name)?;
 
         Ok(Self(mode_switch_interface))
+    }
+
+    /// remove this `ModeSwitchInterface` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        if let Some(mode_group) = self.mode_group() {
+            mode_group.remove(true)?;
+        }
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            match named_parent.element_name() {
+                ElementName::PPortPrototype | ElementName::RPortPrototype | ElementName::PrPortPrototype => {
+                    if let Ok(port) = PortPrototype::try_from(named_parent) {
+                        port.remove(deep)?;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
     }
 
     /// Create a mode group in this `ModeSwitchInterface`
@@ -116,6 +141,30 @@ impl ParameterInterface {
         let parameter_interface = elements.create_named_sub_element(ElementName::ParameterInterface, name)?;
 
         Ok(Self(parameter_interface))
+    }
+
+    /// remove this `ParameterInterface` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        for parameter in self.parameters() {
+            parameter.remove(true)?;
+        }
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            match named_parent.element_name() {
+                ElementName::PPortPrototype | ElementName::RPortPrototype | ElementName::PrPortPrototype => {
+                    if let Ok(port) = PortPrototype::try_from(named_parent) {
+                        port.remove(deep)?;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
     }
 
     /// Create a new `ParameterDataPrototype` in this `ParameterInterface`
@@ -229,6 +278,26 @@ impl NvDataInterface {
 
         Ok(Self(nv_data_interface))
     }
+
+    /// remove this `NvDataInterface` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            match named_parent.element_name() {
+                ElementName::PPortPrototype | ElementName::RPortPrototype | ElementName::PrPortPrototype => {
+                    if let Ok(port) = PortPrototype::try_from(named_parent) {
+                        port.remove(deep)?;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
+    }
 }
 
 //##################################################################
@@ -249,6 +318,26 @@ impl TriggerInterface {
         let trigger_interface = elements.create_named_sub_element(ElementName::TriggerInterface, name)?;
 
         Ok(Self(trigger_interface))
+    }
+
+    /// remove this `TriggerInterface` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            match named_parent.element_name() {
+                ElementName::PPortPrototype | ElementName::RPortPrototype | ElementName::PrPortPrototype => {
+                    if let Ok(port) = PortPrototype::try_from(named_parent) {
+                        port.remove(deep)?;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -336,6 +425,20 @@ impl TryFrom<Element> for PortInterface {
     }
 }
 
+impl PortInterface {
+    /// Remove this port interface from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        match self {
+            PortInterface::SenderReceiverInterface(interface) => interface.remove(deep),
+            PortInterface::ClientServerInterface(interface) => interface.remove(deep),
+            PortInterface::ModeSwitchInterface(interface) => interface.remove(deep),
+            PortInterface::ParameterInterface(interface) => interface.remove(deep),
+            PortInterface::NvDataInterface(interface) => interface.remove(deep),
+            PortInterface::TriggerInterface(interface) => interface.remove(deep),
+        }
+    }
+}
+
 //##################################################################
 
 #[cfg(test)]
@@ -369,7 +472,7 @@ mod test {
         let port_1 = composition.create_p_port("port_1", &sender_receiver_interface).unwrap();
         assert!(matches!(
             port_1.port_interface(),
-            Ok(PortInterface::SenderReceiverInterface(interface)) if interface == sender_receiver_interface
+            Some(PortInterface::SenderReceiverInterface(interface)) if interface == sender_receiver_interface
         ));
         assert_eq!(
             port_1.port_interface().unwrap().element(),
@@ -379,7 +482,7 @@ mod test {
         let port_2 = composition.create_p_port("port_2", &client_server_interface).unwrap();
         assert!(matches!(
             port_2.port_interface(),
-            Ok(PortInterface::ClientServerInterface(interface)) if interface == client_server_interface
+            Some(PortInterface::ClientServerInterface(interface)) if interface == client_server_interface
         ));
         assert_eq!(
             port_2.port_interface().unwrap().element(),
@@ -389,7 +492,7 @@ mod test {
         let port_3 = composition.create_p_port("port_3", &mode_switch_interface).unwrap();
         assert!(matches!(
             port_3.port_interface(),
-            Ok(PortInterface::ModeSwitchInterface(interface)) if interface == mode_switch_interface
+            Some(PortInterface::ModeSwitchInterface(interface)) if interface == mode_switch_interface
         ));
         assert_eq!(
             port_3.port_interface().unwrap().element(),
@@ -399,7 +502,7 @@ mod test {
         let port_4 = composition.create_p_port("port_4", &parameter_interface).unwrap();
         assert!(matches!(
             port_4.port_interface(),
-            Ok(PortInterface::ParameterInterface(interface)) if interface == parameter_interface
+            Some(PortInterface::ParameterInterface(interface)) if interface == parameter_interface
         ));
         assert_eq!(
             port_4.port_interface().unwrap().element(),
@@ -409,14 +512,14 @@ mod test {
         let port_5 = composition.create_p_port("port_5", &nv_data_interface).unwrap();
         assert!(matches!(
             port_5.port_interface(),
-            Ok(PortInterface::NvDataInterface(interface)) if interface == nv_data_interface
+            Some(PortInterface::NvDataInterface(interface)) if interface == nv_data_interface
         ));
         assert_eq!(port_5.port_interface().unwrap().element(), nv_data_interface.element());
 
         let port_6 = composition.create_p_port("port_6", &trigger_interface).unwrap();
         assert!(matches!(
             port_6.port_interface(),
-            Ok(PortInterface::TriggerInterface(interface)) if interface == trigger_interface
+            Some(PortInterface::TriggerInterface(interface)) if interface == trigger_interface
         ));
         assert_eq!(port_6.port_interface().unwrap().element(), trigger_interface.element());
     }
@@ -490,5 +593,63 @@ mod test {
             .unwrap();
         assert_eq!(mode_switch_interface.mode_group().unwrap(), mode_group);
         assert_eq!(mode_group.mode_declaration_group().unwrap(), mode_declaration_group);
+    }
+
+    #[test]
+    fn remove_mode_switch_interface() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+        let mode_switch_interface = package.create_mode_switch_interface("mode_switch_interface").unwrap();
+
+        let composition_type = package.create_composition_sw_component_type("comp_parent").unwrap();
+        let _composition_r_port = composition_type
+            .create_r_port("port_r", &mode_switch_interface)
+            .unwrap();
+
+        assert_eq!(composition_type.ports().count(), 1);
+        mode_switch_interface.remove(true).unwrap();
+        assert_eq!(composition_type.ports().count(), 0);
+    }
+
+    #[test]
+    fn remove_parameter_interface() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+        let parameter_interface = package.create_parameter_interface("parameter_interface").unwrap();
+
+        let composition_type = package.create_composition_sw_component_type("comp_parent").unwrap();
+        let _composition_r_port = composition_type.create_r_port("port_r", &parameter_interface).unwrap();
+
+        assert_eq!(composition_type.ports().count(), 1);
+        parameter_interface.remove(true).unwrap();
+        assert_eq!(composition_type.ports().count(), 0);
+    }
+
+    #[test]
+    fn remove_nv_data_interface() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+        let nv_data_interface = package.create_nv_data_interface("nv_data_interface").unwrap();
+
+        let composition_type = package.create_composition_sw_component_type("comp_parent").unwrap();
+        let _composition_r_port = composition_type.create_r_port("port_r", &nv_data_interface).unwrap();
+
+        assert_eq!(composition_type.ports().count(), 1);
+        nv_data_interface.remove(true).unwrap();
+        assert_eq!(composition_type.ports().count(), 0);
+    }
+
+    #[test]
+    fn remove_trigger_interface() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+        let trigger_interface = package.create_trigger_interface("trigger_interface").unwrap();
+
+        let composition_type = package.create_composition_sw_component_type("comp_parent").unwrap();
+        let _composition_r_port = composition_type.create_r_port("port_r", &trigger_interface).unwrap();
+
+        assert_eq!(composition_type.ports().count(), 1);
+        trigger_interface.remove(true).unwrap();
+        assert_eq!(composition_type.ports().count(), 0);
     }
 }

@@ -26,7 +26,11 @@ impl DelegationSwConnector {
         inner_sw_prototype: &SwComponentPrototype,
         outer_port: &PortPrototype,
     ) -> Result<Self, AutosarAbstractionError> {
-        let inner_port_interface = inner_port.port_interface()?;
+        let inner_port_interface = inner_port
+            .port_interface()
+            .ok_or(AutosarAbstractionError::InvalidParameter(
+                "Invalid port lacks a port interface".to_string(),
+            ))?;
         // the caller (CompositionSwComponentType::add_connector) ensures that the inner and outer port both have the same kind of interface
         match &inner_port_interface {
             PortInterface::SenderReceiverInterface(_) | PortInterface::NvDataInterface(_) => {
@@ -183,7 +187,11 @@ impl AssemblySwConnector {
             }
         };
 
-        let port_interface = provider.port_interface()?;
+        let port_interface = provider
+            .port_interface()
+            .ok_or(AutosarAbstractionError::InvalidParameter(
+                "Invalid port lacks a port interface".to_string(),
+            ))?;
         // additional restrictions beyond the basic rules in the match above
         // apply to ClientServer, ModeSwitch, and Trigger interfaces
         if matches!(

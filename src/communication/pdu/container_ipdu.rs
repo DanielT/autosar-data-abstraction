@@ -1,6 +1,7 @@
-use crate::communication::{AbstractIpdu, AbstractPdu, AbstractPhysicalChannel, IPdu, Pdu};
+use crate::communication::{AbstractIpdu, AbstractPdu, AbstractPhysicalChannel, IPdu, Pdu, PduToFrameMapping};
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
+    get_reference_parents,
 };
 use autosar_data::{Element, ElementName, EnumItem};
 
@@ -30,6 +31,34 @@ impl ContainerIPdu {
         container_ipdu.set_rx_accept_contained_ipdu(rx_accept)?;
 
         Ok(container_ipdu)
+    }
+
+    /// remove this `ContainerIPdu` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all triggerings of this PDU
+        for pdu_triggering in self.pdu_triggerings() {
+            let _ = pdu_triggering.element().remove_sub_element_kind(ElementName::IPduRef);
+            let _ = pdu_triggering.remove(deep);
+        }
+
+        // remove all contained IPdu triggerings
+        for ipdu_triggering in self.contained_ipdu_triggerings() {
+            let _ = ipdu_triggering.remove(deep);
+        }
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            if named_parent.element_name() == ElementName::PduToFrameMapping
+                && let Ok(pdu_to_frame_mapping) = PduToFrameMapping::try_from(named_parent)
+            {
+                pdu_to_frame_mapping.remove(deep)?;
+            }
+        }
+
+        Ok(())
     }
 
     /// set the header type of this `ContainerIPdu`

@@ -1,12 +1,14 @@
 use autosar_data::{AutosarModel, Element, ElementName};
 
 use crate::{
-    AbstractionElement, AutosarAbstractionError, ByteOrder, IdentifiableAbstractionElement, System, SystemCategory,
-    abstraction_element,
+    AbstractionElement, AutosarAbstractionError, ByteOrder, EcuInstance, IdentifiableAbstractionElement, System,
+    SystemCategory, abstraction_element,
     communication::{
-        DataTransformationSet, RequestResponseDelay, SomeipSdClientEventGroupTimingConfig,
-        SomeipSdClientServiceInstanceConfig, SomeipSdServerEventGroupTimingConfig, SomeipSdServerServiceInstanceConfig,
-        SystemSignal, SystemSignalGroup,
+        CanCluster, CanFrame, CanTpConfig, ContainerIPdu, DataTransformationSet, DcmIPdu, DoIpTpConfig,
+        EthernetCluster, FlexrayArTpConfig, FlexrayCluster, FlexrayFrame, FlexrayTpConfig, GeneralPurposeIPdu,
+        GeneralPurposePdu, ISignal, ISignalGroup, ISignalIPdu, LinCluster, MultiplexedIPdu, NPdu, NmConfig, NmPdu,
+        RequestResponseDelay, SecuredIPdu, SomeipSdClientEventGroupTimingConfig, SomeipSdClientServiceInstanceConfig,
+        SomeipSdServerEventGroupTimingConfig, SomeipSdServerServiceInstanceConfig, SystemSignal, SystemSignalGroup,
     },
     datatype::{
         ApplicationArrayDataType, ApplicationArraySize, ApplicationDataType, ApplicationPrimitiveCategory,
@@ -66,6 +68,263 @@ impl ArPackage {
             }
             pkg_elem.try_into()
         }
+    }
+
+    /// remove this `ArPackage` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        for sub_package in self.sub_packages() {
+            sub_package.remove(deep)?;
+        }
+
+        // give all elements the chance to clean up their cross-references
+        for element in self.elements() {
+            match element.element_name() {
+                ElementName::ApplicationArrayDataType => {
+                    let app_array_data_type = ApplicationArrayDataType::try_from(element)?;
+                    app_array_data_type.remove(deep)?;
+                }
+                ElementName::ApplicationPrimitiveDataType => {
+                    let app_prim_data_type = ApplicationPrimitiveDataType::try_from(element)?;
+                    app_prim_data_type.remove(deep)?;
+                }
+                ElementName::ApplicationRecordDataType => {
+                    let app_record_data_type = ApplicationRecordDataType::try_from(element)?;
+                    app_record_data_type.remove(deep)?;
+                }
+                ElementName::ApplicationSwComponentType => {
+                    let app_sw_comp_type = ApplicationSwComponentType::try_from(element)?;
+                    app_sw_comp_type.remove(deep)?;
+                }
+                ElementName::CanCluster => {
+                    let can_cluster = CanCluster::try_from(element)?;
+                    can_cluster.remove(deep)?;
+                }
+                ElementName::CanFrame => {
+                    let can_frame = CanFrame::try_from(element)?;
+                    can_frame.remove(deep)?;
+                }
+                ElementName::CanTpConfig => {
+                    let can_tp_config = CanTpConfig::try_from(element)?;
+                    can_tp_config.remove(deep)?;
+                }
+                ElementName::ClientServerInterface => {
+                    let client_server_interface = ClientServerInterface::try_from(element)?;
+                    client_server_interface.remove(deep)?;
+                }
+                ElementName::ComplexDeviceDriverSwComponentType => {
+                    let complex_device_driver_sw_component_type =
+                        ComplexDeviceDriverSwComponentType::try_from(element)?;
+                    complex_device_driver_sw_component_type.remove(deep)?;
+                }
+                ElementName::CompositionSwComponentType => {
+                    let composition_sw_component_type = CompositionSwComponentType::try_from(element)?;
+                    composition_sw_component_type.remove(deep)?;
+                }
+                ElementName::CompuMethod => {
+                    let compu_method = CompuMethod::try_from(element)?;
+                    compu_method.remove(deep)?;
+                }
+                ElementName::ConstantSpecification => {
+                    let constant_specification = ConstantSpecification::try_from(element)?;
+                    constant_specification.remove(deep)?;
+                }
+                ElementName::ContainerIPdu => {
+                    let container_ipdu = ContainerIPdu::try_from(element)?;
+                    container_ipdu.remove(deep)?;
+                }
+                ElementName::DataConstr => {
+                    let data_constr = DataConstr::try_from(element)?;
+                    data_constr.remove(deep)?;
+                }
+                ElementName::DataTransformationSet => {
+                    let data_transformation_set = DataTransformationSet::try_from(element)?;
+                    data_transformation_set.remove(deep)?;
+                }
+                ElementName::DataTypeMappingSet => {
+                    let data_type_mapping_set = DataTypeMappingSet::try_from(element)?;
+                    data_type_mapping_set.remove(deep)?;
+                }
+                ElementName::DcmIPdu => {
+                    let dcm_ipdu = DcmIPdu::try_from(element)?;
+                    dcm_ipdu.remove(deep)?;
+                }
+                ElementName::DoIpTpConfig => {
+                    let doip_tp_config = DoIpTpConfig::try_from(element)?;
+                    doip_tp_config.remove(deep)?;
+                }
+                ElementName::EcuAbstractionSwComponentType => {
+                    let ecu_abstraction_sw_component_type = EcuAbstractionSwComponentType::try_from(element)?;
+                    ecu_abstraction_sw_component_type.remove(deep)?;
+                }
+                ElementName::EcucDefinitionCollection => {
+                    let ecuc_definition_collection = EcucDefinitionCollection::try_from(element)?;
+                    ecuc_definition_collection.remove(deep)?;
+                }
+                ElementName::EcucDestinationUriDefSet => {
+                    let ecuc_destination_uri_def_set = EcucDestinationUriDefSet::try_from(element)?;
+                    ecuc_destination_uri_def_set.remove(deep)?;
+                }
+                ElementName::EcuInstance => {
+                    let ecu_instance = EcuInstance::try_from(element)?;
+                    ecu_instance.remove(deep)?;
+                }
+                ElementName::EcucModuleConfigurationValues => {
+                    let ecuc_module_configuration_values = EcucModuleConfigurationValues::try_from(element)?;
+                    ecuc_module_configuration_values.remove(deep)?;
+                }
+                ElementName::EcucModuleDef => {
+                    let ecuc_module_def = EcucModuleDef::try_from(element)?;
+                    ecuc_module_def.remove(deep)?;
+                }
+                ElementName::EcucValueCollection => {
+                    let ecuc_value_collection = EcucValueCollection::try_from(element)?;
+                    ecuc_value_collection.remove(deep)?;
+                }
+                ElementName::EthernetCluster => {
+                    let ethernet_cluster = EthernetCluster::try_from(element)?;
+                    ethernet_cluster.remove(deep)?;
+                }
+                ElementName::FlexrayArTpConfig => {
+                    let flexray_ar_tp_config = FlexrayArTpConfig::try_from(element)?;
+                    flexray_ar_tp_config.remove(deep)?;
+                }
+                ElementName::FlexrayCluster => {
+                    let flexray_cluster = FlexrayCluster::try_from(element)?;
+                    flexray_cluster.remove(deep)?;
+                }
+                ElementName::FlexrayFrame => {
+                    let flexray_frame = FlexrayFrame::try_from(element)?;
+                    flexray_frame.remove(deep)?;
+                }
+                ElementName::FlexrayTpConfig => {
+                    let flexray_tp_config = FlexrayTpConfig::try_from(element)?;
+                    flexray_tp_config.remove(deep)?;
+                }
+                ElementName::GeneralPurposeIPdu => {
+                    let general_purpose_ipdu = GeneralPurposeIPdu::try_from(element)?;
+                    general_purpose_ipdu.remove(deep)?;
+                }
+                ElementName::GeneralPurposePdu => {
+                    let general_purpose_pdu = GeneralPurposePdu::try_from(element)?;
+                    general_purpose_pdu.remove(deep)?;
+                }
+                ElementName::ImplementationDataType => {
+                    let implementation_data_type = ImplementationDataType::try_from(element)?;
+                    implementation_data_type.remove(deep)?;
+                }
+                ElementName::ISignal => {
+                    let i_signal = ISignal::try_from(element)?;
+                    i_signal.remove(deep)?;
+                }
+                ElementName::ISignalGroup => {
+                    let i_signal_group = ISignalGroup::try_from(element)?;
+                    i_signal_group.remove(deep)?;
+                }
+                ElementName::ISignalIPdu => {
+                    let i_signal_ipdu = ISignalIPdu::try_from(element)?;
+                    i_signal_ipdu.remove(deep)?;
+                }
+                ElementName::LinCluster => {
+                    let lin_cluster = LinCluster::try_from(element)?;
+                    lin_cluster.remove(deep)?;
+                }
+                ElementName::ModeDeclarationGroup => {
+                    let mode_declaration_group = ModeDeclarationGroup::try_from(element)?;
+                    mode_declaration_group.remove(deep)?;
+                }
+                ElementName::ModeSwitchInterface => {
+                    let mode_switch_interface = ModeSwitchInterface::try_from(element)?;
+                    mode_switch_interface.remove(deep)?;
+                }
+                ElementName::MultiplexedIPdu => {
+                    let multiplexed_ipdu = MultiplexedIPdu::try_from(element)?;
+                    multiplexed_ipdu.remove(deep)?;
+                }
+                ElementName::NmConfig => {
+                    let nm_config = NmConfig::try_from(element)?;
+                    nm_config.remove(deep)?;
+                }
+                ElementName::NmPdu => {
+                    let nm_pdu = NmPdu::try_from(element)?;
+                    nm_pdu.remove(deep)?;
+                }
+                ElementName::NPdu => {
+                    let n_pdu = NPdu::try_from(element)?;
+                    n_pdu.remove(deep)?;
+                }
+                ElementName::NvDataInterface => {
+                    let nv_data_interface = NvDataInterface::try_from(element)?;
+                    nv_data_interface.remove(deep)?;
+                }
+                ElementName::ParameterInterface => {
+                    let parameter_interface = ParameterInterface::try_from(element)?;
+                    parameter_interface.remove(deep)?;
+                }
+                ElementName::SecuredIPdu => {
+                    let secured_ipdu = SecuredIPdu::try_from(element)?;
+                    secured_ipdu.remove(deep)?;
+                }
+                ElementName::SenderReceiverInterface => {
+                    let sender_receiver_interface = SenderReceiverInterface::try_from(element)?;
+                    sender_receiver_interface.remove(deep)?;
+                }
+                ElementName::SensorActuatorSwComponentType => {
+                    let sensor_actuator_sw_component_type = SensorActuatorSwComponentType::try_from(element)?;
+                    sensor_actuator_sw_component_type.remove(deep)?;
+                }
+                ElementName::ServiceSwComponentType => {
+                    let service_sw_component_type = ServiceSwComponentType::try_from(element)?;
+                    service_sw_component_type.remove(deep)?;
+                }
+                ElementName::SomeipSdClientEventGroupTimingConfig => {
+                    let someip_sd_client_event_group_timing_config =
+                        SomeipSdClientEventGroupTimingConfig::try_from(element)?;
+                    someip_sd_client_event_group_timing_config.remove(deep)?;
+                }
+                ElementName::SomeipSdClientServiceInstanceConfig => {
+                    let someip_sd_client_service_instance_config =
+                        SomeipSdClientServiceInstanceConfig::try_from(element)?;
+                    someip_sd_client_service_instance_config.remove(deep)?;
+                }
+                ElementName::SomeipSdServerEventGroupTimingConfig => {
+                    let someip_sd_server_event_group_timing_config =
+                        SomeipSdServerEventGroupTimingConfig::try_from(element)?;
+                    someip_sd_server_event_group_timing_config.remove(deep)?;
+                }
+                ElementName::SomeipSdServerServiceInstanceConfig => {
+                    let someip_sd_server_service_instance_config =
+                        SomeipSdServerServiceInstanceConfig::try_from(element)?;
+                    someip_sd_server_service_instance_config.remove(deep)?;
+                }
+                ElementName::SwBaseType => {
+                    let sw_base_type = SwBaseType::try_from(element)?;
+                    sw_base_type.remove(deep)?;
+                }
+                ElementName::System => {
+                    let system = System::try_from(element)?;
+                    system.remove(deep)?;
+                }
+                ElementName::SystemSignal => {
+                    let system_signal = SystemSignal::try_from(element)?;
+                    system_signal.remove(deep)?;
+                }
+                ElementName::SystemSignalGroup => {
+                    let system_signal_group = SystemSignalGroup::try_from(element)?;
+                    system_signal_group.remove(deep)?;
+                }
+                ElementName::TriggerInterface => {
+                    let trigger_interface = TriggerInterface::try_from(element)?;
+                    trigger_interface.remove(deep)?;
+                }
+                ElementName::Unit => {
+                    let unit = Unit::try_from(element)?;
+                    unit.remove(deep)?;
+                }
+                _ => {}
+            }
+        }
+
+        AbstractionElement::remove(self, deep)
     }
 
     /// create a new `ApplicationArrayDataType` in the package

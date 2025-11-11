@@ -22,6 +22,27 @@ impl CanCommunicationController {
         Ok(Self(ctrl))
     }
 
+    /// remove this `CanCommunicationController` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all the connectors using this controller
+        let ecu_instance = self.ecu_instance()?;
+        for connector in ecu_instance
+            .element()
+            .get_sub_element(ElementName::Connectors)
+            .iter()
+            .flat_map(|connectors| connectors.sub_elements())
+            .filter_map(|conn| CanCommunicationConnector::try_from(conn).ok())
+        {
+            if let Ok(controller_of_connector) = connector.controller()
+                && controller_of_connector == self
+            {
+                connector.remove(deep)?;
+            }
+        }
+
+        AbstractionElement::remove(self, deep)
+    }
+
     /// return an iterator over the [`CanPhysicalChannel`]s connected to this controller
     ///
     /// # Example
@@ -113,10 +134,10 @@ impl CanCommunicationController {
         let connectors = ecu.get_or_create_sub_element(ElementName::Connectors)?;
         let connector = CanCommunicationConnector::new(connection_name, &connectors, self)?;
 
-        let channel_connctor_refs = can_channel
+        let channel_connector_refs = can_channel
             .element()
             .get_or_create_sub_element(ElementName::CommConnectors)?;
-        channel_connctor_refs
+        channel_connector_refs
             .create_sub_element(ElementName::CommunicationConnectorRefConditional)
             .and_then(|ccrc| ccrc.create_sub_element(ElementName::CommunicationConnectorRef))
             .and_then(|ccr| ccr.set_reference_target(connector.element()))?;
@@ -291,5 +312,28 @@ mod test {
             .unwrap();
         let result = connector.controller();
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn remove_controller() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+        let pkg = model.get_or_create_package("/test").unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
+        let ecu = system.create_ecu_instance("ECU", &pkg).unwrap();
+        // create a controller
+        let controller = ecu.create_can_communication_controller("Controller").unwrap();
+        // create a can cluster with a physical channel
+        let cluster = system.create_can_cluster("CanCluster", &pkg, None).unwrap();
+        let channel = cluster.create_physical_channel("C1").unwrap();
+        // connect the controller to the channel
+        let connector = controller
+            .connect_physical_channel("connection_name1", &channel)
+            .unwrap();
+
+        // remove the controller, which should also remove the connector
+        controller.remove(true).unwrap();
+
+        assert_eq!(ecu.communication_controllers().count(), 0);
+        assert!(connector.element().path().is_err());
     }
 }

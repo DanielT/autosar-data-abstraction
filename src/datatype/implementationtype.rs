@@ -1,6 +1,9 @@
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, Element, EnumItem, IdentifiableAbstractionElement,
-    abstraction_element, datatype,
+    abstraction_element,
+    datatype::{self, DataTypeMap},
+    get_reference_parents, is_used,
+    software_component::{ArgumentDataPrototype, ParameterDataPrototype, VariableDataPrototype},
 };
 use autosar_data::ElementName;
 use datatype::{AbstractAutosarDataType, CompuMethod, DataConstr, SwBaseType};
@@ -252,6 +255,82 @@ impl ImplementationDataType {
 
         Ok(implementation_data_type)
     }
+
+    /// remove this implementation data type from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_compu_method = self.compu_method();
+        let opt_data_constraint = self.data_constraint();
+        let opt_base_type = self.base_type();
+        let opt_referenced_type = self.referenced_type();
+
+        for element in self.sub_elements() {
+            element.remove(deep)?;
+        }
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, parent) in ref_parents {
+            match named_parent.element_name() {
+                ElementName::ImplementationDataType => {
+                    if let Ok(impl_data_type) = ImplementationDataType::try_from(named_parent) {
+                        impl_data_type.remove(deep)?;
+                    }
+                }
+                ElementName::ImplementationDataTypeElement => {
+                    if let Ok(impl_data_type_element) = ImplementationDataTypeElement::try_from(named_parent) {
+                        impl_data_type_element.remove(deep)?;
+                    }
+                }
+                ElementName::DataTypeMappingSet => {
+                    if let Ok(datatype_map) = DataTypeMap::try_from(parent) {
+                        datatype_map.remove(deep)?;
+                    }
+                }
+                ElementName::ParameterDataPrototype => {
+                    if let Ok(param_prototype) = ParameterDataPrototype::try_from(named_parent) {
+                        param_prototype.remove(deep)?;
+                    }
+                }
+                ElementName::VariableDataPrototype => {
+                    if let Ok(var_prototype) = VariableDataPrototype::try_from(named_parent) {
+                        var_prototype.remove(deep)?;
+                    }
+                }
+                ElementName::ArgumentDataPrototype => {
+                    if let Ok(arg_prototype) = ArgumentDataPrototype::try_from(named_parent) {
+                        arg_prototype.remove(deep)?;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        if deep {
+            if let Some(compu_method) = opt_compu_method
+                && !is_used(compu_method.element())
+            {
+                compu_method.remove(deep)?;
+            }
+            if let Some(data_constraint) = opt_data_constraint
+                && !is_used(data_constraint.element())
+            {
+                data_constraint.remove(deep)?;
+            }
+            if let Some(base_type) = opt_base_type
+                && !is_used(base_type.element())
+            {
+                base_type.remove(deep)?;
+            }
+            if let Some(referenced_type) = opt_referenced_type
+                && !is_used(referenced_type.element())
+            {
+                referenced_type.remove(deep)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 //#########################################################
@@ -274,6 +353,45 @@ impl ImplementationDataTypeElement {
         implementation_data_type_element.apply_settings(settings)?;
 
         Ok(implementation_data_type_element)
+    }
+
+    /// remove this implementation data type element from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_compu_method = self.compu_method();
+        let opt_data_constraint = self.data_constraint();
+        let opt_base_type = self.base_type();
+        let opt_referenced_type = self.referenced_type();
+
+        for element in self.sub_elements() {
+            element.remove(deep)?;
+        }
+
+        AbstractionElement::remove(self, deep)?;
+
+        if deep {
+            if let Some(compu_method) = opt_compu_method
+                && !is_used(compu_method.element())
+            {
+                compu_method.remove(deep)?;
+            }
+            if let Some(data_constraint) = opt_data_constraint
+                && !is_used(data_constraint.element())
+            {
+                data_constraint.remove(deep)?;
+            }
+            if let Some(base_type) = opt_base_type
+                && !is_used(base_type.element())
+            {
+                base_type.remove(deep)?;
+            }
+            if let Some(referenced_type) = opt_referenced_type
+                && !is_used(referenced_type.element())
+            {
+                referenced_type.remove(deep)?;
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -581,7 +699,11 @@ pub enum DataPointerTarget {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::AutosarModelAbstraction;
+    use crate::{
+        AutosarModelAbstraction,
+        datatype::{ApplicationArraySize, ApplicationPrimitiveCategory},
+        software_component::ArgumentDirection,
+    };
     use autosar_data::AutosarVersion;
     use datatype::{BaseTypeEncoding, CompuMethodLinearContent, CompuScaleDirection};
 
@@ -747,5 +869,73 @@ mod tests {
         );
 
         assert!(ImplementationDataCategory::try_from("invalid").is_err());
+    }
+
+    #[test]
+    fn remove() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/DataTypes").unwrap();
+        let element_type = package
+            .create_application_primitive_data_type(
+                "AppPrimitive",
+                ApplicationPrimitiveCategory::Value,
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+        let array_data_type = package
+            .create_application_array_data_type("AppArray", &element_type, ApplicationArraySize::Fixed(10))
+            .unwrap();
+
+        // create a matching implementation data type
+        let base_type = package
+            .create_sw_base_type("uint8", 8, BaseTypeEncoding::TwosComplement, None, None, Some("uint8"))
+            .unwrap();
+        let impl_array = package
+            .create_implementation_data_type(&ImplementationDataTypeSettings::Array {
+                name: "ImplArray".to_string(),
+                length: 10,
+                element_type: Box::new(ImplementationDataTypeSettings::Value {
+                    name: "ImplPrimitive".to_string(),
+                    base_type,
+                    compu_method: None,
+                    data_constraint: None,
+                }),
+            })
+            .unwrap();
+
+        // create a data type mapping that maps the implementation array to the application array
+        let data_type_mapping_set = package.create_data_type_mapping_set("DataTypeMappingSet").unwrap();
+        data_type_mapping_set
+            .create_data_type_map(&impl_array, &array_data_type)
+            .unwrap();
+
+        // create a SenderReceiverInterface that uses the implementation array data type
+        let sr_interface = package.create_sender_receiver_interface("SRInterface").unwrap();
+        let _vdp = sr_interface.create_data_element("VDP", &impl_array).unwrap();
+        // create a client-server interface that uses the implementation array data type
+        let cs_interface = package.create_client_server_interface("CSInterface").unwrap();
+        let cso = cs_interface.create_operation("ADP").unwrap();
+        let _adp = cso.create_argument("ADP", &impl_array, ArgumentDirection::In).unwrap();
+
+        // create an implementation data type that references the implementation array data type
+        let impl_ref_type = package
+            .create_implementation_data_type(&ImplementationDataTypeSettings::TypeReference {
+                name: "ImplRecord".to_string(),
+                reftype: impl_array.clone(),
+                compu_method: None,
+                data_constraint: None,
+            })
+            .unwrap();
+
+        // remove the application array data type deeply
+        impl_array.remove(true).unwrap();
+
+        // check that all related elements have been removed
+        assert_eq!(data_type_mapping_set.data_type_maps().count(), 0);
+        assert_eq!(sr_interface.data_elements().count(), 0);
+        assert_eq!(cso.arguments().count(), 0);
+        assert!(impl_ref_type.element().path().is_err());
     }
 }

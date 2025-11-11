@@ -1,6 +1,7 @@
-use crate::communication::{AbstractCluster, CanPhysicalChannel};
+use crate::communication::{AbstractCluster, CanNmCluster, CanPhysicalChannel};
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
+    get_reference_parents,
 };
 use autosar_data::{Element, ElementName};
 
@@ -35,6 +36,38 @@ impl CanCluster {
         can_cluster.set_baudrate(can_baudrate.unwrap_or(500_000))?;
 
         Ok(can_cluster)
+    }
+
+    /// remove this `CanCluster` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove the physical channel, if existing
+        if let Some(channel) = self.physical_channel() {
+            channel.remove(deep)?;
+        }
+        let ref_parents = get_reference_parents(&self.0)?;
+
+        // delegate to the trait implementation to clean up all other references to the element and the element itself
+        AbstractionElement::remove(self, deep)?;
+
+        // check if any CanTpConfig or CanNmCluster uses this CanCluster
+        // In both the cluster reference is mandatory, so we remove them together with the cluster
+        for (named_parent, _parent) in ref_parents {
+            match named_parent.element_name() {
+                ElementName::CanTpConfig => {
+                    if let Ok(can_tp_config) = crate::communication::CanTpConfig::try_from(named_parent) {
+                        can_tp_config.remove(deep)?;
+                    }
+                }
+                ElementName::CanNmCluster => {
+                    if let Ok(can_nm_cluster) = CanNmCluster::try_from(named_parent) {
+                        can_nm_cluster.remove(deep)?;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
     }
 
     /// set the baudrate for this `CanCluster`
@@ -192,7 +225,10 @@ impl AbstractCluster for CanCluster {}
 
 #[cfg(test)]
 mod test {
-    use crate::{AutosarModelAbstraction, SystemCategory, communication::AbstractCluster};
+    use crate::{
+        AbstractionElement, AutosarModelAbstraction, SystemCategory,
+        communication::{AbstractCluster, CanNmClusterSettings},
+    };
     use autosar_data::AutosarVersion;
 
     #[test]
@@ -237,5 +273,41 @@ mod test {
 
         let pc = cluster.physical_channel();
         assert!(pc.is_some());
+    }
+
+    #[test]
+    fn remove_cluster() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00051);
+        let pkg = model.get_or_create_package("/test").unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
+
+        let pkg2 = model.get_or_create_package("/can").unwrap();
+        let cluster = system.create_can_cluster("CanCluster", &pkg2, None).unwrap();
+        let channel = cluster.create_physical_channel("Channel1").unwrap();
+
+        let nm_config = system.create_nm_config("NmConfig", &pkg2).unwrap();
+        let can_nm_cluster_settings = CanNmClusterSettings {
+            nm_busload_reduction_active: false,
+            nm_immediate_nm_transmissions: 5,
+            nm_message_timeout_time: 5.0,
+            nm_msg_cycle_time: 5.0,
+            nm_network_timeout: 8.0,
+            nm_remote_sleep_indication_time: 3.0,
+            nm_repeat_message_time: 1.0,
+            nm_wait_bus_sleep_time: 1.0,
+        };
+        let can_nm_cluster = nm_config
+            .create_can_nm_cluster("CanNmCluster", &can_nm_cluster_settings, &cluster)
+            .unwrap();
+        let can_tp_config = system.create_can_tp_config("CanTpConfig", &pkg2, &cluster).unwrap();
+
+        // remove the cluster
+        let result = cluster.remove(true);
+        assert!(result.is_ok());
+
+        // check that the channel, CanNmCluster and CanTpConfig are also removed
+        assert!(channel.element().path().is_err());
+        assert!(can_nm_cluster.element().path().is_err());
+        assert!(can_tp_config.element().path().is_err());
     }
 }

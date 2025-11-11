@@ -166,7 +166,7 @@ impl DataReceivedEvent {
             ));
         }
         // the port must be a sender-receiver port
-        let PortInterface::SenderReceiverInterface(sr_interface) = context_port.port_interface()? else {
+        let Some(PortInterface::SenderReceiverInterface(sr_interface)) = context_port.port_interface() else {
             return Err(AutosarAbstractionError::InvalidParameter(
                 "A DataReceivedEvent must refer to a port using a SenderReceiverInterface".to_string(),
             ));
@@ -438,7 +438,11 @@ impl SwcModeSwitchEvent {
         second_mode_declaration: Option<&ModeDeclaration>,
     ) -> Result<(), AutosarAbstractionError> {
         let context_port = context_port.clone().into();
-        let interface = context_port.port_interface()?;
+        let interface = context_port
+            .port_interface()
+            .ok_or(AutosarAbstractionError::InvalidParameter(
+                "Invalid port lacks a port interface".to_string(),
+            ))?;
         let PortInterface::ModeSwitchInterface(mode_switch_interface) = interface else {
             return Err(AutosarAbstractionError::InvalidParameter(
                 "A ModeSwitchEvent must refer to a port using a ModeSwitchInterface".to_string(),

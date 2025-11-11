@@ -37,6 +37,31 @@ impl CanPhysicalChannel {
         CanCluster::try_from(cluster_elem)
     }
 
+    /// remove this `CanPhysicalChannel` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all frame triggerings of this physical channel
+        for ft in self.frame_triggerings() {
+            ft.remove(deep)?;
+        }
+
+        // remove all pdu triggerings of this physical channel
+        for pt in self.pdu_triggerings() {
+            pt.remove(deep)?;
+        }
+
+        // remove all signal triggerings of this physical channel
+        for st in self.signal_triggerings() {
+            st.remove(deep)?;
+        }
+
+        // remove all connectors using this physical channel
+        for connector in self.connectors() {
+            connector.remove(deep)?;
+        }
+
+        AbstractionElement::remove(self, deep)
+    }
+
     /// add a trigger for a CAN frame in this physical channel
     ///
     /// # Example
@@ -109,7 +134,10 @@ impl AbstractPhysicalChannel for CanPhysicalChannel {
 
 #[cfg(test)]
 mod test {
-    use crate::{AutosarModelAbstraction, SystemCategory, communication::PhysicalChannel};
+    use crate::{
+        AbstractionElement, AutosarModelAbstraction, ByteOrder, SystemCategory,
+        communication::{AbstractFrame, AbstractPhysicalChannel, CanAddressingMode, CanFrameType, PhysicalChannel},
+    };
     use autosar_data::AutosarVersion;
 
     #[test]
@@ -125,5 +153,32 @@ mod test {
 
         let wrapped_channel: PhysicalChannel = channel.clone().into();
         assert_eq!(wrapped_channel, PhysicalChannel::Can(channel));
+    }
+
+    #[test]
+    fn remove_channel() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let pkg = model.get_or_create_package("/test").unwrap();
+        let system = pkg.create_system("System", SystemCategory::SystemDescription).unwrap();
+        let cluster = system.create_can_cluster("CanCluster", &pkg, None).unwrap();
+
+        let channel = cluster.create_physical_channel("channel_name").unwrap();
+
+        let frame = system.create_can_frame("CanFrame", &pkg, 8).unwrap();
+        let _ = channel
+            .trigger_frame(&frame, 0x123, CanAddressingMode::Standard, CanFrameType::Can20)
+            .unwrap();
+        let isignal_ipdu = system.create_isignal_ipdu("ISignalIPdu", &pkg, 8).unwrap();
+        let _ = frame
+            .map_pdu(&isignal_ipdu, 0, ByteOrder::MostSignificantByteLast, None)
+            .unwrap();
+
+        assert_eq!(channel.frame_triggerings().count(), 1);
+        assert_eq!(channel.pdu_triggerings().count(), 1);
+
+        channel.remove(true).unwrap();
+        assert!(cluster.physical_channel().is_none());
+        // the PDU was removed, because it was unused and deep removal was requested
+        assert!(isignal_ipdu.element().parent().is_err());
     }
 }

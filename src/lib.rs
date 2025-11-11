@@ -80,7 +80,9 @@
 
 use std::path::Path;
 
-use autosar_data::{ArxmlFile, AutosarDataError, AutosarModel, AutosarVersion, Element, ElementName, EnumItem};
+use autosar_data::{
+    ArxmlFile, AutosarDataError, AutosarModel, AutosarVersion, Element, ElementName, EnumItem, WeakElement,
+};
 use thiserror::Error;
 
 // modules that are visible in the API
@@ -153,9 +155,46 @@ pub trait AbstractionElement: Clone + PartialEq + TryFrom<autosar_data::Element>
     #[must_use]
     fn element(&self) -> &Element;
 
-    // fn set_timestamp(&self) {
-    //     todo!()
-    // }
+    /// Remove this element from the model
+    ///
+    /// `deep` indicates whether elements that depend on this element should also be removed.
+    fn remove(self, _deep: bool) -> Result<(), AutosarAbstractionError> {
+        let element = self.element();
+        let Some(parent) = element.parent()? else {
+            // root element cannot be removed
+            return Err(AutosarAbstractionError::InvalidParameter(
+                "cannot remove root element".to_string(),
+            ));
+        };
+
+        if element.is_identifiable() {
+            let model = element.model()?;
+            let path = element.path()?;
+            let inbound_refs = model.get_references_to(&path);
+            for ref_elem in inbound_refs.iter().filter_map(WeakElement::upgrade) {
+                let Ok(Some(parent)) = ref_elem.parent() else {
+                    continue;
+                };
+                match ref_elem.element_name() {
+                    ElementName::FibexElementRef => {
+                        // explicit handling of FIBEX-ELEMENTS -> FIBEX-ELEMENT-REF-CONDITIONAl -> FIBEX-ELEMENT-REF
+                        if let Ok(Some(grandparent)) = parent.parent() {
+                            grandparent.remove_sub_element(parent)?;
+                        }
+                    }
+                    _ => {
+                        // Fallback: just remove the reference
+                        // In many cases this leaves the model in an invalid state, but it
+                        // is always better than a dangling reference
+                        let _ = parent.remove_sub_element(ref_elem);
+                    }
+                }
+            }
+        }
+
+        parent.remove_sub_element(element.clone())?;
+        Ok(())
+    }
 }
 
 /// The `IdentifiableAbstractionElement` trait is implemented by all classes that represent elements in the AUTOSAR model that have an item name.
@@ -374,7 +413,48 @@ pub(crate) fn make_unique_name(model: &AutosarModel, base_path: &str, initial_na
     name
 }
 
-//#########################################################
+//##################################################################
+
+/// check if the element is used anywhere
+pub(crate) fn is_used(element: &Element) -> bool {
+    let Ok(model) = element.model() else {
+        // not connected to model -> unused
+        return false;
+    };
+    let Ok(path) = element.path() else {
+        // not connected to model any more -> unused
+        // this case is only reachable through a race condition (parallel deletion)
+        return false;
+    };
+    let references = model.get_references_to(&path);
+
+    // it is unused if there are no references to it
+    !references.is_empty()
+}
+
+//##################################################################
+
+// returns the named parent and the parent of each element that references the given element
+pub(crate) fn get_reference_parents(element: &Element) -> Result<Vec<(Element, Element)>, AutosarAbstractionError> {
+    let model = element.model()?;
+    let path = element.path()?;
+    let references = model.get_references_to(&path);
+
+    let parents = references
+        .iter()
+        .filter_map(WeakElement::upgrade)
+        .filter_map(|ref_elem| {
+            Some((
+                ref_elem.named_parent().ok().flatten()?,
+                ref_elem.parent().ok().flatten()?,
+            ))
+        })
+        .collect();
+
+    Ok(parents)
+}
+
+//##################################################################
 
 #[cfg(test)]
 mod test {

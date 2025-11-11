@@ -34,6 +34,19 @@ impl LinCluster {
         Ok(lin_cluster)
     }
 
+    /// remove this `LinCluster` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove the physical channel, if existing
+        if let Some(channel) = self.physical_channel() {
+            channel.remove(deep)?;
+        }
+
+        // delegate to the trait implementation to clean up all other references to the element and the element itself
+        AbstractionElement::remove(self, deep)?;
+
+        Ok(())
+    }
+
     /// Create a new physical channel for the cluster
     ///
     /// A LIN cluster must contain exactly one physical channel; trying to add a second one triggers an error.

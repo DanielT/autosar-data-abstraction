@@ -4,8 +4,8 @@
 //! It also contains the definition of the composition hierarchy, and the connectors between components.
 
 use crate::{
-    AbstractionElement, ArPackage, AutosarAbstractionError, Element, IdentifiableAbstractionElement,
-    abstraction_element,
+    AbstractionElement, ArPackage, AutosarAbstractionError, Element, IdentifiableAbstractionElement, SwcToEcuMapping,
+    abstraction_element, get_reference_parents,
 };
 use autosar_data::ElementName;
 
@@ -145,6 +145,39 @@ impl CompositionSwComponentType {
         Ok(Self(composition))
     }
 
+    /// remove this `CompositionSwComponentType` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        for component in self.components() {
+            component.remove(deep)?;
+        }
+
+        for connector in self.connectors() {
+            connector.remove(deep)?;
+        }
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            match named_parent.element_name() {
+                ElementName::SwComponentPrototype => {
+                    if let Ok(component) = SwComponentPrototype::try_from(named_parent) {
+                        component.remove(deep)?;
+                    }
+                }
+                ElementName::RootSwCompositionPrototype => {
+                    if let Ok(composition) = RootSwCompositionPrototype::try_from(named_parent) {
+                        composition.remove(deep)?;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
+    }
+
     /// check if the composition is a parent (or grand-parent, etc.) of the component
     pub fn is_parent_of<T: AbstractSwComponentType>(&self, other: &T) -> bool {
         // the expectation is that in normal cases each component has only one parent
@@ -222,8 +255,16 @@ impl CompositionSwComponentType {
         outer_port: &PortPrototype,
     ) -> Result<DelegationSwConnector, AutosarAbstractionError> {
         // check the compatibility of the interfaces
-        let interface_1 = inner_port.port_interface()?;
-        let interface_2 = outer_port.port_interface()?;
+        let interface_1 = inner_port
+            .port_interface()
+            .ok_or(AutosarAbstractionError::InvalidParameter(
+                "Invalid port lacks a port interface".to_string(),
+            ))?;
+        let interface_2 = outer_port
+            .port_interface()
+            .ok_or(AutosarAbstractionError::InvalidParameter(
+                "Invalid port lacks a port interface".to_string(),
+            ))?;
         if std::mem::discriminant(&interface_1) != std::mem::discriminant(&interface_2) {
             return Err(AutosarAbstractionError::InvalidParameter(
                 "The interfaces of the two ports are not compatible".to_string(),
@@ -293,8 +334,16 @@ impl CompositionSwComponentType {
         sw_prototype_2: &SwComponentPrototype,
     ) -> Result<AssemblySwConnector, AutosarAbstractionError> {
         // check the compatibility of the interfaces
-        let interface_1 = port_1.port_interface()?;
-        let interface_2 = port_2.port_interface()?;
+        let interface_1 = port_1
+            .port_interface()
+            .ok_or(AutosarAbstractionError::InvalidParameter(
+                "Invalid port lacks a port interface".to_string(),
+            ))?;
+        let interface_2 = port_2
+            .port_interface()
+            .ok_or(AutosarAbstractionError::InvalidParameter(
+                "Invalid port lacks a port interface".to_string(),
+            ))?;
         if std::mem::discriminant(&interface_1) != std::mem::discriminant(&interface_2) {
             return Err(AutosarAbstractionError::InvalidParameter(
                 "The interfaces of the two ports are not compatible".to_string(),
@@ -362,8 +411,16 @@ impl CompositionSwComponentType {
         port_2: &PortPrototype,
     ) -> Result<PassThroughSwConnector, AutosarAbstractionError> {
         // check the compatibility of the interfaces
-        let interface_1 = port_1.port_interface()?;
-        let interface_2 = port_2.port_interface()?;
+        let interface_1 = port_1
+            .port_interface()
+            .ok_or(AutosarAbstractionError::InvalidParameter(
+                "Invalid port lacks a port interface".to_string(),
+            ))?;
+        let interface_2 = port_2
+            .port_interface()
+            .ok_or(AutosarAbstractionError::InvalidParameter(
+                "Invalid port lacks a port interface".to_string(),
+            ))?;
         if std::mem::discriminant(&interface_1) != std::mem::discriminant(&interface_2) {
             return Err(AutosarAbstractionError::InvalidParameter(
                 "The interfaces of the two ports are not compatible".to_string(),
@@ -414,6 +471,26 @@ impl ApplicationSwComponentType {
         let elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
         let application = elements.create_named_sub_element(ElementName::ApplicationSwComponentType, name)?;
         Ok(Self(application))
+    }
+
+    /// remove this `ApplicationSwComponentType` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        for swc_internal_behavior in self.swc_internal_behaviors() {
+            swc_internal_behavior.remove(deep)?;
+        }
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            if named_parent.element_name() == ElementName::SwComponentPrototype
+                && let Ok(component) = SwComponentPrototype::try_from(named_parent)
+            {
+                component.remove(deep)?;
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -611,6 +688,20 @@ impl From<EcuAbstractionSwComponentType> for SwComponentType {
 
 impl AbstractSwComponentType for SwComponentType {}
 
+impl SwComponentType {
+    /// remove this `SwComponentType` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        match self {
+            SwComponentType::Composition(comp) => comp.remove(deep),
+            SwComponentType::Application(app) => app.remove(deep),
+            SwComponentType::ComplexDeviceDriver(cdd) => cdd.remove(deep),
+            SwComponentType::Service(service) => service.remove(deep),
+            SwComponentType::SensorActuator(sensor_actuator) => sensor_actuator.remove(deep),
+            SwComponentType::EcuAbstraction(ecu_abstraction) => ecu_abstraction.remove(deep),
+        }
+    }
+}
+
 //##################################################################
 
 /// A `SwComponentPrototype` is an instance of a software component type
@@ -631,6 +722,23 @@ impl SwComponentPrototype {
             .set_reference_target(component_type.element())?;
 
         Ok(Self(component))
+    }
+
+    /// remove this `SwComponentPrototype` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            if named_parent.element_name() == ElementName::SwcToEcuMapping
+                && let Ok(swc_mapping) = SwcToEcuMapping::try_from(named_parent)
+            {
+                swc_mapping.remove(deep)?;
+            }
+        }
+
+        Ok(())
     }
 
     /// get the sw component type that this prototype is based on
@@ -947,5 +1055,22 @@ mod test {
 
         // create a port group
         comp_parent_type.create_port_group("group").unwrap();
+    }
+
+    #[test]
+    fn remove_swc_type() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/package").unwrap();
+
+        let comp_swc_type = CompositionSwComponentType::new("comp", &package).unwrap();
+        let app_swc_type = ApplicationSwComponentType::new("app", &package).unwrap();
+        let app_prototype = comp_swc_type.create_component("app", &app_swc_type.clone()).unwrap();
+
+        assert_eq!(comp_swc_type.components().count(), 1);
+
+        app_swc_type.remove(true).unwrap();
+
+        assert_eq!(comp_swc_type.components().count(), 0);
+        assert!(app_prototype.element().path().is_err());
     }
 }

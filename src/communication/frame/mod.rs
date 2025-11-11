@@ -3,7 +3,7 @@ use crate::communication::{
 };
 use crate::{
     AbstractionElement, AutosarAbstractionError, ByteOrder, EcuInstance, IdentifiableAbstractionElement,
-    abstraction_element, make_unique_name,
+    abstraction_element, is_used_system_element, make_unique_name,
 };
 
 mod can;
@@ -128,6 +128,9 @@ impl TryFrom<Element> for Frame {
         match element.element_name() {
             ElementName::CanFrame => Ok(Self::Can(CanFrame::try_from(element)?)),
             ElementName::FlexrayFrame => Ok(Self::Flexray(FlexrayFrame::try_from(element)?)),
+            ElementName::LinEventTriggeredFrame => Ok(Self::Lin(LinEventTriggeredFrame::try_from(element)?.into())),
+            ElementName::LinSporadicFrame => Ok(Self::Lin(LinSporadicFrame::try_from(element)?.into())),
+            ElementName::LinUnconditionalFrame => Ok(Self::Lin(LinUnconditionalFrame::try_from(element)?.into())),
             _ => Err(AutosarAbstractionError::ConversionError {
                 element,
                 dest: "Frame".to_string(),
@@ -389,6 +392,15 @@ impl FrameTriggering {
 
         Ok(pt)
     }
+
+    /// remove this `FrameTriggering` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        match self {
+            Self::Can(cft) => cft.remove(deep),
+            Self::Flexray(fft) => fft.remove(deep),
+            Self::Lin(lft) => lft.remove(deep),
+        }
+    }
 }
 
 //##################################################################
@@ -420,6 +432,22 @@ impl PduToFrameMapping {
         pdumapping.set_update_bit(update_bit)?;
 
         Ok(pdumapping)
+    }
+
+    /// remove this `PduToFrameMapping` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_pdu = self.pdu();
+
+        AbstractionElement::remove(self, deep)?;
+
+        if deep && let Some(pdu) = opt_pdu {
+            // check if the PDU became unused because of this mapping removal
+            if !is_used_system_element(pdu.element()) {
+                pdu.remove(deep)?;
+            }
+        }
+
+        Ok(())
     }
 
     /// Reference to the PDU that is mapped into the frame. The PDU reference is mandatory.

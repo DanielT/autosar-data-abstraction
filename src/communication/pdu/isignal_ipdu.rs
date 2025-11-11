@@ -1,7 +1,10 @@
-use crate::communication::{AbstractIpdu, AbstractPdu, IPdu, ISignal, ISignalGroup, Pdu, TransferProperty};
+use crate::communication::{
+    AbstractIpdu, AbstractPdu, DynamicPartAlternative, IPdu, ISignal, ISignalGroup, MultiplexedIPdu, Pdu,
+    PduToFrameMapping, TransferProperty,
+};
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder, IdentifiableAbstractionElement,
-    abstraction_element, make_unique_name,
+    abstraction_element, get_reference_parents, is_used_system_element, make_unique_name,
 };
 use autosar_data::{Element, ElementName, EnumItem};
 
@@ -10,13 +13,7 @@ use autosar_data::{Element, ElementName, EnumItem};
 /// Trait for PDUs that can contain signals, i.e., ISignalIPdu and NmPdu
 pub trait SignalPdu: AbstractPdu {
     /// returns an iterator over all signals and signal groups mapped to the PDU
-    fn mapped_signals(&self) -> impl Iterator<Item = ISignalToIPduMapping> + Send + use<Self> {
-        self.element()
-            .get_sub_element(ElementName::ISignalToPduMappings)
-            .into_iter()
-            .flat_map(|mappings| mappings.sub_elements())
-            .filter_map(|elem| ISignalToIPduMapping::try_from(elem).ok())
-    }
+    fn mapped_signals(&self) -> impl Iterator<Item = ISignalToIPduMapping> + Send + use<Self>;
 
     /// map a signal to the `ISignalIPdu` or `NmPdu`
     ///
@@ -91,6 +88,53 @@ impl ISignalIPdu {
             .set_character_data(length.to_string())?;
 
         Ok(Self(elem_pdu))
+    }
+
+    /// remove this `ISignalIPdu` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all triggerings of this PDU
+        for pdu_triggering in self.pdu_triggerings() {
+            let _ = pdu_triggering.element().remove_sub_element_kind(ElementName::IPduRef);
+            let _ = pdu_triggering.remove(deep);
+        }
+
+        // remove all signal mappings of this PDU
+        for signal_mapping in self.mapped_signals() {
+            let _ = signal_mapping.remove(deep);
+        }
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, parent) in ref_parents {
+            match parent.element_name() {
+                ElementName::PduToFrameMapping => {
+                    if let Ok(pdu_to_frame_mapping) = PduToFrameMapping::try_from(parent) {
+                        pdu_to_frame_mapping.remove(deep)?;
+                    }
+                }
+                // Multiplexed IPDUs
+                ElementName::DynamicPartAlternative => {
+                    if let Ok(dynamic_part_alternative) = DynamicPartAlternative::try_from(parent) {
+                        dynamic_part_alternative.remove(deep)?;
+                    }
+                }
+                ElementName::StaticPart => {
+                    if let Ok(multiplexed_ipdu) = MultiplexedIPdu::try_from(named_parent) {
+                        multiplexed_ipdu.remove(deep)?;
+                    }
+                }
+                ElementName::ISignalIPduRefConditional => {
+                    if let Ok(Some(parent_parent)) = parent.parent() {
+                        parent_parent.remove_sub_element(parent)?;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
     }
 
     /// map a signal to the `ISignalIPdu`
@@ -307,6 +351,15 @@ impl ISignalIPdu {
 }
 
 impl SignalPdu for ISignalIPdu {
+    /// returns an iterator over all signals and signal groups mapped to the PDU
+    fn mapped_signals(&self) -> impl Iterator<Item = ISignalToIPduMapping> + Send + use<> {
+        self.element()
+            .get_sub_element(ElementName::ISignalToPduMappings)
+            .into_iter()
+            .flat_map(|mappings| mappings.sub_elements())
+            .filter_map(|elem| ISignalToIPduMapping::try_from(elem).ok())
+    }
+
     fn map_signal(
         &self,
         signal: &ISignal,
@@ -377,6 +430,32 @@ impl ISignalToIPduMapping {
         }
 
         Ok(Self(signal_mapping))
+    }
+
+    /// remove this `ISignalToIPduMapping` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        let opt_signal = self.signal();
+        let opt_signal_group = self.signal_group();
+
+        AbstractionElement::remove(self, false)?;
+
+        if deep {
+            // check if the signal is still used
+            if let Some(signal) = opt_signal
+                && !is_used_system_element(signal.element())
+            {
+                signal.remove(true)?;
+            }
+
+            // check if the signal group is still used
+            if let Some(signal_group) = opt_signal_group
+                && !is_used_system_element(signal_group.element())
+            {
+                signal_group.remove(true)?;
+            }
+        }
+
+        Ok(())
     }
 
     pub(crate) fn new_with_group(

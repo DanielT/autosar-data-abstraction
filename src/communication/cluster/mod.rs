@@ -108,6 +108,18 @@ impl From<LinCluster> for Cluster {
     }
 }
 
+impl Cluster {
+    /// remove this `Cluster` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        match self {
+            Cluster::Can(can_cluster) => can_cluster.remove(deep),
+            Cluster::Ethernet(eth_cluster) => eth_cluster.remove(deep),
+            Cluster::FlexRay(flx_cluster) => flx_cluster.remove(deep),
+            Cluster::Lin(lin_cluster) => lin_cluster.remove(deep),
+        }
+    }
+}
+
 //##################################################################
 
 #[cfg(test)]
@@ -146,5 +158,31 @@ mod tests {
         assert_eq!(can.element().item_name().unwrap(), "CanCluster");
         assert_eq!(ethernet.element().item_name().unwrap(), "EthernetCluster");
         assert_eq!(flexray.element().item_name().unwrap(), "FlexrayCluster");
+    }
+
+    #[test]
+    fn remove_cluster() {
+        let model = AutosarModelAbstraction::create("test.arxml", AutosarVersion::LATEST);
+        let package = model.get_or_create_package("/Test").unwrap();
+        let system = package
+            .create_system("System", crate::SystemCategory::EcuExtract)
+            .unwrap();
+        let can_cluster = system.create_can_cluster("CanCluster", &package, None).unwrap();
+        let flexray_cluster = system
+            .create_flexray_cluster("FlexrayCluster", &package, &FlexrayClusterSettings::default())
+            .unwrap();
+        let ethernet_cluster = system.create_ethernet_cluster("EthernetCluster", &package).unwrap();
+        let lin_cluster = system.create_lin_cluster("LinCluster", &package).unwrap();
+
+        assert_eq!(system.clusters().count(), 4);
+        let cluster: Cluster = can_cluster.into();
+        cluster.remove(true).unwrap();
+        let cluster: Cluster = flexray_cluster.into();
+        cluster.remove(true).unwrap();
+        let cluster: Cluster = ethernet_cluster.into();
+        cluster.remove(true).unwrap();
+        let cluster: Cluster = lin_cluster.into();
+        cluster.remove(true).unwrap();
+        assert_eq!(system.clusters().count(), 0);
     }
 }
