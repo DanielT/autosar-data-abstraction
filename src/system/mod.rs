@@ -5,7 +5,7 @@ use crate::communication::{
     GeneralPurposePduCategory, ISignal, ISignalGroup, ISignalIPdu, LinCluster, LinEventTriggeredFrame,
     LinSporadicFrame, LinUnconditionalFrame, MultiplexedIPdu, NPdu, NmConfig, NmPdu, Pdu, RxAcceptContainedIPdu,
     SecureCommunicationProps, SecuredIPdu, ServiceInstanceCollectionSet, SoAdRoutingGroup,
-    SocketConnectionIpduIdentifierSet, SomeipTpConfig, SystemSignal, SystemSignalGroup,
+    SocketConnectionIpduIdentifierSet, SomeipTpConfig, SystemSignal, SystemSignalGroup, UserDefinedPdu,
 };
 use crate::datatype::SwBaseType;
 use crate::software_component::{CompositionSwComponentType, RootSwCompositionPrototype};
@@ -889,6 +889,38 @@ impl System {
         length: u32,
     ) -> Result<MultiplexedIPdu, AutosarAbstractionError> {
         let pdu = MultiplexedIPdu::new(name, package, length)?;
+        self.create_fibex_element_ref_unchecked(pdu.element())?;
+
+        Ok(pdu)
+    }
+
+    /// create a [`UserDefinedPdu`] in the [`System`]
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::*;
+    /// # use autosar_data_abstraction::communication::*;
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// let package = model.get_or_create_package("/Pdus")?;
+    /// system.create_user_defined_pdu("pdu", &package, 42)?;
+    /// # Ok(())}
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model while trying to create elements
+    pub fn create_user_defined_pdu(
+        &self,
+        name: &str,
+        package: &ArPackage,
+        length: u32,
+    ) -> Result<UserDefinedPdu, AutosarAbstractionError> {
+        let pdu = UserDefinedPdu::new(name, package, length)?;
         self.create_fibex_element_ref_unchecked(pdu.element())?;
 
         Ok(pdu)

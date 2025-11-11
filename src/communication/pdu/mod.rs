@@ -1003,6 +1003,59 @@ impl DynamicPartAlternative {
 
 //##################################################################
 
+/// This element is used for user defined AUTOSAR Pdus
+///
+/// This PDU type is occasionally used for time-sync messages
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct UserDefinedPdu(Element);
+abstraction_element!(UserDefinedPdu, UserDefinedPdu);
+impl IdentifiableAbstractionElement for UserDefinedPdu {}
+
+impl UserDefinedPdu {
+    pub(crate) fn new(name: &str, package: &ArPackage, length: u32) -> Result<Self, AutosarAbstractionError> {
+        let pkg_elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
+        let pdu_elem = pkg_elements.create_named_sub_element(ElementName::UserDefinedPdu, name)?;
+        let pdu = Self(pdu_elem);
+
+        pdu.set_length(length)?;
+
+        Ok(pdu)
+    }
+
+    /// remove this `UserDefinedPdu` from the model
+    pub fn remove(self, deep: bool) -> Result<(), AutosarAbstractionError> {
+        // remove all triggerings of this PDU
+        for pdu_triggering in self.pdu_triggerings() {
+            let _ = pdu_triggering.element().remove_sub_element_kind(ElementName::IPduRef);
+            let _ = pdu_triggering.remove(deep);
+        }
+
+        let ref_parents = get_reference_parents(self.element())?;
+
+        AbstractionElement::remove(self, deep)?;
+
+        for (named_parent, _parent) in ref_parents {
+            if named_parent.element_name() == ElementName::PduToFrameMapping
+                && let Ok(pdu_to_frame_mapping) = PduToFrameMapping::try_from(named_parent)
+            {
+                pdu_to_frame_mapping.remove(deep)?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl AbstractPdu for UserDefinedPdu {}
+
+impl From<UserDefinedPdu> for Pdu {
+    fn from(value: UserDefinedPdu) -> Self {
+        Pdu::UserDefinedPdu(value)
+    }
+}
+
+//##################################################################
+
 /// Wrapper for all Pdu types. It is used as a return value for functions that can return any Pdu type
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Pdu {
@@ -1024,6 +1077,8 @@ pub enum Pdu {
     SecuredIPdu(SecuredIPdu),
     /// The Pdu is a Multiplexed `IPdu`
     MultiplexedIPdu(MultiplexedIPdu),
+    /// The Pdu is a User Defined Pdu
+    UserDefinedPdu(UserDefinedPdu),
 }
 
 impl AbstractionElement for Pdu {
@@ -1038,6 +1093,7 @@ impl AbstractionElement for Pdu {
             Pdu::ContainerIPdu(pdu) => pdu.element(),
             Pdu::SecuredIPdu(pdu) => pdu.element(),
             Pdu::MultiplexedIPdu(pdu) => pdu.element(),
+            Pdu::UserDefinedPdu(pdu) => pdu.element(),
         }
     }
 }
@@ -1056,6 +1112,7 @@ impl TryFrom<Element> for Pdu {
             ElementName::ContainerIPdu => Ok(ContainerIPdu::try_from(element)?.into()),
             ElementName::SecuredIPdu => Ok(SecuredIPdu::try_from(element)?.into()),
             ElementName::MultiplexedIPdu => Ok(MultiplexedIPdu::try_from(element)?.into()),
+            ElementName::UserDefinedPdu => Ok(UserDefinedPdu::try_from(element)?.into()),
             _ => Err(AutosarAbstractionError::ConversionError {
                 element,
                 dest: "Pdu".to_string(),
@@ -1080,6 +1137,7 @@ impl Pdu {
             Pdu::ContainerIPdu(pdu) => pdu.remove(deep),
             Pdu::SecuredIPdu(pdu) => pdu.remove(deep),
             Pdu::MultiplexedIPdu(pdu) => pdu.remove(deep),
+            Pdu::UserDefinedPdu(pdu) => pdu.remove(deep),
         }
     }
 }
