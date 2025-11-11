@@ -1,6 +1,6 @@
 use crate::communication::{
     CanCommunicationController, CanTpEcu, CommunicationController, EthernetCommunicationController,
-    FlexrayCommunicationController, FlexrayTpEcu, LinMaster, LinSlave, NmEcu,
+    FlexrayCommunicationController, FlexrayTpEcu, ISignalIPduGroup, LinMaster, LinSlave, NmEcu,
 };
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, IdentifiableAbstractionElement, abstraction_element,
@@ -231,6 +231,70 @@ impl EcuInstance {
             .into_iter()
             .flat_map(|cc| cc.sub_elements())
             .filter_map(|ccelem| CommunicationController::try_from(ccelem).ok())
+    }
+
+    /// Add a reference to an associated COM IPdu group
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::{*, communication::*};
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let group = system.create_isignal_ipdu_group("PduGroup", &package, CommunicationDirection::In)?;
+    /// let ecu_instance = system.create_ecu_instance("ecu_name", &package)?;
+    /// ecu_instance.add_associated_com_ipdu_group(&group)?;
+    /// for group in ecu_instance.associated_com_ipdu_groups() {
+    ///     // ...
+    /// }
+    /// # assert_eq!(ecu_instance.associated_com_ipdu_groups().count(), 1);
+    /// # Ok(())}
+    /// ```
+    pub fn add_associated_com_ipdu_group(
+        &self,
+        group: &ISignalIPduGroup,
+    ) -> Result<(), AutosarAbstractionError> {
+        self.0
+            .get_or_create_sub_element(ElementName::AssociatedComIPduGroupRefs)?
+            .create_sub_element(ElementName::AssociatedComIPduGroupRef)?
+            .set_reference_target(group.element())?;
+        Ok(())
+    }
+
+    /// Return an iterator over all associated COM IPdu groups
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::{*, communication::*};
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+    /// # let package = model.get_or_create_package("/pkg1")?;
+    /// # let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// # let group = system.create_isignal_ipdu_group("PduGroup", &package, CommunicationDirection::In)?;
+    /// let ecu_instance = system.create_ecu_instance("ecu_name", &package)?;
+    /// # ecu_instance.add_associated_com_ipdu_group(&group)?;
+    /// for group in ecu_instance.associated_com_ipdu_groups() {
+    ///     // ...
+    /// }
+    /// # assert_eq!(ecu_instance.associated_com_ipdu_groups().count(), 1);
+    /// # Ok(())}
+    /// ```
+    pub fn associated_com_ipdu_groups(&self) -> impl Iterator<Item = ISignalIPduGroup> + Send + use<> {
+        self.0
+            .get_sub_element(ElementName::AssociatedComIPduGroupRefs)
+            .into_iter()
+            .flat_map(|acigr| acigr.sub_elements())
+            .filter_map(|acigrf| {
+                acigrf
+                    .get_reference_target()
+                    .ok()
+                    .and_then(|elem| ISignalIPduGroup::try_from(elem).ok())
+            })
     }
 }
 

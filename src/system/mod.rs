@@ -1,10 +1,10 @@
 use crate::communication::{
-    CanCluster, CanFrame, CanTpConfig, Cluster, ContainerIPdu, ContainerIPduHeaderType, DcmIPdu, DiagPduType,
-    DoIpTpConfig, EthernetCluster, EventGroupControlType, FlexrayArTpConfig, FlexrayCluster, FlexrayClusterSettings,
-    FlexrayFrame, FlexrayTpConfig, Frame, GeneralPurposeIPdu, GeneralPurposeIPduCategory, GeneralPurposePdu,
-    GeneralPurposePduCategory, ISignal, ISignalGroup, ISignalIPdu, LinCluster, LinEventTriggeredFrame,
-    LinSporadicFrame, LinUnconditionalFrame, MultiplexedIPdu, NPdu, NmConfig, NmPdu, Pdu, RxAcceptContainedIPdu,
-    SecureCommunicationProps, SecuredIPdu, ServiceInstanceCollectionSet, SoAdRoutingGroup,
+    CanCluster, CanFrame, CanTpConfig, Cluster, CommunicationDirection, ContainerIPdu, ContainerIPduHeaderType,
+    DcmIPdu, DiagPduType, DoIpTpConfig, EthernetCluster, EventGroupControlType, FlexrayArTpConfig, FlexrayCluster,
+    FlexrayClusterSettings, FlexrayFrame, FlexrayTpConfig, Frame, GeneralPurposeIPdu, GeneralPurposeIPduCategory,
+    GeneralPurposePdu, GeneralPurposePduCategory, ISignal, ISignalGroup, ISignalIPdu, ISignalIPduGroup, LinCluster,
+    LinEventTriggeredFrame, LinSporadicFrame, LinUnconditionalFrame, MultiplexedIPdu, NPdu, NmConfig, NmPdu, Pdu,
+    RxAcceptContainedIPdu, SecureCommunicationProps, SecuredIPdu, ServiceInstanceCollectionSet, SoAdRoutingGroup,
     SocketConnectionIpduIdentifierSet, SomeipTpConfig, SystemSignal, SystemSignalGroup, UserDefinedPdu,
 };
 use crate::datatype::SwBaseType;
@@ -14,7 +14,6 @@ use crate::{
     abstraction_element,
 };
 use autosar_data::{AutosarModel, Element, ElementName, WeakElement};
-use std::iter::FusedIterator;
 
 mod mapping;
 
@@ -108,6 +107,10 @@ impl System {
                 pdu.remove(deep)?;
             }
 
+            for isignal_ipdu_group in self.isignal_ipdu_groups() {
+                isignal_ipdu_group.remove(deep)?;
+            }
+
             for isignal in self.isignals() {
                 isignal.remove(deep)?;
             }
@@ -118,6 +121,10 @@ impl System {
 
             if let Some(nm_config) = self.nm_config() {
                 nm_config.remove(deep)?;
+            }
+
+            for ecu_instance in self.ecu_instances() {
+                ecu_instance.remove(deep)?;
             }
         }
 
@@ -231,7 +238,15 @@ impl System {
     /// # Ok(())}
     /// ```
     pub fn ecu_instances(&self) -> impl Iterator<Item = EcuInstance> + Send + use<> {
-        EcuInstanceIterator::new(self)
+        self.0
+            .get_sub_element(ElementName::FibexElements)
+            .into_iter()
+            .flat_map(|fibexelems| fibexelems.sub_elements())
+            .filter_map(|ferc| {
+                ferc.get_sub_element(ElementName::FibexElementRef)
+                    .and_then(|fer| fer.get_reference_target().ok())
+                    .and_then(|elem| EcuInstance::try_from(elem).ok())
+            })
     }
 
     /// create a new CAN-CLUSTER
@@ -941,6 +956,52 @@ impl System {
             })
     }
 
+    /// create a new `ISignalIPduGroup` in the package
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::{*, communication::*};
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+    /// # let package = model.get_or_create_package("/some/package")?;
+    /// let system = package.create_system("System", SystemCategory::SystemExtract)?;
+    /// let pdu_group = system.create_isignal_ipdu_group("PduGroup", &package, CommunicationDirection::In)?;
+    /// # assert!(model.get_element_by_path("/some/package/PduGroup").is_some());
+    /// # Ok(())}
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// - [`AutosarAbstractionError::ModelError`] An error occurred in the Autosar model while trying to create the IMPLEMENTATION-DATA-TYPE element
+    pub fn create_isignal_ipdu_group(
+        &self,
+        name: &str,
+        package: &ArPackage,
+        communication_direction: CommunicationDirection,
+    ) -> Result<ISignalIPduGroup, AutosarAbstractionError> {
+        let ipdu_group = ISignalIPduGroup::new(name, package, communication_direction)?;
+        self.create_fibex_element_ref_unchecked(ipdu_group.element())?;
+
+        Ok(ipdu_group)
+    }
+
+    /// iterate over all ISignalIPduGroups in the System
+    ///
+    /// This iterator returns all ISignalIPduGroups that are connected to the System using a `FibexElementRef`.
+    pub fn isignal_ipdu_groups(&self) -> impl Iterator<Item = ISignalIPduGroup> + Send + use<> {
+        self.0
+            .get_sub_element(ElementName::FibexElements)
+            .into_iter()
+            .flat_map(|fibexelems| fibexelems.sub_elements())
+            .filter_map(|ferc| {
+                ferc.get_sub_element(ElementName::FibexElementRef)
+                    .and_then(|fer| fer.get_reference_target().ok())
+                    .and_then(|elem| ISignalIPduGroup::try_from(elem).ok())
+            })
+    }
+
     /// Create a `SocketConnectionIpduIdentifierSet` in the SYSTEM
     ///
     /// `SocketConnectionIpduIdentifierSet` are part of the new ethernet modeling that was introduced in Autosar 4.5.0 (`AUTOSAR_00048`).
@@ -1244,48 +1305,6 @@ impl std::str::FromStr for SystemCategory {
         }
     }
 }
-
-//#########################################################
-
-/// An iterator over all `EcuInstances` in a System
-pub struct EcuInstanceIterator {
-    fibex_elements: Option<Element>,
-    position: usize,
-}
-
-impl EcuInstanceIterator {
-    pub(crate) fn new(system: &System) -> Self {
-        let fibex_elements = system.0.get_sub_element(ElementName::FibexElements);
-
-        EcuInstanceIterator {
-            fibex_elements,
-            position: 0,
-        }
-    }
-}
-
-impl Iterator for EcuInstanceIterator {
-    type Item = EcuInstance;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let fibelem = self.fibex_elements.as_ref()?;
-
-        while let Some(fibrefcond) = fibelem.get_sub_element_at(self.position) {
-            self.position += 1;
-            if let Some(ecuinstance) = fibrefcond
-                .get_sub_element(ElementName::FibexElementRef)
-                .and_then(|r| r.get_reference_target().ok())
-                .and_then(|target| EcuInstance::try_from(target).ok())
-            {
-                return Some(ecuinstance);
-            }
-        }
-        self.fibex_elements = None;
-        None
-    }
-}
-
-impl FusedIterator for EcuInstanceIterator {}
 
 //#########################################################
 

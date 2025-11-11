@@ -1,6 +1,6 @@
 use crate::communication::{
-    AbstractIpdu, AbstractPdu, DynamicPartAlternative, IPdu, ISignal, ISignalGroup, MultiplexedIPdu, Pdu,
-    PduToFrameMapping, TransferProperty,
+    AbstractIpdu, AbstractPdu, CommunicationDirection, DynamicPartAlternative, IPdu, ISignal, ISignalGroup,
+    MultiplexedIPdu, Pdu, PduToFrameMapping, TransferProperty,
 };
 use crate::{
     AbstractionElement, ArPackage, AutosarAbstractionError, ByteOrder, IdentifiableAbstractionElement,
@@ -590,6 +590,74 @@ pub struct EventControlledTiming {
 
 //##################################################################
 
+/// A group of ISignalIPdus that is handled together
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ISignalIPduGroup(Element);
+abstraction_element!(ISignalIPduGroup, ISignalIPduGroup);
+impl IdentifiableAbstractionElement for ISignalIPduGroup {}
+
+impl ISignalIPduGroup {
+    pub(crate) fn new(
+        name: &str,
+        package: &ArPackage,
+        communication_direction: CommunicationDirection,
+    ) -> Result<Self, AutosarAbstractionError> {
+        let pkg_elements = package.element().get_or_create_sub_element(ElementName::Elements)?;
+        let elem_pdu_group = pkg_elements.create_named_sub_element(ElementName::ISignalIPduGroup, name)?;
+        let pdu_group = Self(elem_pdu_group);
+        pdu_group.set_communication_direction(communication_direction)?;
+
+        Ok(pdu_group)
+    }
+
+    /// set the communication direction of the PDU group
+    pub fn set_communication_direction(
+        &self,
+        communication_direction: CommunicationDirection,
+    ) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::CommunicationDirection)
+            .and_then(|cd| cd.set_character_data::<EnumItem>(communication_direction.into()))?;
+        Ok(())
+    }
+
+    /// get the communication direction of the PDU group
+    #[must_use]
+    pub fn communication_direction(&self) -> Option<CommunicationDirection> {
+        self.element()
+            .get_sub_element(ElementName::CommunicationDirection)
+            .and_then(|cd| cd.character_data())
+            .and_then(|cdata| cdata.enum_value())
+            .and_then(|enumval| enumval.try_into().ok())
+    }
+
+    /// add a PDU to the PDU group
+    pub fn add_pdu(&self, pdu: &ISignalIPdu) -> Result<(), AutosarAbstractionError> {
+        self.element()
+            .get_or_create_sub_element(ElementName::ISignalIPdus)?
+            .create_sub_element(ElementName::ISignalIPduRefConditional)?
+            .create_sub_element(ElementName::ISignalIPduRef)?
+            .set_reference_target(pdu.element())?;
+        Ok(())
+    }
+
+    /// get an iterator over all PDUs in the PDU group
+    pub fn pdus(&self) -> impl Iterator<Item = ISignalIPdu> + Send + use<> {
+        self.element()
+            .get_sub_element(ElementName::ISignalIPdus)
+            .into_iter()
+            .flat_map(|pdus_elem| pdus_elem.sub_elements())
+            .filter_map(|pdu_ref_cond| {
+                pdu_ref_cond
+                    .get_sub_element(ElementName::ISignalIPduRef)
+                    .and_then(|pdu_ref| pdu_ref.get_reference_target().ok())
+                    .and_then(|pdu_elem| ISignalIPdu::try_from(pdu_elem).ok())
+            })
+    }
+}
+
+//##################################################################
+
 /// Helper struct to validate signal mappings
 pub struct SignalMappingValidator {
     bitmap: Vec<u8>,
@@ -874,5 +942,28 @@ mod test {
         pdu.set_timing(&timing_spec).unwrap();
         let timing_spec2 = pdu.timing().unwrap();
         assert_eq!(timing_spec, timing_spec2);
+    }
+
+    #[test]
+    fn isignal_ipdu_group() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+        let package = model.get_or_create_package("/pkg").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
+        let pdu_group = system
+            .create_isignal_ipdu_group("PduGroup", &package, CommunicationDirection::In)
+            .unwrap();
+
+        assert_eq!(system.isignal_ipdu_groups().count(), 1);
+
+        assert_eq!(pdu_group.name().unwrap(), "PduGroup");
+        assert_eq!(pdu_group.communication_direction().unwrap(), CommunicationDirection::In);
+
+        let isignal_ipdu1 = system.create_isignal_ipdu("Pdu1", &package, 8).unwrap();
+        let isignal_ipdu2 = system.create_isignal_ipdu("Pdu2", &package, 16).unwrap();
+
+        pdu_group.add_pdu(&isignal_ipdu1).unwrap();
+        pdu_group.add_pdu(&isignal_ipdu2).unwrap();
+
+        assert_eq!(pdu_group.pdus().count(), 2);
     }
 }
