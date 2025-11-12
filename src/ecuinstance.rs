@@ -253,10 +253,7 @@ impl EcuInstance {
     /// # assert_eq!(ecu_instance.associated_com_ipdu_groups().count(), 1);
     /// # Ok(())}
     /// ```
-    pub fn add_associated_com_ipdu_group(
-        &self,
-        group: &ISignalIPduGroup,
-    ) -> Result<(), AutosarAbstractionError> {
+    pub fn add_associated_com_ipdu_group(&self, group: &ISignalIPduGroup) -> Result<(), AutosarAbstractionError> {
         self.0
             .get_or_create_sub_element(ElementName::AssociatedComIPduGroupRefs)?
             .create_sub_element(ElementName::AssociatedComIPduGroupRef)?
