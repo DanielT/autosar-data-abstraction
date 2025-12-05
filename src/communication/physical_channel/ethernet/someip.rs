@@ -1712,10 +1712,10 @@ mod test {
 
         assert_eq!(si_set.service_instances().count(), 2);
         let service_instances: Vec<ServiceInstance> = si_set.service_instances().collect();
-        assert_eq!(service_instances[0].element(), psi.element());
-        assert_eq!(service_instances[0], ServiceInstance::Provided(psi));
-        assert_eq!(service_instances[1].element(), csi.element());
-        assert_eq!(service_instances[1], ServiceInstance::Consumed(csi));
+        assert_eq!(service_instances[0].element(), csi.element());
+        assert_eq!(service_instances[0], ServiceInstance::Consumed(csi));
+        assert_eq!(service_instances[1].element(), psi.element());
+        assert_eq!(service_instances[1], ServiceInstance::Provided(psi));
     }
 
     #[test]

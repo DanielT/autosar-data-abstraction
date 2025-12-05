@@ -1042,10 +1042,10 @@ mod test {
 
         // check the connectors
         let mut parent_connectors = comp_parent_type.connectors();
-        assert_eq!(parent_connectors.next().unwrap().name().unwrap(), "sr_delegation");
         assert_eq!(parent_connectors.next().unwrap().name().unwrap(), "sr_assembly");
-        assert_eq!(parent_connectors.next().unwrap().name().unwrap(), "cs_delegation");
         assert_eq!(parent_connectors.next().unwrap().name().unwrap(), "cs_assembly");
+        assert_eq!(parent_connectors.next().unwrap().name().unwrap(), "sr_delegation");
+        assert_eq!(parent_connectors.next().unwrap().name().unwrap(), "cs_delegation");
         assert!(parent_connectors.next().is_none());
 
         let mut child_connectors = comp_child_type.connectors();
