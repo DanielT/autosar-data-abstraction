@@ -1,6 +1,6 @@
 [package]
 name = "autosar-data-abstraction"
-version = "0.9.0"
+version = "0.10.0"
 authors = ["Daniel Thaler <daniel@dthaler.de>"]
 edition = "2024"
 description = "abstraction layer for the autosar data model"
@@ -8,7 +8,7 @@ license = "MIT OR Apache-2.0"
 keywords = ["arxml", "automotive", "file-format", "Autosar"]
 # categories = ["parser-implementations"]
 repository = "https://github.com/DanielT/autosar-data-abstraction"
-rust-version = "1.88.1"
+rust-version = "1.88.0"
 
 [dependencies]
 autosar-data = "0.21"
