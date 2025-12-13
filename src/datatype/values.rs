@@ -1765,6 +1765,15 @@ mod test {
                 ],
             })],
             compound_primitive_argument: vec![
+                CompositeRuleBasedValueArgument::Application(ApplicationValueSpecification {
+                    label: Some("ApplicationValue".to_string()),
+                    category: ApplicationPrimitiveCategory::ResAxis,
+                    sw_axis_conts: vec![],
+                    sw_value_cont: SwValueCont {
+                        sw_array_size: vec![1, 2],
+                        sw_values_phys: vec![SwValue::Vf(0.0), SwValue::Vf(1.0)],
+                    },
+                }),
                 CompositeRuleBasedValueArgument::ApplicationRuleBased(ApplicationRuleBasedValueSpecification {
                     label: Some("ApplicationRuleBasedValue".to_string()),
                     category: ApplicationPrimitiveCategory::ResAxis,
@@ -1777,15 +1786,6 @@ mod test {
                         },
                         sw_array_size: vec![1, 2],
                         unit: None,
-                    },
-                }),
-                CompositeRuleBasedValueArgument::Application(ApplicationValueSpecification {
-                    label: Some("ApplicationValue".to_string()),
-                    category: ApplicationPrimitiveCategory::ResAxis,
-                    sw_axis_conts: vec![],
-                    sw_value_cont: SwValueCont {
-                        sw_array_size: vec![1, 2],
-                        sw_values_phys: vec![SwValue::Vf(0.0), SwValue::Vf(1.0)],
                     },
                 }),
             ],

@@ -1690,6 +1690,9 @@ mod test {
         assert_eq!(item.element_name(), ElementName::EcuAbstractionSwComponentType);
 
         let item = elements.next().unwrap();
+        assert_eq!(item.element_name(), ElementName::SwBaseType);
+
+        let item = elements.next().unwrap();
         assert_eq!(item.element_name(), ElementName::ImplementationDataType);
 
         let item = elements.next().unwrap();
@@ -1721,9 +1724,6 @@ mod test {
 
         let item = elements.next().unwrap();
         assert_eq!(item.element_name(), ElementName::SomeipSdServerServiceInstanceConfig);
-
-        let item = elements.next().unwrap();
-        assert_eq!(item.element_name(), ElementName::SwBaseType);
 
         let item = elements.next().unwrap();
         assert_eq!(item.element_name(), ElementName::System);

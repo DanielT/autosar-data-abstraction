@@ -828,9 +828,9 @@ mod test {
         assert_eq!(swc_internal_behavior.events().count(), 5);
         // iterate over all events and check if they are the same as the ones we created
         let mut events_iter = swc_internal_behavior.events();
-        assert_eq!(events_iter.next().unwrap().element(), background_event.element());
         assert_eq!(events_iter.next().unwrap().element(), init_event.element());
         assert_eq!(events_iter.next().unwrap().element(), op_invoked_event.element());
+        assert_eq!(events_iter.next().unwrap().element(), background_event.element());
         assert_eq!(events_iter.next().unwrap().element(), os_task_execution_event.element());
         assert_eq!(events_iter.next().unwrap().element(), timing_event.element());
 

@@ -956,7 +956,7 @@ impl System {
             })
     }
 
-    /// create a new `ISignalIPduGroup` in the System
+    /// create a new `ISignalIPduGroup` in the package
     ///
     /// # Example
     ///

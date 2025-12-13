@@ -337,17 +337,17 @@ mod test {
         let comp = package.create_composition_sw_component_type("comp").unwrap();
 
         let port_interface = package.create_sender_receiver_interface("sr_interface").unwrap();
+        let r_port = comp.create_r_port("sr_r_port", &port_interface).unwrap();
         let p_port = comp.create_p_port("sr_p_port", &port_interface).unwrap();
         let pr_port = comp.create_pr_port("sr_pr_port", &port_interface).unwrap();
-        let r_port = comp.create_r_port("sr_r_port", &port_interface).unwrap();
 
         assert_eq!(comp.ports().count(), 3);
         let ports: Vec<PortPrototype> = comp.ports().collect();
-        assert_eq!(ports[0], p_port.clone().into());
-        assert_eq!(ports[1], pr_port.clone().into());
-        assert_eq!(ports[2], r_port.clone().into());
-        assert_eq!(p_port.component_type().unwrap(), comp.clone().into());
+        assert_eq!(ports[0], r_port.clone().into());
+        assert_eq!(ports[1], p_port.clone().into());
+        assert_eq!(ports[2], pr_port.clone().into());
         assert_eq!(r_port.component_type().unwrap(), comp.clone().into());
+        assert_eq!(p_port.component_type().unwrap(), comp.clone().into());
         assert_eq!(pr_port.component_type().unwrap(), comp.clone().into());
         assert_eq!(ports[0].component_type().unwrap(), comp.clone().into());
 
@@ -358,21 +358,20 @@ mod test {
 
         assert_eq!(comp.ports().count(), 6);
         let ports: Vec<PortPrototype> = comp.ports().collect();
-        // note - ports are ordered by type in the collection: ports, pr_ports, r_ports
-        assert_eq!(ports[1], p_port.into());
-        assert_eq!(ports[3], pr_port.into());
-        assert_eq!(ports[5], r_port.into());
+        assert_eq!(ports[3], r_port.into());
+        assert_eq!(ports[4], p_port.into());
+        assert_eq!(ports[5], pr_port.into());
 
         let port_interface = package.create_mode_switch_interface("ms_interface").unwrap();
+        let r_port = comp.create_r_port("ms_r_port", &port_interface).unwrap();
         let p_port = comp.create_p_port("ms_p_port", &port_interface).unwrap();
         let pr_port = comp.create_pr_port("ms_pr_port", &port_interface).unwrap();
-        let r_port = comp.create_r_port("ms_r_port", &port_interface).unwrap();
 
         assert_eq!(comp.ports().count(), 9);
         let ports: Vec<PortPrototype> = comp.ports().collect();
-        assert_eq!(ports[2], p_port.into());
-        assert_eq!(ports[5], pr_port.into());
-        assert_eq!(ports[8], r_port.into());
+        assert_eq!(ports[6], r_port.into());
+        assert_eq!(ports[7], p_port.into());
+        assert_eq!(ports[8], pr_port.into());
 
         let port_interface = package.create_nv_data_interface("nv_interface").unwrap();
         let r_port = comp.create_r_port("nv_r_port", &port_interface).unwrap();
@@ -381,9 +380,9 @@ mod test {
 
         assert_eq!(comp.ports().count(), 12);
         let ports: Vec<PortPrototype> = comp.ports().collect();
-        assert_eq!(ports[3], p_port.into());
-        assert_eq!(ports[7], pr_port.into());
-        assert_eq!(ports[11], r_port.into());
+        assert_eq!(ports[9], r_port.into());
+        assert_eq!(ports[10], p_port.into());
+        assert_eq!(ports[11], pr_port.into());
 
         let port_interface = package.create_parameter_interface("param_interface").unwrap();
         let r_port = comp.create_r_port("param_r_port", &port_interface).unwrap();
@@ -393,8 +392,8 @@ mod test {
 
         assert_eq!(comp.ports().count(), 14);
         let ports: Vec<PortPrototype> = comp.ports().collect();
-        assert_eq!(ports[4], p_port.into());
-        assert_eq!(ports[13], r_port.into());
+        assert_eq!(ports[12], r_port.into());
+        assert_eq!(ports[13], p_port.into());
 
         let port_interface = package.create_trigger_interface("trigger_interface").unwrap();
         let r_port = comp.create_r_port("trigger_r_port", &port_interface).unwrap();
@@ -403,9 +402,9 @@ mod test {
 
         assert_eq!(comp.ports().count(), 17);
         let ports: Vec<PortPrototype> = comp.ports().collect();
-        assert_eq!(ports[5], p_port.into());
-        assert_eq!(ports[10], pr_port.into());
-        assert_eq!(ports[16], r_port.into());
+        assert_eq!(ports[14], r_port.into());
+        assert_eq!(ports[15], p_port.into());
+        assert_eq!(ports[16], pr_port.into());
     }
 
     #[test]

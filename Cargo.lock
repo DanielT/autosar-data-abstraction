@@ -10,9 +10,9 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "autosar-data"
-version = "0.21.0"
+version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "051d0173230d5d990bfb1ce518b9d29aa5024105681a7d5f895a6bfb73195c7a"
+checksum = "ea52a818637050da494f9971732e0ea622f7495c030975141724c7fd0ab8e4bc"
 dependencies = [
  "autosar-data-specification",
  "fxhash",
