@@ -849,6 +849,28 @@ mod test {
     }
 
     #[test]
+    fn insert_large_opaque() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+        let package = model.get_or_create_package("/pkg").unwrap();
+        let system = package.create_system("system", SystemCategory::EcuExtract).unwrap();
+
+        let pdu = system.create_isignal_ipdu("pdu", &package, 64).unwrap();
+
+        let syssignal = package.create_system_signal("large_opaque_signal").unwrap();
+        let isignal = system
+            .create_isignal("large_opaque_isignal", &package, 512, &syssignal, None)
+            .unwrap();
+
+        let mapping = pdu
+            .map_signal(&isignal, 0, ByteOrder::Opaque, None, TransferProperty::Triggered)
+            .unwrap();
+
+        assert_eq!(mapping.signal().unwrap(), isignal);
+        assert_eq!(mapping.start_position().unwrap(), 0);
+        assert_eq!(mapping.byte_order().unwrap(), ByteOrder::Opaque);
+    }
+
+    #[test]
     fn validate_signal_mapping() {
         // create a validator and add a 2-bit signal
         let mut validator = SignalMappingValidator::new(4);
@@ -894,6 +916,17 @@ mod test {
         assert_eq!(validator.bitmap[1], 0xFF);
         assert_eq!(validator.bitmap[2], 0xFF);
         assert_eq!(validator.bitmap[3], 0xFF);
+
+        // create a validator and add an opaque 160-bit signal
+        let mut validator = SignalMappingValidator::new(32);
+        let result = validator.add_signal(0, 160, ByteOrder::Opaque, None);
+        assert!(result);
+        for i in 0..20 {
+            assert_eq!(validator.bitmap[i], 0xFF);
+        }
+        for i in 20..32 {
+            assert_eq!(validator.bitmap[i], 0x00);
+        }
 
         // multiple mixed signals
         let mut validator = SignalMappingValidator::new(8);
