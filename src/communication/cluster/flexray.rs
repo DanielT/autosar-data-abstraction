@@ -1177,7 +1177,7 @@ mod test {
 
         settings.sync_frame_id_count_max = 1;
         assert!(!settings.verify());
-        settings.sync_frame_id_count_max = settings2.sync_frame_id_count_max;
+        // settings.sync_frame_id_count_max = settings2.sync_frame_id_count_max;
     }
 
     #[test]

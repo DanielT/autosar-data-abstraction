@@ -277,6 +277,20 @@ impl AutosarModelAbstraction {
         Ok(Self(model))
     }
 
+    /// Create an `AutosarModelAbstraction` from a buffer
+    ///
+    /// Since all autosar data is always associated with a file, a file name must be provided
+    /// but no file is created on disk unless you call `write()`.
+    pub fn from_buffer<P: AsRef<Path>>(
+        buffer: &[u8],
+        file_name: P,
+        strict: bool,
+    ) -> Result<Self, AutosarAbstractionError> {
+        let model = AutosarModel::new();
+        model.load_buffer(buffer, file_name, strict)?;
+        Ok(Self(model))
+    }
+
     /// Get the underlying `AutosarModel` from the abstraction model
     #[must_use]
     pub fn model(&self) -> &AutosarModel {
@@ -317,6 +331,17 @@ impl AutosarModelAbstraction {
         strict: bool,
     ) -> Result<(ArxmlFile, Vec<AutosarDataError>), AutosarAbstractionError> {
         let value = self.0.load_file(file_name, strict)?;
+        Ok(value)
+    }
+
+    /// Load a buffer into the model
+    pub fn load_buffer<P: AsRef<Path>>(
+        &self,
+        buffer: &[u8],
+        file_name: P,
+        strict: bool,
+    ) -> Result<(ArxmlFile, Vec<AutosarDataError>), AutosarAbstractionError> {
+        let value = self.0.load_buffer(buffer, file_name, strict)?;
         Ok(value)
     }
 
@@ -543,5 +568,41 @@ mod test {
         let err = AutosarAbstractionError::ItemAlreadyExists;
         let string = format!("{err}");
         assert!(!string.is_empty());
+    }
+
+    #[test]
+    fn from_buffer() {
+        let buffer = br#"
+        <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+        <AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 AUTOSAR_00046.xsd">
+            <AR-PACKAGES>
+                <AR-PACKAGE>
+                    <SHORT-NAME>MyPackage</SHORT-NAME>
+                </AR-PACKAGE>
+            </AR-PACKAGES>
+        </AUTOSAR>
+        "#;
+
+        let model = AutosarModelAbstraction::from_buffer(buffer, "buffer.arxml", true).unwrap();
+        let package = model.get_or_create_package("/MyPackage").unwrap();
+        assert_eq!(package.name().unwrap(), "MyPackage");
+    }
+
+    #[test]
+    fn load_buffer() {
+        let model = AutosarModelAbstraction::create("dummy", AutosarVersion::LATEST);
+        let buffer = br#"
+        <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+        <AUTOSAR xmlns="http://autosar.org/schema/r4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://autosar.org/schema/r4.0 AUTOSAR_00046.xsd">
+            <AR-PACKAGES>
+                <AR-PACKAGE>
+                    <SHORT-NAME>MyPackage</SHORT-NAME>
+                </AR-PACKAGE>
+            </AR-PACKAGES>
+        </AUTOSAR>
+        "#;
+        let (_file, errors) = model.load_buffer(buffer, "buffer.arxml", true).unwrap();
+        assert!(errors.is_empty());
+        assert_eq!(model.files().count(), 2);
     }
 }
