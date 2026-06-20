@@ -97,7 +97,7 @@ mod ecuinstance;
 mod system;
 
 // export the content of the internal modules
-pub use arpackage::ArPackage;
+pub use arpackage::{ArPackage, ReferenceBase};
 pub use ecuinstance::*;
 pub use system::*;
 
