@@ -1304,6 +1304,78 @@ impl ArPackage {
             .flat_map(|element| element.sub_elements())
             .filter_map(|element| ArPackage::try_from(element).ok())
     }
+
+    /// create a new `ReferenceBase` in the package
+    ///
+    /// A `ReferenceBase` is the base of a relative reference to elements in the model.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::*;
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+    /// let package = model.get_or_create_package("/some/package")?;
+    /// let reference_base = package.create_reference_base("ReferenceBase", &package)?;
+    /// # assert!(package.element().get_sub_element(ElementName::ReferenceBases).is_some());
+    /// # assert!(package.element().get_sub_element(ElementName::ReferenceBases).unwrap().get_sub_element(ElementName::ReferenceBase).is_some());
+    /// # Ok(())}
+    /// ```
+    pub fn create_reference_base(
+        &self,
+        name: &str,
+        target: &ArPackage,
+    ) -> Result<ReferenceBase, AutosarAbstractionError> {
+        ReferenceBase::new(self, name.to_string(), target)
+    }
+
+    /// iterate over all `ReferenceBase`s in the package
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use autosar_data::*;
+    /// # use autosar_data_abstraction::*;
+    /// # fn main() -> Result<(), AutosarAbstractionError> {
+    /// # let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+    /// let package = model.get_or_create_package("/some/package")?;
+    /// for reference_base in package.reference_bases() {
+    ///   println!("{:?}", reference_base);
+    /// }
+    /// # Ok(())}
+    /// ```
+    pub fn reference_bases(&self) -> impl Iterator<Item = ReferenceBase> + Send + use<> {
+        self.0
+            .get_sub_element(ElementName::ReferenceBases)
+            .into_iter()
+            .flat_map(|element| element.sub_elements())
+            .filter_map(|element| ReferenceBase::try_from(element).ok())
+    }
+}
+
+//##################################################################
+
+/// A `ReferenceBase` is the base of a relative reference to an element in the model.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ReferenceBase(Element);
+abstraction_element!(ReferenceBase, ReferenceBase);
+
+impl ReferenceBase {
+    fn new(parent: &ArPackage, name: String, target: &ArPackage) -> Result<Self, AutosarAbstractionError> {
+        let reference_base_elem = parent
+            .element()
+            .get_or_create_sub_element(ElementName::ReferenceBases)
+            .and_then(|elem| elem.create_sub_element(ElementName::ReferenceBase))?;
+        reference_base_elem
+            .create_sub_element(ElementName::ShortLabel)
+            .and_then(|sl| sl.set_character_data(name))?;
+        reference_base_elem
+            .create_sub_element(ElementName::PackageRef)
+            .and_then(|pr| pr.set_reference_target(target.element()))?;
+
+        Ok(Self(reference_base_elem))
+    }
 }
 
 //##################################################################
@@ -1756,5 +1828,34 @@ mod test {
 
         // iterate over sub-packages
         assert_eq!(package.sub_packages().count(), 2);
+    }
+
+    #[test]
+    fn reference_bases() {
+        let model = AutosarModelAbstraction::create("filename", AutosarVersion::Autosar_00048);
+        let package = model.get_or_create_package("/package").unwrap();
+        let target_package = model.get_or_create_package("/target").unwrap();
+
+        let reference_base = package.create_reference_base("ReferenceBase", &target_package).unwrap();
+        assert!(
+            package
+                .element()
+                .get_sub_element(ElementName::ReferenceBases)
+                .unwrap()
+                .get_sub_element(ElementName::ReferenceBase)
+                .is_some()
+        );
+        assert!(
+            reference_base
+                .element()
+                .get_sub_element(ElementName::ShortLabel)
+                .is_some()
+        );
+        assert!(
+            reference_base
+                .element()
+                .get_sub_element(ElementName::PackageRef)
+                .is_some()
+        );
     }
 }
